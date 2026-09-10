@@ -32,6 +32,7 @@
   import EntryScreen from "./components/Entry.svelte";
   import Workbench from "./components/Workbench.svelte";
   import Avatar from "./components/Avatar.svelte";
+  let EditorSpike = $state<typeof import("./dev/EditorSpike.svelte").default>();
   let route = $state<Route>(parseRoute(location.hash)),
     theme = $state(savedTheme()),
     search = $state("");
@@ -52,7 +53,7 @@
     signingIn = $state(false),
     direction = $state("forward");
   let generation = 0;
-  let isHome = $derived(!route.projectId && !route.entryId && !route.invalid);
+  let isHome = $derived(!route.projectId && !route.entryId && !route.invalid && !route.editorSpike);
   let workbench = $derived(route.pageIndex !== undefined);
   async function identity() {
     session = await sessionCurrent();
@@ -97,6 +98,10 @@
     pages = [];
     canvases = [];
     try {
+      if (next.editorSpike && import.meta.env.DEV) {
+        EditorSpike = (await import("./dev/EditorSpike.svelte")).default;
+        return;
+      }
       if (next.invalid)
         throw Error("ページが見つかりません。ホームから選び直してください。");
       if (!next.projectId && !next.entryId) {
@@ -241,10 +246,10 @@
         >
       </div>{:else if loading}<div class="panel empty" role="status">
         読み込み中…
-      </div>{:else}{#key route.entryId ?? route.projectId ?? "home"}<div
+      </div>{:else}{#key route.editorSpike ? "editor" : route.entryId ?? route.projectId ?? "home"}<div
           class="route-screen"
         >
-          {#if isHome}<Home
+          {#if route.editorSpike && EditorSpike}<EditorSpike />{:else if isHome}<Home
               {projects}
               {session}
               {profile}

@@ -1,9 +1,30 @@
+import { parseLine } from "./syntax";
+export { parse, serialize, parseLine } from "./syntax";
+export type {
+  SyntaxTree,
+  SyntaxNode,
+  SyntaxKind,
+  SourceColumn,
+} from "./syntax";
 export type Inline =
-  | { kind: "text" | "editorial" | "comment" | "glyph"; text: string }
+  | {
+      kind:
+        | "text"
+        | "raw"
+        | "editorial"
+        | "comment"
+        | "glyph"
+        | "rightLine"
+        | "title"
+        | "box"
+        | "place";
+      text: string;
+    }
   | {
       kind: "ruby" | "warichu" | "correction" | "emphasis";
       base: string;
       annotation: string;
+      segments?: string[];
     }
   | { kind: "reading"; base: string; returnMark: string; okurigana: string }
   | { kind: "reference"; number: number };
@@ -22,41 +43,22 @@ const escape = (text: string) =>
   );
 export function parseInline(text: string): Inline[] {
   const nodes: Inline[] = [];
-  const pattern =
-    /《([^《》]*)》|【([^【】]*)】|※[^\n]*|＃([0-9０-９]+)|＿([レ一二三四五六七八九十上中下甲乙丙丁天地人]+)|￣([\p{Script=Hiragana}\p{Script=Katakana}ー]+)|[■□〓]/gu;
-  let offset = 0;
-  const append = (text: string) => {
-    if (text) nodes.push({ kind: "text", text });
-  };
-  for (const match of text.matchAll(pattern)) {
-    append(text.slice(offset, match.index));
-    offset = match.index! + match[0].length;
-    if (match[1] !== undefined) {
-      const parts = /^(振り仮名|割書|見せ消ち|圏点)：([^｜]*)｜([\s\S]*)$/.exec(
-        match[1],
-      );
-      if (parts)
-        nodes.push({
-          kind: (
-            {
-              振り仮名: "ruby",
-              割書: "warichu",
-              見せ消ち: "correction",
-              圏点: "emphasis",
-            } as const
-          )[parts[1] as "振り仮名"],
-          base: parts[2],
-          annotation: parts[3],
-        });
-      else append(match[0]);
-    } else if (match[2] !== undefined)
-      nodes.push({ kind: "editorial", text: match[0] });
-    else if (match[3])
+  for (const node of parseLine(text)) {
+    const parts = node.segments ?? [];
+    const names = {
+      ruby: "ruby",
+      warigaki: "warichu",
+      misekechi: "correction",
+      kenten: "emphasis",
+    } as const;
+    if (node.kind in names) {
       nodes.push({
-        kind: "reference",
-        number: Number(match[3].normalize("NFKC")),
+        kind: names[node.kind as keyof typeof names],
+        base: parts[0],
+        annotation: parts[1],
+        ...(parts.length > 2 ? { segments: parts } : {}),
       });
-    else if (match[4] || match[5]) {
+    } else if (node.kind === "return" || node.kind === "okurigana") {
       let previous = nodes.at(-1);
       if (previous?.kind === "text") {
         const chars = [...graphemes.segment(previous.text)].map(
@@ -68,19 +70,28 @@ export function parseInline(text: string): Inline[] {
         nodes.push(previous);
       }
       if (previous?.kind === "reading") {
-        if (match[4]) previous.returnMark += match[4];
-        else previous.okurigana += match[5];
-      } else append(match[0]);
-    } else
+        if (node.kind === "return") previous.returnMark += parts[0];
+        else previous.okurigana += parts[0];
+      } else nodes.push({ kind: "text", text: node.source });
+    } else if (node.kind === "reference")
       nodes.push({
-        kind: match[0].startsWith("※") ? "comment" : "glyph",
-        text: match[0],
+        kind: "reference",
+        number: Number(node.source.slice(1).normalize("NFKC")),
       });
+    else
+      nodes.push({
+        kind:
+          node.kind === "divider"
+            ? "editorial"
+            : node.kind === "gap"
+              ? "glyph"
+              : node.kind,
+        text: parts[0] ?? node.source,
+      } as Inline);
   }
-  append(text.slice(offset));
   return nodes;
 }
-export function parse(text: string): ColumnGroup[] {
+export function parseGroups(text: string): ColumnGroup[] {
   const groups: ColumnGroup[] = [];
   let group: ColumnGroup = { label: "", columns: [] };
   const chunks = text.replace(/\r\n?/g, "\n").split(/(【右丁】|【左丁】)/);
@@ -103,16 +114,25 @@ export function renderInline(nodes: Inline[]): string {
   return nodes
     .map((node) => {
       switch (node.kind) {
+        case "raw":
         case "text":
           return escape(node.text);
+        case "rightLine":
+        case "title":
+        case "box":
+        case "place":
         case "editorial":
         case "comment":
         case "glyph":
           return `<span class="markup-${node.kind}">${escape(node.text)}</span>`;
-        case "ruby":
-          return `<ruby>${escape(node.base)}<rp>（</rp><rt>${escape(node.annotation)}</rt><rp>）</rp></ruby>`;
+        case "ruby": {
+          const ruby = `<ruby>${escape(node.base)}<rp>（</rp><rt>${escape(node.annotation)}</rt><rp>）</rp></ruby>`;
+          return node.segments?.[2] === undefined
+            ? ruby
+            : `<ruby class="markup-double-ruby">${ruby}<rt class="markup-left-ruby">${escape(node.segments[2])}</rt></ruby>`;
+        }
         case "warichu":
-          return `<span class="markup-warichu"><span>${escape(node.base)}</span><span>${escape(node.annotation)}</span></span>`;
+          return `<span class="markup-warichu">${(node.segments ?? [node.base, node.annotation]).map((part) => `<span>${escape(part)}</span>`).join("")}</span>`;
         case "correction":
           return `<span class="markup-correction"><s>${escape(node.base)}</s><span>${escape(node.annotation)}</span></span>`;
         case "emphasis":

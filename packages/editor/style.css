@@ -1,0 +1,229 @@
+.editor-workspace {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+.editor-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+}
+.editor-toolbar button {
+  font-size: 13px;
+}
+.editor-toolbar-spacer {
+  flex: 1;
+}
+.editor-reading-popover {
+  position: absolute;
+  inset-block-start: calc(100% + 8px);
+  inset-inline-start: 16px;
+  z-index: 5;
+  display: flex;
+  gap: 8px;
+  padding: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 7px;
+}
+.editor-reading-popover label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.editor-reading-popover input {
+  inline-size: 160px;
+}
+.editor-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+.transcription.editor-scroll {
+  direction: rtl;
+  display: block;
+  padding: 24px 16px;
+  overflow: auto;
+}
+.editor-scroll[hidden] {
+  display: none;
+}
+.editor-mount {
+  direction: ltr;
+  inline-size: max-content;
+  min-inline-size: 100%;
+  block-size: 100%;
+  display: flex;
+  justify-content: flex-end;
+}
+.vertical-editor {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  white-space: pre-wrap;
+  min-block-size: 100%;
+  inline-size: 100%;
+  padding: 4px;
+  caret-color: var(--focus);
+  outline: none;
+  flex-shrink: 0;
+}
+.vertical-editor .transcription-column {
+  min-block-size: 44px;
+  block-size: auto;
+  height: auto;
+  min-width: 44px;
+  padding: 0 8px;
+  margin: 0;
+  border-inline-start: 1px solid transparent;
+}
+.vertical-editor:focus .transcription-column:has(.ProseMirror-selectednode) {
+  background: var(--selection);
+}
+.vertical-editor ::selection {
+  background: var(--selection);
+  color: var(--text);
+}
+.vertical-editor:focus-visible {
+  outline: 1px solid var(--focus);
+  outline-offset: 4px;
+}
+.vertical-editor .editor-half-divider {
+  border-block-start: 1px solid var(--border-strong);
+  padding-block-start: 12px;
+}
+.editor-source-anchor {
+  display: inline;
+  font-size: 0;
+}
+.editor-token {
+  user-select: none;
+}
+.markup-divider {
+  color: var(--text-muted);
+  font: 400 13px/18px var(--font-sans);
+}
+.editor-annotation {
+  display: inline-flex;
+  writing-mode: horizontal-tb;
+  flex-direction: row-reverse;
+  vertical-align: top;
+  align-items: flex-start;
+  line-height: 1.4;
+}
+.editor-segment {
+  writing-mode: vertical-rl;
+  white-space: pre-wrap;
+  min-inline-size: 0.5em;
+}
+.editor-ruby > .editor-base {
+  order: 1;
+}
+.editor-ruby > .editor-right {
+  order: 0;
+}
+.editor-ruby > .editor-left {
+  order: 2;
+}
+.editor-ruby > .editor-right,
+.editor-ruby > .editor-left,
+.editor-warigaki {
+  font-size: 13px;
+  line-height: 18px;
+}
+.editor-misekechi > .editor-base {
+  text-decoration: line-through;
+}
+.editor-kenten > .editor-base {
+  text-emphasis: var(--kenten-mark, "﹅");
+}
+.editor-kenten > .editor-right {
+  font-size: 13px;
+  color: var(--link);
+}
+.editor-rightLine {
+  border-inline-end: 1px solid currentColor;
+}
+.editor-title {
+  font-weight: 600;
+}
+.editor-box {
+  border: 1px solid currentColor;
+  padding: 2px;
+}
+.editor-place {
+  text-decoration: underline;
+  text-decoration-style: dotted;
+}
+.editor-return,
+.editor-okurigana {
+  font-size: 13px;
+  line-height: 18px;
+  vertical-align: bottom;
+}
+.editor-raw {
+  color: var(--text-muted);
+  text-decoration: underline dotted var(--border-strong);
+}
+.editor-palette {
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.editor-palette-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+.editor-palette-row > span {
+  inline-size: 80px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.editor-palette-row button {
+  min-inline-size: 34px;
+  padding: 2px 8px;
+  font: 400 20px/28px var(--font-serif);
+}
+.editor-raw-textarea {
+  flex: 1;
+  min-inline-size: 0;
+  inline-size: 100%;
+  resize: none;
+  border: 0;
+  border-radius: 0;
+  padding: 20px;
+  font: 400 16px/28px var(--font-serif);
+  background: var(--surface-inset);
+  color: var(--text);
+  white-space: pre;
+}
+@font-face {
+  font-family: "Noto Serif Hentaigana";
+  src: url("./fonts/NotoSerifHentaigana.ttf") format("truetype");
+  font-weight: 400 700;
+  font-display: swap;
+  unicode-range: U+1B000-1B16F;
+}
+.editor-workspace,
+.editor-raw-textarea {
+  --editor-font: "Noto Serif Hentaigana", var(--font-serif);
+}
+.editor-workspace .transcription,
+.editor-palette-row button,
+.editor-workspace textarea,
+.editor-raw-textarea {
+  font-family: var(--editor-font);
+}
+
+.vertical-editor:focus .editor-active-column {
+  background: var(--selection);
+  border-block-end: 1px solid var(--focus);
+}
