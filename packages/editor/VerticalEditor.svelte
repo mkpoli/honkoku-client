@@ -12,14 +12,19 @@
     type EditorUpdate,
   } from "./index";
   import { palette } from "./palette";
+  import { transcriptionColumns } from "@honkoku/markup";
   import "prosemirror-view/style/prosemirror.css";
   import "./style.css";
   let {
     source = $bindable(""),
     onupdate,
     onready,
+    oncolumnchange,
+    highlightedColumn = -1,
   }: {
     source: string;
+    oncolumnchange?: (index: number) => void;
+    highlightedColumn?: number;
     onupdate?: (update: EditorUpdate) => void;
     onready?: (editor: ReturnType<typeof createEditor>) => void;
   } = $props();
@@ -33,7 +38,24 @@
   let canWrap = $state(false),
     canUndo = $state(false),
     canRedo = $state(false);
+  let lastNotifiedColumn = -1;
+  function notifyColumn(index: number) {
+    if (index === lastNotifiedColumn) return;
+    lastNotifiedColumn = index;
+    oncolumnchange?.(index);
+  }
+  function rawSelection(element: HTMLTextAreaElement) {
+    const sourceIndex =
+      element.value.slice(0, element.selectionStart).split("\n").length - 1;
+    notifyColumn(
+      transcriptionColumns(source).findIndex(
+        (column) => column.sourceIndex === sourceIndex,
+      ),
+    );
+  }
   onMount(() => {
+    let ready = false;
+    const initialColumn = untrack(() => highlightedColumn);
     const instance = createEditor(
       host,
       untrack(() => source),
@@ -47,14 +69,33 @@
         }
         onupdate?.(update);
       },
+      (index) => {
+        if (ready) notifyColumn(index);
+      },
     );
     editor = instance;
+    ready = true;
+    if (initialColumn >= 0) instance.focusColumn(initialColumn);
+    else
+      notifyColumn(
+        transcriptionColumns(source).findIndex(
+          (column) =>
+            column.sourceIndex === instance.view.state.selection.$head.index(0),
+        ),
+      );
     canWrap = wrapSelection("ruby")(instance.view.state);
     onready?.(instance);
     return () => instance.destroy();
   });
   $effect(() => {
     editor?.setSource(source);
+  });
+  export function focusColumn(index: number) {
+    raw = false;
+    requestAnimationFrame(() => editor?.focusColumn(index));
+  }
+  $effect(() => {
+    editor?.setHighlightedColumn(highlightedColumn);
   });
   function submitReading(event: SubmitEvent) {
     event.preventDefault();
@@ -132,6 +173,7 @@
     {#if raw}<textarea
         class="editor-raw-textarea"
         aria-label="原文を編集"
+        onselect={(event) => rawSelection(event.currentTarget)}
         onkeydown={(event) => historyKey(event, editor)}
         value={source}
         oninput={(event) =>

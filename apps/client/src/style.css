@@ -1729,3 +1729,29 @@ main {
   margin-bottom: 8px;
   font-size: 13px;
 }
+
+.transcription-reader {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+}
+.transcription-column.alignment-active-column {
+  background: var(--selection);
+}
+button.line-overlay {
+  padding: 0;
+  min-width: 0;
+  min-height: 0;
+  border-radius: 0;
+  border: 1px solid color-mix(in srgb, var(--border-strong) 40%, transparent);
+  background: transparent;
+  cursor: pointer;
+}
+button.line-overlay.highlighted {
+  background: color-mix(in srgb, var(--selection) 35%, transparent);
+}
+button.line-overlay.line-hidden {
+  visibility: hidden;
+  pointer-events: none;
+}

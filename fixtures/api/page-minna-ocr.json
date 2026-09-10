@@ -1,0 +1,150 @@
+{
+  "page": {
+    "id": "a21e410013af91efa21fc7a97617a119_2",
+    "projectId": "ainu",
+    "entryId": "a21e410013af91efa21fc7a97617a119",
+    "index": 2,
+    "prevStatus": "default",
+    "syncMode": false,
+    "notes": [],
+    "canvasId": "https://kokusho.nijl.ac.jp/biblio/100348741/canvas/3",
+    "annotations": [],
+    "createdAt": {
+      "_seconds": 1788633727,
+      "_nanoseconds": 473000000
+    },
+    "ocr": {
+      "minna": {
+        "text": "雪（ゆつ）の花（はな）　　青（あを）\n大隅国国分の内浜の市船奥ゑそゑとろふに漂着之記\n正徳元辛卯十月廿三日出船翌年辰十一月四日武州江戸\n芝御屋敷え帰着仕候\n一浜之市船頭次郎左衛門船《割書：但船は五年舟に而新敷｜》\n門舟　堅く御座候十五端帆\n沖船頭　雇小根古　長右衛門　五十一歳\n梶取　　大根古鳥居戸三五郎　四十一才\n水主　大根古鳥居戸覚兵衛　三十二才　太兵衛　卅五才\n庄五郎　廿二才　長右衛門　十九才　甚七　十七才",
+        "createdAt": {
+          "_seconds": 1788634037,
+          "_nanoseconds": 758000000
+        },
+        "textBlocks": [],
+        "engine": "minna",
+        "lines": [
+          {
+            "x": 2253,
+            "y": 1710,
+            "width": 206,
+            "height": 57,
+            "confidence": 0.3730619549751282,
+            "classId": 1,
+            "readingOrder": 1,
+            "raw": "<ruby>雪<rt>ゆつ</rt></ruby>の<ruby>花<rt>はな</rt></ruby>　　<ruby>青<rt>あを</rt></ruby>"
+          },
+          {
+            "x": 1558,
+            "y": 521,
+            "width": 101,
+            "height": 1626,
+            "confidence": 0.8212252855300903,
+            "classId": 1,
+            "readingOrder": 2,
+            "raw": "大隅国国分の内浜の市船奥ゑそゑとろふに漂着之記"
+          },
+          {
+            "x": 1424,
+            "y": 615,
+            "width": 99,
+            "height": 1529,
+            "confidence": 0.8370699882507324,
+            "classId": 1,
+            "readingOrder": 3,
+            "raw": "正徳元辛卯十月廿三日出船翌年辰十一月四日武州江戸"
+          },
+          {
+            "x": 1303,
+            "y": 594,
+            "width": 84,
+            "height": 657,
+            "confidence": 0.8325698375701904,
+            "classId": 1,
+            "readingOrder": 4,
+            "raw": "芝御屋敷え帰着仕候"
+          },
+          {
+            "x": 1147,
+            "y": 348,
+            "width": 115,
+            "height": 1412,
+            "confidence": 0.6437456011772156,
+            "classId": 1,
+            "readingOrder": 5,
+            "raw": "一浜之市船頭次郎左衛門船<WARI>但船は五年舟に而新敷<WARI_SEP></WARI>"
+          },
+          {
+            "x": 1125,
+            "y": 998,
+            "width": 65,
+            "height": 746,
+            "confidence": 0.42168712615966797,
+            "classId": 1,
+            "readingOrder": 6,
+            "raw": "門舟　堅く御座候十五端帆"
+          },
+          {
+            "x": 1005,
+            "y": 484,
+            "width": 99,
+            "height": 1246,
+            "confidence": 0.7443429231643677,
+            "classId": 1,
+            "readingOrder": 7,
+            "raw": "沖船頭　雇小根古　長右衛門　五十一歳"
+          },
+          {
+            "x": 865,
+            "y": 502,
+            "width": 98,
+            "height": 1209,
+            "confidence": 0.8405137062072754,
+            "classId": 1,
+            "readingOrder": 8,
+            "raw": "梶取　　大根古鳥居戸三五郎　四十一才"
+          },
+          {
+            "x": 723,
+            "y": 506,
+            "width": 93,
+            "height": 1611,
+            "confidence": 0.8283431529998779,
+            "classId": 1,
+            "readingOrder": 9,
+            "raw": "水主　大根古鳥居戸覚兵衛　三十二才　太兵衛　卅五才"
+          },
+          {
+            "x": 558,
+            "y": 773,
+            "width": 124,
+            "height": 1280,
+            "confidence": 0.7515389323234558,
+            "classId": 1,
+            "readingOrder": 10,
+            "raw": "庄五郎　廿二才　長右衛門　十九才　甚七　十七才"
+          }
+        ]
+      }
+    },
+    "updatedAt": {
+      "_seconds": 1788634455,
+      "_nanoseconds": 983000000
+    },
+    "editedBy": "B5KzM2KmjxXlvUVHiQdEO6Xth9J2",
+    "requestReview": true,
+    "share": true,
+    "text": "【左丁】\n　　　大隅国国分の内濱の市舩奥ゑそゑとろふに漂着之記\n　　　　正徳元辛卯十月廿三日出船翌年辰十一月四日武州江戸\n　　　　芝御屋敷￣え帰着仕候\n一濱之市舩頭、次郎左衛門舩、《割書：但船￣は五年舟￣に而新敷｜　堅く御座候十五端帆》\n　　沖船頭　雇小根古　長右衛門　　五十一歳\n　　梶取　　大根古鳥居戸ノ三五郎　四十一才\n　　水主　　大根古鳥居戸ノ覚兵衛　三十二才　太兵衛　卅五才\n　　庄五郎　廿二才　長右衛門　十九才　甚七　十七才",
+    "status": "completed",
+    "translations": {
+      "translationJa": "**大隅国国分の内、浜の市の船が奥蝦夷・択捉島に漂着した記録**\n\n正徳元年（辛卯）十月二十三日に出船し、翌年（辰年）十一月四日に武蔵国江戸芝の御屋敷へ帰着いたしました。\n\n一、浜の市の船頭・次郎左衛門の船　※ただし、船は（進水して）五年の比較的新しい船で、堅固な造りであり、十五反帆の帆を持つ。\n\n- 沖船頭（雇い）　小根古　長右衛門　　五十一歳\n- 梶取　　　　　　大根古鳥居戸の三五郎　四十一歳\n- 水主　　　　　　大根古鳥居戸の覚兵衛　三十二歳\n- 水主　　　　　　太兵衛　三十五歳\n- 水主　　　　　　庄五郎　二十二歳\n- 水主　　　　　　長右衛門　十九歳\n- 水主　　　　　　甚七　十七歳",
+      "translationEn": "**Record of the Ship from Hamanomachi, within Kokubu, Ōsumi Province, Drifting Ashore at Oku-Ezo (Etorofu Island)**\n\nThe ship departed on the twenty-third day of the tenth month of Shōtoku 1 (the Year of the Rabbit, 1711), and returned to the lord's residence at Shiba, Edo, in Musashi Province, on the fourth day of the eleventh month of the following year (the Year of the Dragon, 1712).\n\nOne ship belonging to ship captain Jirōzaemon of Hamanomachi. ※Note: The ship was relatively new, having been in service for five years, was sturdily built, and carried fifteen-tan sails.\n\n- Chief navigator (hired): Konego, Chōuemon — age 51\n- Helmsman: Ōnego-Torii-do no Sangōrō — age 41\n- Sailor: Ōnego-Torii-do no Kakubē — age 32\n- Sailor: Tahē — age 35\n- Sailor: Shōgorō — age 22\n- Sailor: Chōuemon — age 19\n- Sailor: Jinshichi — age 17",
+      "annotationsJa": "1. **大隅国国分（おおすみのくに こくぶ）**：現在の鹿児島県霧島市国分地区に相当する地域。江戸時代には薩摩藩の領地であった。\n\n2. **奥蝦夷ゑとろふ（おくえぞ えとろふ）**：現在の択捉島（北方領土）のこと。「奥蝦夷」は北蝦夷地（現在の北海道の北・東）を指し、「ゑとろふ」はその中の択捉島を指す。江戸時代には松前藩の管轄下に置かれ、アイヌの居住地として知られていた。\n\n3. **正徳元年辛卯（しょうとくがんねん かのとう）**：正徳元年は西暦1711年にあたる。辛卯（かのとう）は干支（えと）で、この年の干支表記。\n\n4. **武州江戸芝御屋敷（ぶしゅう えど しば おやしき）**：武蔵国（現在の東京都・埼玉県等）の江戸・芝にある御屋敷。薩摩藩の江戸藩邸が芝に位置しており、漂流者たちが帰還した先がここであったと考えられる。\n\n5. **十五端帆（じゅうごたんほ）**：帆の大きさを示す単位で、帆布（はんぷ）の枚数（端＝反）で表す。十五反の帆布を使った帆という意味で、当時の中型から大型の廻船に相当する規模。\n\n6. **沖船頭（おきせんどう）**：航海中の実際の操船を担う責任者。「雇い」とあることから、船主ではなく雇われた専門の航海師であることがわかる。\n\n7. **梶取（かじとり）**：舵を操る役職。沖船頭の補佐役として航海において重要な役割を担った。\n\n8. **水主（かこ）**：一般の船乗り・乗組員のこと。\n\n9. **小根古・大根古（こねこ・おおねこ）**：地名と思われるが、詳細は不明。大隅国周辺の地名の可能性がある。「鳥居戸」も同様に地名と考えられる。\n\n10. **割書（わりがき）**：本文中に小さな文字で二行に割って書かれた注記のこと。本文書では船の状態（五年船で新しく堅固、十五反帆）について補足説明している。",
+      "annotationsEn": "1. **Ōsumi Province, Kokubu (大隅国国分)**: Corresponds to the present-day Kokubu district of Kirishima City, Kagoshima Prefecture. During the Edo period, this area was part of the Satsuma Domain territory.\n\n2. **Oku-Ezo, Etorofu (奥蝦夷ゑとろふ)**: Refers to present-day Iturup Island (Etorofu), one of the disputed Northern Territories. \"Oku-Ezo\" referred to the far northeastern regions of Hokkaido and the surrounding islands, while \"Etorofu\" specifically denotes Iturup Island. It was known as an Ainu settlement under the jurisdiction of the Matsumae Domain during the Edo period.\n\n3. **Shōtoku 1, Year of the Rabbit (正徳元年辛卯)**: Shōtoku 1 corresponds to 1711 CE. \"Kanoto-u\" (辛卯) is the sexagenary cycle designation for that year.\n\n4. **Lord's Residence at Shiba, Edo, Musashi Province (武州江戸芝御屋敷)**: Refers to a residence in the Shiba area of Edo (present-day Tokyo) within Musashi Province. This is likely the Satsuma Domain's Edo residence (藩邸), which was located in Shiba, and was the destination to which the castaways returned.\n\n5. **Fifteen-tan sail (十五端帆)**: A unit measuring sail size, expressed in the number of lengths (tan/反) of sailcloth used. A fifteen-tan sail indicates a medium-to-large-sized coastal trading vessel (廻船) for the period.\n\n6. **Chief Navigator, \"Oki-sendō\" (沖船頭)**: The person responsible for actual navigation at sea. The notation \"hired\" (雇い) indicates this was a professional navigator employed for the voyage, not the ship's owner.\n\n7. **Helmsman, \"Kajitori\" (梶取)**: The person responsible for operating the rudder. This was an important role, serving as assistant to the chief navigator.\n\n8. **Sailor, \"Kako\" (水主)**: General term for crew members and sailors aboard the vessel.\n\n9. **Konego / Ōnego / Torii-do**: These appear to be place names, likely referring to localities within or near Ōsumi Province, though their precise locations are uncertain. \"Torii-do\" (鳥居戸) is similarly interpreted as a place name.\n\n10. **Interlinear notation (割書)**: Small text written in two lines within the body of the document, used as supplementary notes. In this document, it provides additional details about the ship's condition — that it was a relatively new five-year-old vessel, sturdily built, with fifteen-tan sails."
+    }
+  },
+  "canvas": {
+    "id": "https://kokusho.nijl.ac.jp/biblio/100348741/canvas/3",
+    "width": 6468,
+    "height": 4565
+  }
+}

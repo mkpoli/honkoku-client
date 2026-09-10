@@ -1,9 +1,16 @@
-import { checkInteractions, checkEditing } from "./checks";
+import { checkInteractions, checkEditing, checkAlignment } from "./checks";
 import { chromium, webkit, type Page } from "playwright";
 import { mkdir } from "node:fs/promises";
 import { resolve } from "node:path";
 const root = resolve(import.meta.dir, "../..");
-const origin = "http://127.0.0.1:1420";
+const probe = Bun.serve({
+  hostname: "127.0.0.1",
+  port: 0,
+  fetch: () => new Response(),
+});
+const port = probe.port;
+probe.stop(true);
+const origin = `http://127.0.0.1:${port}`;
 const output = resolve(root, ".local/shots");
 const routes = [
   ["01-home", "#/"],
@@ -15,7 +22,7 @@ const routes = [
 ] as const;
 async function available() {
   try {
-    const r = await fetch(origin);
+    const r = await fetch(origin, { signal: AbortSignal.timeout(1000) });
     return r.ok && (await r.text()).includes("みんなで翻刻");
   } catch {
     return false;
@@ -39,11 +46,19 @@ async function stopServer() {
   await p.exited;
   for (const line of text.split("\n")) {
     const name = line.trim().split(/\s+/)[0];
-    if (/^devrun-\d+-\d+\.scope$/.test(name))
+    if (/^devrun-\d+-\d+\.scope$/.test(name)) {
+      await Bun.spawn(
+        ["systemctl", "--user", "kill", "--signal=SIGKILL", name],
+        {
+          stdout: "ignore",
+          stderr: "ignore",
+        },
+      ).exited;
       await Bun.spawn(["systemctl", "--user", "stop", name], {
         stdout: "ignore",
         stderr: "ignore",
       }).exited;
+    }
   }
   if (server.exitCode === null) server.kill("SIGTERM");
   await server.exited;
@@ -75,8 +90,19 @@ await mkdir(output, { recursive: true });
 let browser: Awaited<ReturnType<typeof chromium.launch>> | undefined;
 try {
   if (!(await available())) {
+    await Bun.write(resolve(output, "vite.log"), "");
+    await Bun.write(resolve(output, "vite-error.log"), "");
     server = Bun.spawn(
-      ["devrun", "bun", "run", "--cwd", "apps/client", "dev"],
+      [
+        "devrun",
+        "bun",
+        "run",
+        "--cwd",
+        "apps/client",
+        "dev",
+        "--port",
+        String(port),
+      ],
       {
         cwd: root,
         stdout: Bun.file(resolve(output, "vite.log")),
@@ -89,12 +115,16 @@ try {
         throw Error("Vite exited before becoming ready.");
       await Bun.sleep(200);
     }
-    if (!(await available())) throw Error("Vite did not start on port 1420.");
+    if (!(await available()))
+      throw Error("Vite did not start on the assigned port.");
   }
   browser = await chromium.launch({ headless: true });
+  for (const theme of ["light", "dark"] as const)
+    await checkAlignment(browser, origin, theme);
   await checkInteractions(browser, origin);
   const webkitBrowser = await webkit.launch({ headless: true });
   try {
+    await checkAlignment(webkitBrowser, origin, "light", "-webkit");
     await checkEditing(webkitBrowser, origin, "light", "-webkit");
   } finally {
     await webkitBrowser.close();
