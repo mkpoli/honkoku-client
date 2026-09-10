@@ -224,7 +224,9 @@
     <h2>原本</h2>
     {#if (showLines || highlightedLine !== null) && lineModel.lines.length}<span
         class="caption muted"
-        >{lineModel.engine === "minna"
+        >{lineModel.engine === "local"
+          ? "ローカルOCR"
+          : lineModel.engine === "minna"
           ? "みんなで翻刻"
           : "国立国会図書館"}{lineModel.estimated ? "・推定" : ""}</span
       >{/if}

@@ -11,7 +11,7 @@ export interface CanvasLine {
   half: "right" | "left" | null;
 }
 export interface PageLines {
-  engine: "minna" | "ndl" | null;
+  engine: "minna" | "ndl" | "local" | null;
   lines: CanvasLine[];
   estimated: boolean;
 }
@@ -53,6 +53,11 @@ export function pageLines(
   page: Pick<Page, "ocr">,
   canvas?: Pick<Canvas, "width" | "height">,
 ): PageLines {
+  if (page.ocr?.local && canvas)
+    return localPageLines(
+      page.ocr.local as import("./types").LocalOcrPage,
+      canvas,
+    );
   const engine =
     page.ocr?.minna != null ? "minna" : page.ocr?.ndl != null ? "ndl" : null;
   const result: PageLines = { engine, lines: [], estimated: false };
@@ -132,4 +137,43 @@ export function pageLines(
   result.lines.sort((a, b) => centre(b) - centre(a) || a.y - b.y);
   result.lines.forEach((line, index) => (line.index = index));
   return result;
+}
+
+export function localPageLines(
+  local: import("./types").LocalOcrPage,
+  canvas: Pick<Canvas, "width" | "height">,
+): PageLines {
+  if (
+    ![local.width, local.height, canvas.width, canvas.height].every(
+      (n) => Number.isFinite(n) && n > 0,
+    )
+  )
+    return { engine: "local", lines: [], estimated: false };
+  const lines = [...local.lines].sort(
+    (a, b) => a.reading_order - b.reading_order,
+  );
+  const sx = canvas.width / local.width,
+    sy = canvas.height / local.height;
+  return {
+    engine: "local",
+    estimated: false,
+    lines: lines
+      .filter(
+        (l) =>
+          [l.x, l.y, l.width, l.height].every(Number.isFinite) &&
+          l.width > 0 &&
+          l.height > 0,
+      )
+      .map((line, index) => ({
+        index,
+        x: line.x * sx,
+        y: line.y * sy,
+        width: line.width * sx,
+        height: line.height * sy,
+        text: line.plain,
+        confidence: line.confidence,
+        half:
+          (line.x + line.width / 2) * sx >= canvas.width / 2 ? "right" : "left",
+      })),
+  };
 }

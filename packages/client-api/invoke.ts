@@ -122,3 +122,27 @@ export const collectionProgress = (collectionId: string, refresh = false) =>
   invoke<import("./types").CollectionProgress>("collection_progress", { collectionId, refresh });
 export const entryProgress = (entryIds: string[]) =>
   invoke<import("./types").EntryProgress[]>("entry_progress", { entryIds });
+
+export const ocrStatus = () =>
+  invoke<import("./types").OcrStatus>("ocr_status");
+export const ocrSetup = (useGpu: boolean) =>
+  invoke<import("./types").OcrStatus>("ocr_setup", { useGpu });
+export const ocrRunPage = (entryId: string, index: number) =>
+  invoke<import("./types").LocalOcrPage>("ocr_run_page", { entryId, index });
+export const ocrResult = (entryId: string, index: number) =>
+  invoke<import("./types").LocalOcrPage | null>("ocr_result", {
+    entryId,
+    index,
+  });
+export const ocrCancel = () => invoke<void>("ocr_cancel");
+export const ocrPublishPage = (entryId: string, index: number) =>
+  invoke<void>("ocr_publish_page", { entryId, index });
+export async function onOcrProgress(
+  handler: (progress: import("./types").OcrProgress) => void,
+) {
+  if (!isTauri()) return () => {};
+  const { listen } = await import("@tauri-apps/api/event");
+  return listen<import("./types").OcrProgress>("ocr-progress", (event) =>
+    handler(event.payload),
+  );
+}

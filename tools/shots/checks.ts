@@ -5,6 +5,7 @@ import { resolve } from "node:path";
 const entry = "0916dafb80cdc48ca7687afcad4a4f35";
 const collection = "3R4VhlBfvOYeqPY13cJm";
 export async function checkInteractions(browser: Browser, origin: string) {
+  await checkOcr(browser, origin);
   await checkEditor(browser, origin);
   for (const theme of ["light", "dark"] as const)
     await checkEditing(browser, origin, theme);
@@ -278,7 +279,7 @@ export async function checkInteractions(browser: Browser, origin: string) {
   await page.getByRole("button", { name: "注記1", exact: true }).click();
   assert.equal(await page.locator(".note.highlighted").count(), 1);
   assert.ok(
-    (await page.locator(".ocr-panel").textContent())?.includes("認識した本文"),
+    (await page.locator(".ocr-panel").textContent())?.includes("ローカルOCR"),
   );
   await page
     .locator(".column-label")
@@ -477,7 +478,9 @@ export async function checkEditing(
     await page.getByRole("button", { name: "編集開始", exact: true }).click();
     await page.getByRole("button", { name: "原文表示", exact: true }).click();
     const beforeOcr = await raw.inputValue();
-    const ocr = await page.locator(".ocr-columns pre").first().textContent();
+    const ocr = (
+      await page.locator(".ocr-line .line-text").allTextContents()
+    ).join("\n");
     await page
       .getByRole("button", { name: "本文に挿入", exact: true })
       .first()
@@ -516,13 +519,16 @@ export async function checkEditing(
               tempText: string;
               syncMode: boolean;
             }[];
-            Object.assign(pages.find((p) => p.index === 3)!, {
-              status: "editing",
-              prevStatus: "completed",
-              tempEditedBy: actor.uid,
-              tempText: "共有前の下書き",
-              syncMode,
-            });
+            Object.assign(
+              pages.find((p) => p.index === 3)!,
+              {
+                status: "editing",
+                prevStatus: "completed",
+                tempEditedBy: actor.uid,
+                tempText: "共有前の下書き",
+                syncMode,
+              },
+            );
             location.hash = "#/";
             return actor.displayName;
           },
@@ -818,6 +824,72 @@ export async function checkAlignment(
     assert.deepEqual(errors, []);
     console.log(
       `Alignment checks passed (${theme}${suffix}): ${model.lines.length} overlays, ${matches.filter((v) => v !== null).length}/${matches.length} matched columns, selection, caret, zoom, pan, swap, visibility, page cleanup.`,
+    );
+  } finally {
+    await context.close();
+  }
+}
+
+async function checkOcr(browser: Browser, origin: string) {
+  const fixture = await import("../../fixtures/api/ocr-local-0916dafb-3.json");
+  const context = await browser.newContext({
+    viewport: { width: 1600, height: 1000 },
+    locale: "ja-JP",
+  });
+  const page = await context.newPage();
+  try {
+    await page.goto(`${origin}/#/entries/${entry}/pages/3`);
+    await page.getByText("ローカルOCR · v18", { exact: false }).waitFor();
+    assert.equal(await page.locator(".ocr-line").count(), fixture.lines.length);
+    await page.getByRole("button", { name: "行枠", exact: true }).click();
+    assert.equal(
+      await page.locator(".line-overlay:visible").count(),
+      fixture.lines.length,
+    );
+    await page
+      .getByRole("button", { name: "サイトに保存", exact: true })
+      .click();
+    await page
+      .getByRole("alertdialog", { name: "翻刻サイトにOCR結果を保存しますか" })
+      .waitFor();
+    await page.getByRole("button", { name: "戻る", exact: true }).click();
+    await page.getByRole("button", { name: "編集開始", exact: true }).click();
+    const before = await page.locator(".ProseMirror").textContent();
+    await page
+      .locator(".ocr-line")
+      .first()
+      .getByRole("button", { name: "挿入", exact: true })
+      .click();
+    assert.ok(
+      (await page.locator(".ProseMirror").textContent())?.includes(
+        fixture.lines[0].koji,
+      ),
+    );
+    assert.notEqual(await page.locator(".ProseMirror").textContent(), before);
+    await page.getByRole("button", { name: "原文表示", exact: true }).click();
+    const text = await page
+      .getByRole("textbox", { name: "原文を編集", exact: true })
+      .inputValue();
+    assert.ok(text.split("\n").includes(fixture.lines[0].koji));
+    const raw = page.getByRole("textbox", { name: "原文を編集", exact: true });
+    await raw.fill("前の行\n後の行");
+    await raw.evaluate((element: HTMLTextAreaElement) => element.setSelectionRange(1, 1));
+    await page.locator(".ocr-line").first().getByRole("button", { name: "挿入", exact: true }).click();
+    assert.equal(await raw.inputValue(), `前の行\n${fixture.lines[0].koji}\n後の行`);
+
+    await page.getByRole("button", { name: "破棄", exact: true }).click();
+    await page.getByRole("button", { name: "破棄する", exact: true }).click();
+    await page.getByRole("button", { name: "編集開始", exact: true }).waitFor();
+    await page.screenshot({
+      path: resolve(import.meta.dir, "../../.local/shots/09-ocr-light.png"),
+    });
+    await page.getByRole("button", { name: "次のコマ", exact: true }).click();
+    await page.waitForURL("**/pages/4");
+    await page.waitForFunction(
+      () => document.querySelectorAll(".ocr-line").length === 0,
+    );
+    console.log(
+      "OCR checks passed: stored fixture, local overlays, confirmation, insertion, page cleanup.",
     );
   } finally {
     await context.close();
