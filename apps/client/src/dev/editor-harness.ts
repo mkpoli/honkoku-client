@@ -1,5 +1,6 @@
 import type { createEditor } from "@honkoku/editor";
 export {
+  createEditor,
   fromMarkup,
   historyKey,
   toMarkup,

@@ -19,6 +19,35 @@ export async function checkEditor(browser: Browser, origin: string) {
     await page.locator(".vertical-editor").waitFor();
     await page.evaluate(() => document.fonts.ready);
     const initial = await source(page);
+    await page.evaluate(async () => {
+      const { createEditor } = await import("/src/dev/editor-harness.ts");
+      const host = document.createElement("div");
+      document.body.append(host);
+      const changes: number[] = [];
+      const editor = createEditor(
+        host,
+        "【右丁】\n春はあけぼの\n\n夏は夜",
+        undefined,
+        (index) => changes.push(index),
+      );
+      try {
+        editor.focusColumn(1);
+        if (
+          editor.view.state.selection.$head.index(0) !== 3 ||
+          editor.view.state.selection.$head.parentOffset !== 0
+        )
+          throw Error("focusColumn did not skip blank lines and markers");
+        editor.focusColumn(1);
+        editor.focusColumn(0);
+        if (JSON.stringify(changes) !== JSON.stringify([-1, 1, 0]))
+          throw Error(
+            `Unexpected column callbacks: ${JSON.stringify(changes)}`,
+          );
+      } finally {
+        editor.destroy();
+        host.remove();
+      }
+    });
     await equal(page);
     assert.equal(
       await page

@@ -1,3 +1,5 @@
+import alignmentFixture from "../../../../fixtures/api/page-minna-ocr.json";
+import alignmentEntry from "../../../../fixtures/api/entry-minna-ocr.json";
 import unreadCount from "../../../../fixtures/home/unread-notification-count.json";
 import { fixtureEdit } from "./editing";
 import pagesJson from "../../../../fixtures/home/pages.json";
@@ -68,6 +70,7 @@ const collections = [
 const entry = normalize(entryJson) as Entry;
 const entries = [
   entry,
+  normalize(alignmentEntry) as Entry,
   ...catalog.entries.filter((e) => e.id !== entry.id),
 ].map((e) => ({ ...e, canvases: e.canvases?.map(normalizeCanvas) }));
 const pages = new Map((entry.transcriptions ?? []).map((p) => [p.index, p]));
@@ -77,6 +80,19 @@ for (const row of firestorePages)
     pages.set(p.index, p);
   }
 const extraPages = normalize(pagesJson) as Record<string, Page[]>;
+extraPages[alignmentEntry.id] = alignmentEntry.canvases.map((canvas, index) =>
+  index === alignmentFixture.page.index
+    ? (normalize(alignmentFixture.page) as Page)
+    : {
+        id: `${alignmentEntry.id}_${index}`,
+        entryId: alignmentEntry.id,
+        index,
+        canvasId: canvas.id,
+        status: "default",
+        text: "",
+        notes: [],
+      },
+);
 const timeline = normalize(timelineJson) as TimelineItem[];
 const projectTimeline = normalize(projectTimelineJson) as TimelineItem[];
 const editingEvents: TimelineItem[] = [];
