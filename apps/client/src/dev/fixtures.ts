@@ -125,6 +125,7 @@ export async function fixtureInvoke(
     [
       "page_lock",
       "page_draft",
+      "page_draft_notes",
       "page_save",
       "page_discard",
       "page_lock_state",

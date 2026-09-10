@@ -672,3 +672,21 @@ pub async fn entry_progress(
         .entry_progress(&entry_ids)
         .await?)
 }
+
+#[tauri::command]
+pub async fn page_draft_notes(
+    entry_id: String,
+    index: u32,
+    notes: Vec<Value>,
+    state: State<'_, AppState>,
+    editing: State<'_, EditingState>,
+) -> Result<Page, AppError> {
+    let connection = state.connection.read().await;
+    let live = editing
+        .session(&connection.client, &entry_id, index)
+        .await?;
+    let mut guard = live.session.lock().await;
+    let session = guard.as_mut().ok_or_else(no_editing_session)?;
+    session.draft_notes(&notes).await?;
+    Ok(session.page().clone())
+}

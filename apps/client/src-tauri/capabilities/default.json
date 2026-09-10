@@ -32,6 +32,7 @@
     "allow-get-user",
     "allow-page-lock",
     "allow-page-draft",
+    "allow-page-draft-notes",
     "allow-page-save",
     "allow-page-discard",
     "allow-page-lock-state",

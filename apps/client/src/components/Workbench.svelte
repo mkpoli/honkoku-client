@@ -26,7 +26,7 @@
   import type { EditorUpdate } from "@honkoku/editor";
   import {
     pageLock,
-    pageDraftWithNotes,
+    pageDraftTextAndNotes,
     isTauri,
     pageSave,
     pageDiscard,
@@ -351,7 +351,7 @@
           notes: (JsonValue | null)[];
         };
         saveState = "送信中";
-        const draft = await pageDraftWithNotes(
+        const draft = await pageDraftTextAndNotes(
           entryId,
           pageIndex,
           text,
@@ -432,7 +432,7 @@
       await queue!.flush(draftPayload());
       if (notesPending())
         throw Error(
-          "注記の変更はこの端末に保存されています。このバージョンでは注記をサイトに保存できません。本文と注記は下書きに残ります。",
+          "注記の変更はこの端末に保存されています。注記の送信を確認できませんでした。再試行してください。",
         );
       saveState = "送信中";
       const saved = await pageSave(entry.id, index, options);

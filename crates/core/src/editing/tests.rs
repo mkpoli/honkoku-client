@@ -728,3 +728,63 @@ async fn ocr_write_preserves_other_fields_and_uses_server_timestamps() -> Result
     assert!(write["update"]["fields"].get("text").is_none());
     Ok(())
 }
+
+#[tokio::test]
+async fn notes_draft_writes_only_temp_notes_with_lock_precondition() -> Result<()> {
+    let server = MockServer::start().await;
+    let client = client(&server)?;
+    let document = page_reads()[1].clone();
+    read(&server, document.clone(), 2).await;
+    let response = commits("response")[1].clone();
+    commit_response(&server, response.clone()).await;
+    let mut session = client.resume_editing(ENTRY, 20).await?;
+    let notes = vec![
+        Value::Null,
+        json!({"type":"note","content":"原本の書入れ","markdown":"原本の書入れ"}),
+    ];
+    session.draft_notes(&notes).await?;
+    assert_commit(
+        &server,
+        json!({"writes":[{
+            "update":{"name": document["name"],"fields":{"tempNotes":encode_value(&json!(notes))}},
+            "updateMask":{"fieldPaths":["tempNotes"]},
+            "updateTransforms":[{"fieldPath":"updatedAt","setToServerValue":"REQUEST_TIME"}],
+            "currentDocument":{"updateTime":document["updateTime"]}
+        }]}),
+    )
+    .await;
+    assert_eq!(
+        serde_json::to_value(&session.page().temp_notes)?,
+        json!(notes)
+    );
+    assert_eq!(
+        session.update_time(),
+        response["writeResults"][0]["updateTime"].as_str().unwrap()
+    );
+    Ok(())
+}
+
+#[tokio::test]
+async fn notes_draft_rejects_a_lost_lock() -> Result<()> {
+    for (status, owner) in [("editing", "another-user"), ("completed", UID)] {
+        let server = MockServer::start().await;
+        let client = client(&server)?;
+        read(&server, page_reads()[1].clone(), 1).await;
+        let mut session = client.resume_editing(ENTRY, 20).await?;
+        server.reset().await;
+        let mut changed = page_reads()[1].clone();
+        changed["fields"]["status"] = json!({"stringValue": status});
+        changed["fields"]["tempEditedBy"] = json!({"stringValue": owner});
+        read(&server, changed, 1).await;
+        assert!(session.draft_notes(&[]).await.is_err());
+        assert!(
+            server
+                .received_requests()
+                .await
+                .unwrap()
+                .iter()
+                .all(|r| !r.url.path().ends_with(":commit"))
+        );
+    }
+    Ok(())
+}

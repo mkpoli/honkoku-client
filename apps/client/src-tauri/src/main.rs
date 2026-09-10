@@ -249,6 +249,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             commands::get_user,
             commands::page_lock,
             commands::page_draft,
+            commands::page_draft_notes,
             commands::page_save,
             commands::page_discard,
             commands::page_lock_state,

@@ -151,3 +151,10 @@ export async function onOcrProgress(
 export const pageDraftWithNotes = (
   entryId: string, index: number, text: string, notes: Array<import("./types").JsonValue | null>,
 ) => isTauri() ? pageDraft(entryId, index, text) : invoke<Page>("page_draft", { entryId, index, text, notes });
+
+export const pageDraftNotes = (entryId: string, index: number, notes: Array<import("./types").JsonValue | null>) =>
+  invoke<Page>("page_draft_notes", { entryId, index, notes });
+export async function pageDraftTextAndNotes(entryId: string, index: number, text: string, notes: Array<import("./types").JsonValue | null>) {
+  await pageDraft(entryId, index, text);
+  return pageDraftNotes(entryId, index, notes);
+}
