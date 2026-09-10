@@ -145,3 +145,5 @@ export function renderInline(nodes: Inline[]): string {
     })
     .join("");
 }
+
+export { alignColumns, transcriptionColumns, plainColumn } from "./align";
