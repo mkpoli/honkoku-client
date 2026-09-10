@@ -53,9 +53,17 @@ enum Command {
     Announcements,
     Project {
         id: String,
+        #[arg(long)]
+        progress: bool,
     },
     Collection {
         id: String,
+        #[arg(long)]
+        progress: bool,
+        #[arg(long, conflicts_with = "progress")]
+        entries: bool,
+        #[arg(long, requires = "entries")]
+        entry_progress: bool,
     },
     Entry {
         id: String,
@@ -412,7 +420,90 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 )
             }
         }
-        Command::Project { id } => {
+        Command::Project { id, progress: true } => {
+            let collections = client
+                .cached_collections(&storage, &id, args.refresh)
+                .await?;
+            let mut figures = Vec::new();
+            let mut rows = Vec::new();
+            let mut total = [0u64; 5];
+            for collection in collections {
+                let p = client
+                    .collection_progress(&collection.id, args.refresh)
+                    .await?;
+                let values = [
+                    p.entries as u64,
+                    p.size,
+                    p.counts.completed,
+                    p.counts.initiated,
+                    p.counts.editing,
+                ];
+                for (total, value) in total.iter_mut().zip(values) {
+                    *total += value;
+                }
+                rows.push(
+                    std::iter::once(collection.title)
+                        .chain(values.map(|n| n.to_string()))
+                        .collect(),
+                );
+                figures.push(p);
+            }
+            if args.json {
+                pretty(&figures)?
+            } else {
+                rows.push(
+                    std::iter::once("合計".into())
+                        .chain(total.map(|n| n.to_string()))
+                        .collect(),
+                );
+                table(
+                    &["コレクション", "資料", "コマ", "完了", "翻刻途中", "編集中"],
+                    rows,
+                )
+            }
+        }
+        Command::Collection {
+            id, progress: true, ..
+        } => {
+            let p = client.collection_progress(&id, args.refresh).await?;
+            if args.json {
+                pretty(&p)?
+            } else {
+                table(
+                    &["コレクション", "資料", "コマ", "完了", "翻刻途中", "編集中"],
+                    vec![vec![
+                        p.collection_id,
+                        p.entries.to_string(),
+                        p.size.to_string(),
+                        p.counts.completed.to_string(),
+                        p.counts.initiated.to_string(),
+                        p.counts.editing.to_string(),
+                    ]],
+                )
+            }
+        }
+        Command::Collection {
+            id,
+            entries: true,
+            entry_progress,
+            ..
+        } => {
+            let entries = client.list_entries_with_refresh(&id, args.refresh).await?;
+            if entry_progress {
+                let ids: Vec<_> = entries.iter().map(|e| e.id.clone()).collect();
+                pretty(
+                    &client
+                        .entry_progress_with_refresh(&ids, args.refresh)
+                        .await?,
+                )?
+            } else {
+                pretty(&entries)?
+            }
+        }
+        Command::Project {
+            id,
+            progress: false,
+        } => {
             let project = client.cached_project(&storage, &id, args.refresh).await?;
             if args.json {
                 return write_output(pretty(&project)?);
@@ -431,7 +522,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             );
             table(&["項目", "内容"], rows)
         }
-        Command::Collection { id } => {
+        Command::Collection { id, .. } => {
             let collection = client
                 .cached_collection(&storage, &id, args.refresh)
                 .await?;
