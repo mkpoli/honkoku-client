@@ -45,3 +45,15 @@ export function entryCanvases(id: string): Promise<Canvas[]> {
     );
   return canvases.get(id)!;
 }
+
+export async function concurrentEach<T>(
+  items: readonly T[],
+  visit: (item: T) => Promise<void>,
+): Promise<void> {
+  let next = 0;
+  await Promise.all(
+    Array.from({ length: Math.min(4, items.length) }, async () => {
+      while (next < items.length) await visit(items[next++]);
+    }),
+  );
+}

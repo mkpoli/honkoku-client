@@ -1,3 +1,7 @@
+import collectionFigures from "../../../../fixtures/home/collection-progress-ainu.json";
+import entrySummaries from "../../../../fixtures/api/entry-summaries-ainu.json";
+import selectedSummaries from "../../../../fixtures/api/entries-3R4VhlBfvOYeqPY13cJm.json";
+import entryFigures from "../../../../fixtures/home/entry-progress-ainu.json";
 import alignmentFixture from "../../../../fixtures/api/page-minna-ocr.json";
 import alignmentEntry from "../../../../fixtures/api/entry-minna-ocr.json";
 import unreadCount from "../../../../fixtures/home/unread-notification-count.json";
@@ -105,7 +109,8 @@ function required<T>(value: T | undefined): T {
   if (!value)
     throw {
       kind: "fixture",
-      message: "この資料の閲覧データは収録されていません。",
+      message:
+        "ブラウザープレビューにはサンプルデータのみ収録しています。デスクトップアプリではすべての資料を閲覧できます。",
     };
   return value;
 }
@@ -160,10 +165,30 @@ export async function fixtureInvoke(
           ? project
           : projects.find((p) => p.id === args.id),
       );
-    case "list_collections":
-      return collections.filter((c) => c.projectId === args.projectId);
+    case "list_collections": {
+      const rows = collections.filter((c) => c.projectId === args.projectId);
+      return required(
+        rows.length || args.projectId === project.id ? rows : undefined,
+      );
+    }
     case "get_collection":
       return required(collections.find((c) => c.id === args.id));
+    case "list_entry_summaries": {
+      required(
+        collectionFigures.find((p) => p.collectionId === args.collectionId),
+      );
+      return args.collectionId === collectionJson.id
+        ? selectedSummaries
+        : entrySummaries.filter((e) => e.collectionId === args.collectionId);
+    }
+    case "collection_progress":
+      return required(
+        collectionFigures.find((p) => p.collectionId === args.collectionId),
+      );
+    case "entry_progress":
+      return (args.entryIds as string[]).map((id) =>
+        required(entryFigures.find((p) => p.entryId === id)),
+      );
     case "get_entry":
       return required(entries.find((e) => e.id === args.id));
     case "list_pages":

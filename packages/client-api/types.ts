@@ -271,3 +271,32 @@ export type SignInProvider = "google.com" | "twitter.com";
 export interface SavedPageWithCount extends SavedPage {
   count: number;
 }
+
+export interface EntrySummary {
+  [key: string]: unknown;
+  id: string;
+  projectId: string;
+  collectionId: string;
+  index: number;
+  label: Label;
+  manifestUrl: string;
+  thumbnail?: string | null;
+  size?: number | null;
+  createdAt?: Timestamp | null;
+}
+export interface StatusCounts {
+  completed: number;
+  initiated: number;
+  editing: number;
+}
+export interface CollectionProgress extends StatusCounts {
+  collectionId: string;
+  entries: number;
+  size: number;
+  fetchedAt: Timestamp;
+}
+export interface EntryProgress extends StatusCounts {
+  entryId: string;
+  size: number;
+  fetchedAt: Timestamp;
+}

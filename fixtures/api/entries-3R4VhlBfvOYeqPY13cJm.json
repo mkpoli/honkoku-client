@@ -1,0 +1,47 @@
+[
+  {
+    "id": "3daea514503efa7c8ec5ccc61c9be9d8",
+    "projectId": "ainu",
+    "collectionId": "3R4VhlBfvOYeqPY13cJm",
+    "index": 1,
+    "label": "蝦夷方言藻汐草　乾巻（国立国語研究所）",
+    "manifestUrl": "https://dglb01.ninjal.ac.jp/ninjaldl/ezomosio/001/manifest.json",
+    "thumbnail": "https://dglb01.ninjal.ac.jp/iiif/ezomosio/001/tiff/ezmg001-001.tiff/full/200,/0/default.jpg",
+    "size": 104,
+    "_firestore": {
+      "createTime": "2026-04-15T12:45:55.125929Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/3daea514503efa7c8ec5ccc61c9be9d8",
+      "updateTime": "2026-09-08T14:20:32.593778Z"
+    }
+  },
+  {
+    "id": "62c6743982041882d0aefd6582ac6a84",
+    "projectId": "ainu",
+    "collectionId": "3R4VhlBfvOYeqPY13cJm",
+    "index": 2,
+    "label": "蝦夷方言藻汐草　坤巻（国立国語研究所）",
+    "manifestUrl": "https://dglb01.ninjal.ac.jp/ninjaldl/ezomosio/002/manifest.json",
+    "thumbnail": "https://dglb01.ninjal.ac.jp/iiif/ezomosio/002/tiff/ezmg002-001.tiff/full/200,/0/default.jpg",
+    "size": 108,
+    "_firestore": {
+      "createTime": "2026-04-15T12:46:37.961062Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/62c6743982041882d0aefd6582ac6a84",
+      "updateTime": "2026-09-08T14:20:37.831417Z"
+    }
+  },
+  {
+    "id": "83b29132c6d01a596a847de5ba3b0b0d",
+    "projectId": "ainu",
+    "collectionId": "3R4VhlBfvOYeqPY13cJm",
+    "index": 3,
+    "label": "蝦夷方言（Wereldmuseum Leiden）",
+    "manifestUrl": "https://www.dh-jac.net/db1/books/RV-578-131-/portal/manifest.json",
+    "thumbnail": "https://www.arc.ritsumei.ac.jp/images/PB/Scaler/iiif/Leiden%21Books%21J04%21578-131%21Lei-578-131_001/full/200,/0/default.jpg",
+    "size": 107,
+    "_firestore": {
+      "createTime": "2026-04-15T17:01:09.022636Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/83b29132c6d01a596a847de5ba3b0b0d",
+      "updateTime": "2026-09-08T14:20:46.039509Z"
+    }
+  }
+]

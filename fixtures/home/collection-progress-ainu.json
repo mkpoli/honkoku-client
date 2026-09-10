@@ -1,0 +1,605 @@
+[
+  {
+    "collectionId": "0N8VzRzNfQyYtOC4xYiT",
+    "entries": 2,
+    "size": 56,
+    "completed": 10,
+    "initiated": 2,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:17.790612458Z"
+  },
+  {
+    "collectionId": "25fpAyxEpufmdRvdudYK",
+    "entries": 0,
+    "size": 0,
+    "completed": 0,
+    "initiated": 0,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:17.862719659Z"
+  },
+  {
+    "collectionId": "2eCDzADowvEN6oD4K3yJ",
+    "entries": 2,
+    "size": 283,
+    "completed": 0,
+    "initiated": 0,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:18.364401142Z"
+  },
+  {
+    "collectionId": "3R4VhlBfvOYeqPY13cJm",
+    "entries": 3,
+    "size": 319,
+    "completed": 218,
+    "initiated": 4,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:18.87205003Z"
+  },
+  {
+    "collectionId": "3cD2Yre3ru8zM4BwqtOV",
+    "entries": 1,
+    "size": 25,
+    "completed": 0,
+    "initiated": 0,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:19.272582716Z"
+  },
+  {
+    "collectionId": "3tyx7dPQaF9unOId4OvF",
+    "entries": 1,
+    "size": 32,
+    "completed": 0,
+    "initiated": 0,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:19.606930112Z"
+  },
+  {
+    "collectionId": "4DSNWCwMqLXjwAVsjdRR",
+    "entries": 1,
+    "size": 53,
+    "completed": 53,
+    "initiated": 0,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:19.97043022Z"
+  },
+  {
+    "collectionId": "4EFmA2GGrZTGo8Kfsoi1",
+    "entries": 1,
+    "size": 3,
+    "completed": 0,
+    "initiated": 0,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:20.284227422Z"
+  },
+  {
+    "collectionId": "539edNLjyK0jWzFAFDqf",
+    "entries": 1,
+    "size": 10,
+    "completed": 0,
+    "initiated": 0,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:20.691279323Z"
+  },
+  {
+    "collectionId": "59LuupUEbhzxyzTIpqzB",
+    "entries": 1,
+    "size": 89,
+    "completed": 0,
+    "initiated": 0,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:21.002520289Z"
+  },
+  {
+    "collectionId": "6hJhjn6BzdgktE4VaEse",
+    "entries": 1,
+    "size": 171,
+    "completed": 0,
+    "initiated": 0,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:21.402449297Z"
+  },
+  {
+    "collectionId": "7vPZMAHngl7kGt87rKD0",
+    "entries": 1,
+    "size": 52,
+    "completed": 0,
+    "initiated": 0,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:21.844623431Z"
+  },
+  {
+    "collectionId": "848u6IVekAIw9DSVlalZ",
+    "entries": 1,
+    "size": 172,
+    "completed": 0,
+    "initiated": 0,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:22.2106962Z"
+  },
+  {
+    "collectionId": "9UwdUZePnYssuLtsp7R5",
+    "entries": 1,
+    "size": 33,
+    "completed": 0,
+    "initiated": 0,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:22.600699177Z"
+  },
+  {
+    "collectionId": "AsTQx8qlIXypdULPKaYE",
+    "entries": 1,
+    "size": 30,
+    "completed": 0,
+    "initiated": 0,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:22.961925781Z"
+  },
+  {
+    "collectionId": "B9s4Q7QNhJm39uGCrdIK",
+    "entries": 1,
+    "size": 37,
+    "completed": 0,
+    "initiated": 0,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:23.280109467Z"
+  },
+  {
+    "collectionId": "BDTFd2a5bQZ3VAWBxHbM",
+    "entries": 1,
+    "size": 67,
+    "completed": 0,
+    "initiated": 0,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:23.584794679Z"
+  },
+  {
+    "collectionId": "BVT7qlb52dqTH87Qv2qu",
+    "entries": 1,
+    "size": 199,
+    "completed": 0,
+    "initiated": 0,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:23.878585439Z"
+  },
+  {
+    "collectionId": "CJSJjOqheETE3gAo4prB",
+    "entries": 1,
+    "size": 38,
+    "completed": 0,
+    "initiated": 0,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:24.248888691Z"
+  },
+  {
+    "collectionId": "CjmQ6VpuSCZ75VWNZlRd",
+    "entries": 1,
+    "size": 49,
+    "completed": 0,
+    "initiated": 0,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:24.596993346Z"
+  },
+  {
+    "collectionId": "DGxj2uonzsNLAihFW7Va",
+    "entries": 1,
+    "size": 51,
+    "completed": 0,
+    "initiated": 0,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:24.940687803Z"
+  },
+  {
+    "collectionId": "FzTuTJQe5cPsSNhOUEiM",
+    "entries": 1,
+    "size": 54,
+    "completed": 0,
+    "initiated": 0,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:25.274924728Z"
+  },
+  {
+    "collectionId": "G159Fb6Q3rPEeVSwDkCe",
+    "entries": 1,
+    "size": 21,
+    "completed": 0,
+    "initiated": 0,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:25.67108522Z"
+  },
+  {
+    "collectionId": "G8SfSj6rgwQiZHIUDoqE",
+    "entries": 1,
+    "size": 33,
+    "completed": 0,
+    "initiated": 0,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:25.941850007Z"
+  },
+  {
+    "collectionId": "GaUAgMWufZP6RiWTxDxY",
+    "entries": 1,
+    "size": 311,
+    "completed": 0,
+    "initiated": 0,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:26.272580902Z"
+  },
+  {
+    "collectionId": "J5elFtY3zgGBXns7kUtl",
+    "entries": 1,
+    "size": 128,
+    "completed": 0,
+    "initiated": 0,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:26.586103675Z"
+  },
+  {
+    "collectionId": "Jfhz2p1Mv6gr3Bjgk3BK",
+    "entries": 1,
+    "size": 68,
+    "completed": 0,
+    "initiated": 0,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:26.92065547Z"
+  },
+  {
+    "collectionId": "LqWMQN0yJ9Zug4XsiXg5",
+    "entries": 1,
+    "size": 38,
+    "completed": 0,
+    "initiated": 0,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:27.203615751Z"
+  },
+  {
+    "collectionId": "OTW1IHNeFvpD6vEXHjUO",
+    "entries": 1,
+    "size": 28,
+    "completed": 0,
+    "initiated": 0,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:27.57518183Z"
+  },
+  {
+    "collectionId": "P7kN58KieyI6uUg2hm4a",
+    "entries": 1,
+    "size": 65,
+    "completed": 0,
+    "initiated": 0,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:27.90677479Z"
+  },
+  {
+    "collectionId": "QSNI5gV9wkGwdOnrJCul",
+    "entries": 1,
+    "size": 18,
+    "completed": 0,
+    "initiated": 0,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:28.260888832Z"
+  },
+  {
+    "collectionId": "RP0ikZnTFw6JHrKVMFXr",
+    "entries": 1,
+    "size": 364,
+    "completed": 0,
+    "initiated": 0,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:28.668795507Z"
+  },
+  {
+    "collectionId": "RPAqoHMKo71b4l6bAEeh",
+    "entries": 1,
+    "size": 136,
+    "completed": 0,
+    "initiated": 0,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:28.97485722Z"
+  },
+  {
+    "collectionId": "RaToHMBrQqBX1fjriyWY",
+    "entries": 2,
+    "size": 154,
+    "completed": 0,
+    "initiated": 0,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:29.312167356Z"
+  },
+  {
+    "collectionId": "RiEKp9AseAi72DPnWbZQ",
+    "entries": 1,
+    "size": 2,
+    "completed": 0,
+    "initiated": 0,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:29.62417378Z"
+  },
+  {
+    "collectionId": "Rnyk7xIBdEnuLPFhrkHL",
+    "entries": 1,
+    "size": 25,
+    "completed": 0,
+    "initiated": 0,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:29.932171181Z"
+  },
+  {
+    "collectionId": "RvV7kgyvo1F0sqOwTDSd",
+    "entries": 1,
+    "size": 2,
+    "completed": 0,
+    "initiated": 0,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:30.272847079Z"
+  },
+  {
+    "collectionId": "UTAK479h1ML8NVE1N35x",
+    "entries": 1,
+    "size": 17,
+    "completed": 0,
+    "initiated": 0,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:30.586067009Z"
+  },
+  {
+    "collectionId": "VkI941m2DAI5JONZgdpb",
+    "entries": 1,
+    "size": 107,
+    "completed": 0,
+    "initiated": 0,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:30.923854992Z"
+  },
+  {
+    "collectionId": "WQvn7cZDGI0d3nHplyhY",
+    "entries": 1,
+    "size": 57,
+    "completed": 0,
+    "initiated": 0,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:31.379801012Z"
+  },
+  {
+    "collectionId": "X3XMs05GOfp3i7dnwmih",
+    "entries": 2,
+    "size": 117,
+    "completed": 0,
+    "initiated": 0,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:31.714807208Z"
+  },
+  {
+    "collectionId": "X8TYKhzfRrrf17d6WdYf",
+    "entries": 4,
+    "size": 359,
+    "completed": 0,
+    "initiated": 0,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:32.087089581Z"
+  },
+  {
+    "collectionId": "XojdaFBPfR9XCv4QKllL",
+    "entries": 1,
+    "size": 118,
+    "completed": 0,
+    "initiated": 0,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:32.44506618Z"
+  },
+  {
+    "collectionId": "YC02tFjQZ150OdGzKJrf",
+    "entries": 1,
+    "size": 31,
+    "completed": 0,
+    "initiated": 0,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:32.906798459Z"
+  },
+  {
+    "collectionId": "YwKPEM6Y9hJrMHthvYZ7",
+    "entries": 1,
+    "size": 37,
+    "completed": 0,
+    "initiated": 0,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:33.221014321Z"
+  },
+  {
+    "collectionId": "cUlC6xntGaN8xLZBjLXm",
+    "entries": 1,
+    "size": 52,
+    "completed": 0,
+    "initiated": 0,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:33.692762459Z"
+  },
+  {
+    "collectionId": "ckxLwWmpkoKkprUuAqPe",
+    "entries": 1,
+    "size": 100,
+    "completed": 24,
+    "initiated": 0,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:34.008788744Z"
+  },
+  {
+    "collectionId": "e16HvAlUp3qITEbgtDLd",
+    "entries": 1,
+    "size": 30,
+    "completed": 0,
+    "initiated": 0,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:34.380861055Z"
+  },
+  {
+    "collectionId": "hkAiRTxc8WS0ksYzwsjQ",
+    "entries": 1,
+    "size": 37,
+    "completed": 0,
+    "initiated": 0,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:34.746786833Z"
+  },
+  {
+    "collectionId": "hq07XMPb3A8VgK6ckj9W",
+    "entries": 1,
+    "size": 53,
+    "completed": 0,
+    "initiated": 0,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:35.10884527Z"
+  },
+  {
+    "collectionId": "hqk5Fv7vmw3aVp1RGHNo",
+    "entries": 1,
+    "size": 92,
+    "completed": 0,
+    "initiated": 0,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:35.438851187Z"
+  },
+  {
+    "collectionId": "jEHDzx5wtpq3fDpSYrj9",
+    "entries": 1,
+    "size": 52,
+    "completed": 0,
+    "initiated": 0,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:35.768859701Z"
+  },
+  {
+    "collectionId": "jmWNtJfceuR0OnaH36gk",
+    "entries": 1,
+    "size": 61,
+    "completed": 0,
+    "initiated": 0,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:36.282861041Z"
+  },
+  {
+    "collectionId": "kwrfgGSk6VvSoGQeCLFI",
+    "entries": 1,
+    "size": 37,
+    "completed": 0,
+    "initiated": 0,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:36.616754624Z"
+  },
+  {
+    "collectionId": "nR2f8fr6946AkY0dIi5t",
+    "entries": 1,
+    "size": 100,
+    "completed": 0,
+    "initiated": 0,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:36.92468327Z"
+  },
+  {
+    "collectionId": "pWBwHswsxVonxrmzj0GQ",
+    "entries": 1,
+    "size": 36,
+    "completed": 0,
+    "initiated": 0,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:37.412784718Z"
+  },
+  {
+    "collectionId": "sBlDDbb6hGfxAnNAwreY",
+    "entries": 3,
+    "size": 44,
+    "completed": 18,
+    "initiated": 0,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:38.553006534Z"
+  },
+  {
+    "collectionId": "sNC0CMFuOaqcBiZ12lx2",
+    "entries": 1,
+    "size": 35,
+    "completed": 0,
+    "initiated": 0,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:39.002646007Z"
+  },
+  {
+    "collectionId": "sVXt1SjtlByslbX3n7xX",
+    "entries": 1,
+    "size": 52,
+    "completed": 52,
+    "initiated": 0,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:39.686875522Z"
+  },
+  {
+    "collectionId": "t1zdivFpOJunIbCHOkmY",
+    "entries": 1,
+    "size": 56,
+    "completed": 0,
+    "initiated": 0,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:40.21899043Z"
+  },
+  {
+    "collectionId": "w5bsUYl8trfYDaik9dm1",
+    "entries": 1,
+    "size": 44,
+    "completed": 0,
+    "initiated": 0,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:40.889081721Z"
+  },
+  {
+    "collectionId": "wa8HydOAmtzvjpk4h2ji",
+    "entries": 1,
+    "size": 32,
+    "completed": 0,
+    "initiated": 0,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:41.24825185Z"
+  },
+  {
+    "collectionId": "wrJ3XveeCTILNPMEJsNz",
+    "entries": 1,
+    "size": 26,
+    "completed": 0,
+    "initiated": 0,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:41.5608668Z"
+  },
+  {
+    "collectionId": "xtEarK2hNZae4SB0ZFzt",
+    "entries": 1,
+    "size": 13,
+    "completed": 0,
+    "initiated": 0,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:41.891287686Z"
+  },
+  {
+    "collectionId": "y9UrqHfBYj27gtrIGAD5",
+    "entries": 3,
+    "size": 234,
+    "completed": 182,
+    "initiated": 3,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:42.276572599Z"
+  },
+  {
+    "collectionId": "zgNDJPWdozhS2TOth0qO",
+    "entries": 1,
+    "size": 36,
+    "completed": 0,
+    "initiated": 0,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:42.612029602Z"
+  },
+  {
+    "collectionId": "zjyQGzvYLtlSvJSG5Gj5",
+    "entries": 1,
+    "size": 292,
+    "completed": 0,
+    "initiated": 0,
+    "editing": 0,
+    "fetchedAt": "2026-09-10T10:43:42.965034515Z"
+  }
+]

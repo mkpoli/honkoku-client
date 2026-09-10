@@ -5,6 +5,7 @@ pub mod editing;
 pub mod firestore;
 pub mod home;
 pub mod model;
+pub mod progress;
 
 use reqwest::{Client, Method, Url};
 use serde::{Serialize, de::DeserializeOwned};
@@ -55,6 +56,7 @@ pub struct HonkokuClient {
     search_base: String,
     functions_base: String,
     home_storage: cache::SharedStorage,
+    summary_gates: Arc<Mutex<HashMap<String, Arc<tokio::sync::Mutex<()>>>>>,
 }
 impl HonkokuClient {
     pub fn new() -> Result<Self> {
@@ -72,6 +74,7 @@ impl HonkokuClient {
             api_base: api.trim_end_matches('/').into(),
             firestore_base: firestore.trim_end_matches('/').into(),
             session: None,
+            summary_gates: Arc::new(Mutex::new(HashMap::new())),
             search_base: "https://search-r7au5bknyq-uc.a.run.app".into(),
             functions_base: "https://us-central1-honkoku3-c466c.cloudfunctions.net".into(),
             home_storage: Arc::new(Mutex::new(honkoku_storage::Storage::in_memory()?)),

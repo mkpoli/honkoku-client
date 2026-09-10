@@ -56,6 +56,7 @@
     connected = $state(false),
     syncedAt = $state<number>(),
     error = $state(""),
+    fixtureMissing = $state(false),
     loginError = $state(""),
     loading = $state(true),
     signingIn = $state(false),
@@ -136,6 +137,7 @@
     const g = ++generation;
     loading = true;
     error = "";
+    fixtureMissing = false;
     project = null;
     collection = null;
     entry = null;
@@ -179,7 +181,11 @@
         project = p;
       }
     } catch (e) {
-      if (g === generation) error = errorMessage(e);
+      if (g === generation) {
+        error = errorMessage(e);
+        fixtureMissing =
+          typeof e === "object" && e !== null && "kind" in e && e.kind === "fixture";
+      }
     } finally {
       if (g === generation) loading = false;
     }
@@ -387,7 +393,11 @@
     </div>{/if}
   <main class:back={direction === "back"} aria-busy={loading}>
     {#if error}<div class="panel error" role="alert">
-        {error}<button onclick={() => load(route)}>再試行</button><a href="#/"
+        {error}
+        {#if fixtureMissing}<p>
+            <code>devrun bun run --cwd apps/client tauri dev</code>
+          </p>{/if}
+        <button onclick={() => load(route)}>再試行</button><a href="#/"
           >ホームへ</a
         >
       </div>{:else if loading}<div class="panel empty" role="status">

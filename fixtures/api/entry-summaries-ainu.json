@@ -1,0 +1,1187 @@
+[
+  {
+    "id": "91e9d7edfbcead11d8bc83a6fc83183c",
+    "projectId": "ainu",
+    "collectionId": "0N8VzRzNfQyYtOC4xYiT",
+    "index": 1,
+    "label": "蝦夷薮話（北海道大学附属図書館）",
+    "manifestUrl": "https://kokusho.nijl.ac.jp/biblio/100348715/manifest",
+    "thumbnail": "https://kokusho.nijl.ac.jp/api/iiif/100348715/v4/HOKU/HOKU-70048/HOKU-70048-0001.tif/full/200,/0/default.jpg",
+    "size": 24,
+    "_firestore": {
+      "createTime": "2026-06-20T15:03:56.001740Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/91e9d7edfbcead11d8bc83a6fc83183c",
+      "updateTime": "2026-09-08T08:20:08.055616Z"
+    }
+  },
+  {
+    "id": "a21e410013af91efa21fc7a97617a119",
+    "projectId": "ainu",
+    "collectionId": "0N8VzRzNfQyYtOC4xYiT",
+    "index": 1,
+    "label": "恵渡路部漂流記（北海道大学附属図書館）",
+    "manifestUrl": "https://kokusho.nijl.ac.jp/biblio/100348741/manifest",
+    "thumbnail": "https://kokusho.nijl.ac.jp/api/iiif/100348741/v4/HOKU/HOKU-70074/HOKU-70074-0001.tif/full/200,/0/default.jpg",
+    "size": 32,
+    "_firestore": {
+      "createTime": "2026-09-05T18:42:08.257411Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/a21e410013af91efa21fc7a97617a119",
+      "updateTime": "2026-09-08T14:20:16.026156Z"
+    }
+  },
+  {
+    "id": "f1cd4e86b7dd45f8162171a0f691e7e7",
+    "projectId": "ainu",
+    "collectionId": "2eCDzADowvEN6oD4K3yJ",
+    "index": 1,
+    "label": "北蝦夷図説　巻1–4（国文学研究資料館）",
+    "manifestUrl": "https://kokusho.nijl.ac.jp/biblio/200019364/manifest",
+    "thumbnail": "https://kokusho.nijl.ac.jp/api/iiif/200019364/v4/NIAC/MIT-Y01310-001/MIT-Y01310-001-00001.tif/full/200,/0/default.jpg",
+    "size": 140,
+    "_firestore": {
+      "createTime": "2026-09-08T14:34:05.210120Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/f1cd4e86b7dd45f8162171a0f691e7e7",
+      "updateTime": "2026-09-08T14:34:05.210120Z"
+    }
+  },
+  {
+    "id": "27c9a543a9913228bcc5d1511eaf9641",
+    "projectId": "ainu",
+    "collectionId": "2eCDzADowvEN6oD4K3yJ",
+    "index": 2,
+    "label": "北蝦夷図説　巻1–4（茨城大学図書館）",
+    "manifestUrl": "https://kokusho.nijl.ac.jp/biblio/100384535/manifest",
+    "thumbnail": "https://kokusho.nijl.ac.jp/api/iiif/100384535/v4/IBRK/IBRK-10061/IBRK-10061-00000.tif/full/200,/0/default.jpg",
+    "size": 143,
+    "_firestore": {
+      "createTime": "2026-09-08T17:17:26.760432Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/27c9a543a9913228bcc5d1511eaf9641",
+      "updateTime": "2026-09-08T17:17:26.760432Z"
+    }
+  },
+  {
+    "id": "3daea514503efa7c8ec5ccc61c9be9d8",
+    "projectId": "ainu",
+    "collectionId": "3R4VhlBfvOYeqPY13cJm",
+    "index": 1,
+    "label": "蝦夷方言藻汐草　乾巻（国立国語研究所）",
+    "manifestUrl": "https://dglb01.ninjal.ac.jp/ninjaldl/ezomosio/001/manifest.json",
+    "thumbnail": "https://dglb01.ninjal.ac.jp/iiif/ezomosio/001/tiff/ezmg001-001.tiff/full/200,/0/default.jpg",
+    "size": 104,
+    "_firestore": {
+      "createTime": "2026-04-15T12:45:55.125929Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/3daea514503efa7c8ec5ccc61c9be9d8",
+      "updateTime": "2026-09-08T14:20:32.593778Z"
+    }
+  },
+  {
+    "id": "62c6743982041882d0aefd6582ac6a84",
+    "projectId": "ainu",
+    "collectionId": "3R4VhlBfvOYeqPY13cJm",
+    "index": 2,
+    "label": "蝦夷方言藻汐草　坤巻（国立国語研究所）",
+    "manifestUrl": "https://dglb01.ninjal.ac.jp/ninjaldl/ezomosio/002/manifest.json",
+    "thumbnail": "https://dglb01.ninjal.ac.jp/iiif/ezomosio/002/tiff/ezmg002-001.tiff/full/200,/0/default.jpg",
+    "size": 108,
+    "_firestore": {
+      "createTime": "2026-04-15T12:46:37.961062Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/62c6743982041882d0aefd6582ac6a84",
+      "updateTime": "2026-09-08T14:20:37.831417Z"
+    }
+  },
+  {
+    "id": "83b29132c6d01a596a847de5ba3b0b0d",
+    "projectId": "ainu",
+    "collectionId": "3R4VhlBfvOYeqPY13cJm",
+    "index": 3,
+    "label": "蝦夷方言（Wereldmuseum Leiden）",
+    "manifestUrl": "https://www.dh-jac.net/db1/books/RV-578-131-/portal/manifest.json",
+    "thumbnail": "https://www.arc.ritsumei.ac.jp/images/PB/Scaler/iiif/Leiden%21Books%21J04%21578-131%21Lei-578-131_001/full/200,/0/default.jpg",
+    "size": 107,
+    "_firestore": {
+      "createTime": "2026-04-15T17:01:09.022636Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/83b29132c6d01a596a847de5ba3b0b0d",
+      "updateTime": "2026-09-08T14:20:46.039509Z"
+    }
+  },
+  {
+    "id": "709e44e9f4750ba1f303579afc2076df",
+    "projectId": "ainu",
+    "collectionId": "3cD2Yre3ru8zM4BwqtOV",
+    "index": 1,
+    "label": "普通蝦夷語捷径（国立国会図書館）",
+    "manifestUrl": "https://dl.ndl.go.jp/api/iiif/869580/manifest.json",
+    "thumbnail": "https://dl.ndl.go.jp/api/iiif/869580/R0000001/full/200,/0/default.jpg",
+    "size": 25,
+    "_firestore": {
+      "createTime": "2026-09-08T14:12:49.556973Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/709e44e9f4750ba1f303579afc2076df",
+      "updateTime": "2026-09-08T15:03:56.808102Z"
+    }
+  },
+  {
+    "id": "87dcf5d80c5204b6c0e3a875a4cf5796",
+    "projectId": "ainu",
+    "collectionId": "3tyx7dPQaF9unOId4OvF",
+    "index": 1,
+    "label": "蝦夷見聞私記　1833年写本（東北大学附属図書館）",
+    "manifestUrl": "https://touda.tohoku.ac.jp/collection/iiif/0/metadata/10050030000018/manifest.json",
+    "thumbnail": "https://touda.tohoku.ac.jp/iiif/2/public%2Flibrary%2Fhonkanold%2Fkokusho%2FTHKL-02501%2FTHKL-02501-00000.tif/full/!100,150/0/default.jpg",
+    "size": 32,
+    "_firestore": {
+      "createTime": "2026-09-08T17:18:51.237641Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/87dcf5d80c5204b6c0e3a875a4cf5796",
+      "updateTime": "2026-09-08T17:18:51.237641Z"
+    }
+  },
+  {
+    "id": "28556c9ece7f2b208437d213ad5f7dd8",
+    "projectId": "ainu",
+    "collectionId": "4DSNWCwMqLXjwAVsjdRR",
+    "index": 1,
+    "label": "北海随筆（筑波大学附属図書館）",
+    "manifestUrl": "https://kokusho.nijl.ac.jp/biblio/100334875/manifest",
+    "thumbnail": "https://kokusho.nijl.ac.jp/api/iiif/100334875/v4/TSDT/TSDT-01855/TSDT-01855-00000.tif/full/200,/0/default.jpg",
+    "size": 53,
+    "_firestore": {
+      "createTime": "2026-04-16T12:23:25.018431Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/28556c9ece7f2b208437d213ad5f7dd8",
+      "updateTime": "2026-09-08T14:22:10.712648Z"
+    }
+  },
+  {
+    "id": "919eb65ac7fa19ba13a051bd9aee90e1",
+    "projectId": "ainu",
+    "collectionId": "4EFmA2GGrZTGo8Kfsoi1",
+    "index": 1,
+    "label": "札幌土人オムシヤ及熊送リ廃止ノ件（北海道立文書館）",
+    "manifestUrl": "https://www3.library.pref.hokkaido.jp/manifest/36891",
+    "thumbnail": "https://www3.library.pref.hokkaido.jp/view/36891/004.tiff/full/90,/0/default.jpg",
+    "size": 3,
+    "_firestore": {
+      "createTime": "2026-09-07T17:37:12.279396Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/919eb65ac7fa19ba13a051bd9aee90e1",
+      "updateTime": "2026-09-07T17:37:12.279396Z"
+    }
+  },
+  {
+    "id": "63f711fb800795cbaaad4959ea7eab0e",
+    "projectId": "ainu",
+    "collectionId": "539edNLjyK0jWzFAFDqf",
+    "index": 1,
+    "label": "蝦夷記　新楽閑叟著（北海道大学附属図書館）",
+    "manifestUrl": "https://kokusho.nijl.ac.jp/biblio/100348683/manifest",
+    "thumbnail": "https://kokusho.nijl.ac.jp/api/iiif/100348683/v4/HOKU/HOKU-70016/HOKU-70016-0001.tif/full/200,/0/default.jpg",
+    "size": 10,
+    "_firestore": {
+      "createTime": "2026-09-08T05:10:02.219687Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/63f711fb800795cbaaad4959ea7eab0e",
+      "updateTime": "2026-09-08T05:10:02.219687Z"
+    }
+  },
+  {
+    "id": "e3ffd6a18cc435341292689887ca2db1",
+    "projectId": "ainu",
+    "collectionId": "59LuupUEbhzxyzTIpqzB",
+    "index": 1,
+    "label": "蝦夷一揆興廃記　上・下（同志社大学図書館）",
+    "manifestUrl": "https://kokusho.nijl.ac.jp/biblio/300138948/manifest",
+    "thumbnail": "https://kokusho.nijl.ac.jp/api/iiif/300138948/v4/DSSH/DSSH-50020/DSSH-50020-00001.tif/full/200,/0/default.jpg",
+    "size": 89,
+    "_firestore": {
+      "createTime": "2026-09-08T16:20:57.680994Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/e3ffd6a18cc435341292689887ca2db1",
+      "updateTime": "2026-09-08T16:20:57.680994Z"
+    }
+  },
+  {
+    "id": "6a0b31a5c2c175fb24a937e18c4c74df",
+    "projectId": "ainu",
+    "collectionId": "6hJhjn6BzdgktE4VaEse",
+    "index": 1,
+    "label": "東蝦夷日誌　初編–第5編（筑波大学附属図書館）",
+    "manifestUrl": "https://kokusho.nijl.ac.jp/biblio/100334657/manifest",
+    "thumbnail": "https://kokusho.nijl.ac.jp/api/iiif/100334657/v4/TSDT/TSDT-01637/TSDT-01637-00000.tif/full/200,/0/default.jpg",
+    "size": 171,
+    "_firestore": {
+      "createTime": "2026-09-08T15:34:48.682049Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/6a0b31a5c2c175fb24a937e18c4c74df",
+      "updateTime": "2026-09-08T15:34:48.682049Z"
+    }
+  },
+  {
+    "id": "cfbacb02195a2dec04abf90cfa800723",
+    "projectId": "ainu",
+    "collectionId": "7vPZMAHngl7kGt87rKD0",
+    "index": 1,
+    "label": "アイヌ物語　1918年版（国立国会図書館）",
+    "manifestUrl": "https://dl.ndl.go.jp/api/iiif/1875471/manifest.json",
+    "thumbnail": "https://dl.ndl.go.jp/api/iiif/1875471/R0000001/full/200,/0/default.jpg",
+    "size": 52,
+    "_firestore": {
+      "createTime": "2026-09-08T04:56:32.794206Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/cfbacb02195a2dec04abf90cfa800723",
+      "updateTime": "2026-09-08T04:56:32.794206Z"
+    }
+  },
+  {
+    "id": "859ba09ba416ed9517273b5d0c85f38a",
+    "projectId": "ainu",
+    "collectionId": "848u6IVekAIw9DSVlalZ",
+    "index": 1,
+    "label": "蝦夷物産誌　上・下・1938年写本（北海道大学附属図書館）",
+    "manifestUrl": "https://kokusho.nijl.ac.jp/biblio/100348735/manifest",
+    "thumbnail": "https://kokusho.nijl.ac.jp/api/iiif/100348735/v4/HOKU/HOKU-70068/HOKU-70068-0001.tif/full/200,/0/default.jpg",
+    "size": 172,
+    "_firestore": {
+      "createTime": "2026-09-08T16:53:46.871041Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/859ba09ba416ed9517273b5d0c85f38a",
+      "updateTime": "2026-09-08T16:53:46.871041Z"
+    }
+  },
+  {
+    "id": "768be9de79503eda91923059565f585c",
+    "projectId": "ainu",
+    "collectionId": "9UwdUZePnYssuLtsp7R5",
+    "index": 1,
+    "label": "蝦夷葉那誌　1857年版（信州大学附属図書館）",
+    "manifestUrl": "https://kokusho.nijl.ac.jp/biblio/100347491/manifest",
+    "thumbnail": "https://kokusho.nijl.ac.jp/api/iiif/100347491/v4/SSDL/SSDL-50152/SSDL-50152-00001.tif/full/200,/0/default.jpg",
+    "size": 33,
+    "_firestore": {
+      "createTime": "2026-09-08T16:22:12.851871Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/768be9de79503eda91923059565f585c",
+      "updateTime": "2026-09-08T16:22:12.851871Z"
+    }
+  },
+  {
+    "id": "e55a92038e22b1d05e9663b4566529d5",
+    "projectId": "ainu",
+    "collectionId": "AsTQx8qlIXypdULPKaYE",
+    "index": 1,
+    "label": "納紗布日誌　志古覃日記附（信州大学附属図書館）",
+    "manifestUrl": "https://kokusho.nijl.ac.jp/biblio/100347495/manifest",
+    "thumbnail": "https://kokusho.nijl.ac.jp/api/iiif/100347495/v4/SSDL/SSDL-50156/SSDL-50156-00001.tif/full/200,/0/default.jpg",
+    "size": 30,
+    "_firestore": {
+      "createTime": "2026-09-08T15:06:35.001628Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/e55a92038e22b1d05e9663b4566529d5",
+      "updateTime": "2026-09-08T15:06:35.001628Z"
+    }
+  },
+  {
+    "id": "65b54a063b3d0385eecbc64a61ae68c4",
+    "projectId": "ainu",
+    "collectionId": "B9s4Q7QNhJm39uGCrdIK",
+    "index": 1,
+    "label": "北海小文典（国立国会図書館）",
+    "manifestUrl": "https://dl.ndl.go.jp/api/iiif/868693/manifest.json",
+    "thumbnail": "https://dl.ndl.go.jp/api/iiif/868693/R0000001/full/200,/0/default.jpg",
+    "size": 37,
+    "_firestore": {
+      "createTime": "2026-09-08T14:13:20.021747Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/65b54a063b3d0385eecbc64a61ae68c4",
+      "updateTime": "2026-09-08T14:21:24.446277Z"
+    }
+  },
+  {
+    "id": "16cde0a70378d4ea0b011e016503809e",
+    "projectId": "ainu",
+    "collectionId": "BDTFd2a5bQZ3VAWBxHbM",
+    "index": 1,
+    "label": "唐太日記　上・下（国文学研究資料館）",
+    "manifestUrl": "https://kokusho.nijl.ac.jp/biblio/200019365/manifest",
+    "thumbnail": "https://kokusho.nijl.ac.jp/api/iiif/200019365/v4/NIAC/MIT-Y01310-002/MIT-Y01310-002-00001.tif/full/200,/0/default.jpg",
+    "size": 67,
+    "_firestore": {
+      "createTime": "2026-09-08T14:50:15.116825Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/16cde0a70378d4ea0b011e016503809e",
+      "updateTime": "2026-09-08T14:50:15.116825Z"
+    }
+  },
+  {
+    "id": "01839ff23ef288356e7dd4adca8cc282",
+    "projectId": "ainu",
+    "collectionId": "BVT7qlb52dqTH87Qv2qu",
+    "index": 1,
+    "label": "西蝦夷日誌　初編–第6編（北海道大学附属図書館）",
+    "manifestUrl": "https://kokusho.nijl.ac.jp/biblio/100418594/manifest",
+    "thumbnail": "https://kokusho.nijl.ac.jp/api/iiif/100418594/v4/HOKU/HOKU-10009/HOKU-10009-00000.tif/full/200,/0/default.jpg",
+    "size": 199,
+    "_firestore": {
+      "createTime": "2026-09-08T15:35:31.932318Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/01839ff23ef288356e7dd4adca8cc282",
+      "updateTime": "2026-09-08T15:35:31.932318Z"
+    }
+  },
+  {
+    "id": "d0851e00673f19dc14ddacb4b6c2bd74",
+    "projectId": "ainu",
+    "collectionId": "CJSJjOqheETE3gAo4prB",
+    "index": 1,
+    "label": "北蝦夷新志（北海道大学附属図書館）",
+    "manifestUrl": "https://kokusho.nijl.ac.jp/biblio/100239381/manifest",
+    "thumbnail": "https://kokusho.nijl.ac.jp/api/iiif/100239381/v4/HOKU/HOKU-00161/HOKU-00161-00000.tif/full/200,/0/default.jpg",
+    "size": 38,
+    "_firestore": {
+      "createTime": "2026-09-08T16:21:27.747048Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/d0851e00673f19dc14ddacb4b6c2bd74",
+      "updateTime": "2026-09-08T16:21:27.747048Z"
+    }
+  },
+  {
+    "id": "8f0a342ee55438a7f3cea7634af604b1",
+    "projectId": "ainu",
+    "collectionId": "CjmQ6VpuSCZ75VWNZlRd",
+    "index": 1,
+    "label": "南北蝦夷地魯西亜国話通言（北海道立図書館）",
+    "manifestUrl": "https://www3.library.pref.hokkaido.jp/manifest/4923",
+    "thumbnail": "https://www3.library.pref.hokkaido.jp/view/4923/001.tiff/full/90,/0/default.jpg",
+    "size": 49,
+    "_firestore": {
+      "createTime": "2026-09-08T11:11:08.541943Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/8f0a342ee55438a7f3cea7634af604b1",
+      "updateTime": "2026-09-08T11:11:08.541943Z"
+    }
+  },
+  {
+    "id": "5ad067c37370442f47dfd0df38ae86b5",
+    "projectId": "ainu",
+    "collectionId": "DGxj2uonzsNLAihFW7Va",
+    "index": 1,
+    "label": "蝦夷年代記　1870年版（信州大学附属図書館）",
+    "manifestUrl": "https://kokusho.nijl.ac.jp/biblio/100347608/manifest",
+    "thumbnail": "https://kokusho.nijl.ac.jp/api/iiif/100347608/v4/SSDL/SSDL-50277/SSDL-50277-00001.tif/full/200,/0/default.jpg",
+    "size": 51,
+    "_firestore": {
+      "createTime": "2026-09-08T15:36:22.326709Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/5ad067c37370442f47dfd0df38ae86b5",
+      "updateTime": "2026-09-08T15:36:22.326709Z"
+    }
+  },
+  {
+    "id": "18d7f3cb96c9924738fcc0912f9c3efb",
+    "projectId": "ainu",
+    "collectionId": "FzTuTJQe5cPsSNhOUEiM",
+    "index": 1,
+    "label": "北地日記（同志社大学図書館）",
+    "manifestUrl": "https://kokusho.nijl.ac.jp/biblio/300138947/manifest",
+    "thumbnail": "https://kokusho.nijl.ac.jp/api/iiif/300138947/v4/DSSH/DSSH-50019/DSSH-50019-00001.tif/full/200,/0/default.jpg",
+    "size": 54,
+    "_firestore": {
+      "createTime": "2026-09-08T17:26:55.101773Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/18d7f3cb96c9924738fcc0912f9c3efb",
+      "updateTime": "2026-09-08T17:26:55.101773Z"
+    }
+  },
+  {
+    "id": "c12e8f47d21cdf3298b50c1024441dc1",
+    "projectId": "ainu",
+    "collectionId": "G159Fb6Q3rPEeVSwDkCe",
+    "index": 1,
+    "label": "蝦夷品彙訳言　地理之図附録（北海道大学附属図書館）",
+    "manifestUrl": "https://kokusho.nijl.ac.jp/biblio/100348730/manifest",
+    "thumbnail": "https://kokusho.nijl.ac.jp/api/iiif/100348730/v4/HOKU/HOKU-70063/HOKU-70063-0001.tif/full/200,/0/default.jpg",
+    "size": 21,
+    "_firestore": {
+      "createTime": "2026-09-08T13:49:42.772028Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/c12e8f47d21cdf3298b50c1024441dc1",
+      "updateTime": "2026-09-08T14:19:59.796357Z"
+    }
+  },
+  {
+    "id": "4c36adda863a345a616f7ecbea4b91a7",
+    "projectId": "ainu",
+    "collectionId": "G8SfSj6rgwQiZHIUDoqE",
+    "index": 1,
+    "label": "後方羊蹄日誌（神戸大学附属図書館）",
+    "manifestUrl": "https://kokusho.nijl.ac.jp/biblio/100345410/manifest",
+    "thumbnail": "https://kokusho.nijl.ac.jp/api/iiif/100345410/v4/KOBE/KOBE-00903/KOBE-00903-00000.tif/full/200,/0/default.jpg",
+    "size": 33,
+    "_firestore": {
+      "createTime": "2026-09-08T15:34:16.356545Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/4c36adda863a345a616f7ecbea4b91a7",
+      "updateTime": "2026-09-08T15:34:16.356545Z"
+    }
+  },
+  {
+    "id": "c2cb949015c5a0154d91499182802888",
+    "projectId": "ainu",
+    "collectionId": "GaUAgMWufZP6RiWTxDxY",
+    "index": 1,
+    "label": "東北韃靼諸国図誌野作雑記訳説　巻1–6（茨城大学図書館）",
+    "manifestUrl": "https://kokusho.nijl.ac.jp/biblio/100384614/manifest",
+    "thumbnail": "https://kokusho.nijl.ac.jp/api/iiif/100384614/v4/IBRK/IBRK-10136/IBRK-10136-00000.tif/full/200,/0/default.jpg",
+    "size": 311,
+    "_firestore": {
+      "createTime": "2026-09-08T17:27:20.798163Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/c2cb949015c5a0154d91499182802888",
+      "updateTime": "2026-09-08T17:27:20.798163Z"
+    }
+  },
+  {
+    "id": "8eb607ef192123cc80adae9ec599571f",
+    "projectId": "ainu",
+    "collectionId": "J5elFtY3zgGBXns7kUtl",
+    "index": 1,
+    "label": "東遊記　平秩東作著（筑波大学附属図書館）",
+    "manifestUrl": "https://kokusho.nijl.ac.jp/biblio/100000965/manifest",
+    "thumbnail": "https://kokusho.nijl.ac.jp/api/iiif/100000965/v4/0006/0006-014401/0006-014401-0000.tif/full/200,/0/default.jpg",
+    "size": 128,
+    "_firestore": {
+      "createTime": "2026-09-08T14:35:06.966580Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/8eb607ef192123cc80adae9ec599571f",
+      "updateTime": "2026-09-08T14:35:06.966580Z"
+    }
+  },
+  {
+    "id": "42709b389a6eb0c59d59d37473d770ae",
+    "projectId": "ainu",
+    "collectionId": "Jfhz2p1Mv6gr3Bjgk3BK",
+    "index": 1,
+    "label": "東韃紀行　上・中・下・附録（国文学研究資料館）",
+    "manifestUrl": "https://kokusho.nijl.ac.jp/biblio/200017971/manifest",
+    "thumbnail": "https://kokusho.nijl.ac.jp/api/iiif/200017971/v4/NIAC/MIT-X00426-008/MIT-X00426-008-00001.tif/full/200,/0/default.jpg",
+    "size": 68,
+    "_firestore": {
+      "createTime": "2026-09-08T16:55:17.180965Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/42709b389a6eb0c59d59d37473d770ae",
+      "updateTime": "2026-09-08T16:55:17.180965Z"
+    }
+  },
+  {
+    "id": "786757088e71a4e7cc32fdd58c404741",
+    "projectId": "ainu",
+    "collectionId": "LqWMQN0yJ9Zug4XsiXg5",
+    "index": 1,
+    "label": "東蝦夷地日記　1802年写本（東北大学附属図書館）",
+    "manifestUrl": "https://kokusho.nijl.ac.jp/biblio/300125394/manifest",
+    "thumbnail": "https://kokusho.nijl.ac.jp/api/iiif/300125394/v4/THKK/THKK-32959/THKK-32959-0001.tif/full/200,/0/default.jpg",
+    "size": 38,
+    "_firestore": {
+      "createTime": "2026-09-08T17:26:16.295474Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/786757088e71a4e7cc32fdd58c404741",
+      "updateTime": "2026-09-08T17:26:16.295474Z"
+    }
+  },
+  {
+    "id": "7068f69de306a1f3eb6bc4f1e0714a54",
+    "projectId": "ainu",
+    "collectionId": "OTW1IHNeFvpD6vEXHjUO",
+    "index": 1,
+    "label": "蝦夷地言葉　1849年写本（神戸大学附属図書館）",
+    "manifestUrl": "https://kokusho.nijl.ac.jp/biblio/100390158/manifest",
+    "thumbnail": "https://kokusho.nijl.ac.jp/api/iiif/100390158/v4/KOBE/KOBE-02134/KOBE-02134-00000.tif/full/200,/0/default.jpg",
+    "size": 28,
+    "_firestore": {
+      "createTime": "2026-09-08T17:25:10.078561Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/7068f69de306a1f3eb6bc4f1e0714a54",
+      "updateTime": "2026-09-08T17:25:10.078561Z"
+    }
+  },
+  {
+    "id": "c1fae1fec72aba442fa0fed3f84c980d",
+    "projectId": "ainu",
+    "collectionId": "P7kN58KieyI6uUg2hm4a",
+    "index": 1,
+    "label": "蝦夷東西考証　上・下・1859年写本（北海道大学附属図書館）",
+    "manifestUrl": "https://kokusho.nijl.ac.jp/biblio/100348725/manifest",
+    "thumbnail": "https://kokusho.nijl.ac.jp/api/iiif/100348725/v4/HOKU/HOKU-70058/HOKU-70058-0001.tif/full/200,/0/default.jpg",
+    "size": 65,
+    "_firestore": {
+      "createTime": "2026-09-08T17:27:42.448610Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/c1fae1fec72aba442fa0fed3f84c980d",
+      "updateTime": "2026-09-08T17:27:42.448610Z"
+    }
+  },
+  {
+    "id": "6fd9b7bf6ca644d4005173092c78ae59",
+    "projectId": "ainu",
+    "collectionId": "QSNI5gV9wkGwdOnrJCul",
+    "index": 1,
+    "label": "蝦夷雑話（北海道大学附属図書館）",
+    "manifestUrl": "https://kokusho.nijl.ac.jp/biblio/100348698/manifest",
+    "thumbnail": "https://kokusho.nijl.ac.jp/api/iiif/100348698/v4/HOKU/HOKU-70031/HOKU-70031-0001.tif/full/200,/0/default.jpg",
+    "size": 18,
+    "_firestore": {
+      "createTime": "2026-09-08T13:27:42.341805Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/6fd9b7bf6ca644d4005173092c78ae59",
+      "updateTime": "2026-09-08T14:19:49.211622Z"
+    }
+  },
+  {
+    "id": "8033b215e103474ce29d612f33562835",
+    "projectId": "ainu",
+    "collectionId": "RP0ikZnTFw6JHrKVMFXr",
+    "index": 1,
+    "label": "松前志　巻1–8・10（筑波大学附属図書館）",
+    "manifestUrl": "https://kokusho.nijl.ac.jp/biblio/100334876/manifest",
+    "thumbnail": "https://kokusho.nijl.ac.jp/api/iiif/100334876/v4/TSDT/TSDT-01856/TSDT-01856-00000.tif/full/200,/0/default.jpg",
+    "size": 364,
+    "_firestore": {
+      "createTime": "2026-09-08T16:23:13.185924Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/8033b215e103474ce29d612f33562835",
+      "updateTime": "2026-09-08T16:23:13.185924Z"
+    }
+  },
+  {
+    "id": "f7d5a3f846e35c2f6f8c72fe152139aa",
+    "projectId": "ainu",
+    "collectionId": "RPAqoHMKo71b4l6bAEeh",
+    "index": 1,
+    "label": "奥北地理分見略記　上・中・下（北海道大学附属図書館）",
+    "manifestUrl": "https://kokusho.nijl.ac.jp/biblio/100348744/manifest",
+    "thumbnail": "https://kokusho.nijl.ac.jp/api/iiif/100348744/v4/HOKU/HOKU-70077/HOKU-70077-0001.tif/full/200,/0/default.jpg",
+    "size": 136,
+    "_firestore": {
+      "createTime": "2026-09-08T16:52:04.757958Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/f7d5a3f846e35c2f6f8c72fe152139aa",
+      "updateTime": "2026-09-08T16:52:04.757958Z"
+    }
+  },
+  {
+    "id": "cab9cab2ad7e12bd896a69720bfa0840",
+    "projectId": "ainu",
+    "collectionId": "RaToHMBrQqBX1fjriyWY",
+    "index": 1,
+    "label": "蝦夷拾遺　正・補（北海道大学附属図書館）",
+    "manifestUrl": "https://kokusho.nijl.ac.jp/biblio/100348705/manifest",
+    "thumbnail": "https://kokusho.nijl.ac.jp/api/iiif/100348705/v4/HOKU/HOKU-70038/HOKU-70038-0001.tif/full/200,/0/default.jpg",
+    "size": 84,
+    "_firestore": {
+      "createTime": "2026-09-08T14:13:49.462120Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/cab9cab2ad7e12bd896a69720bfa0840",
+      "updateTime": "2026-09-08T15:03:40.208230Z"
+    }
+  },
+  {
+    "id": "dc9405367cf604885161eba000a1514a",
+    "projectId": "ainu",
+    "collectionId": "RaToHMBrQqBX1fjriyWY",
+    "index": 2,
+    "label": "蝦夷拾遺　元・亨・利・貞・別巻（名古屋大学附属図書館）",
+    "manifestUrl": "https://da.adm.thers.ac.jp/iiif/1/classic_books/N004-20230901-01459/manifest.json",
+    "thumbnail": "https://da.adm.thers.ac.jp/iiif/2/thers%2Fpublic%2FN004%2Fslide_1%2F10049749_001.tif/full/220,/0/default.jpg",
+    "size": 70,
+    "_firestore": {
+      "createTime": "2026-09-08T17:19:25.380764Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/dc9405367cf604885161eba000a1514a",
+      "updateTime": "2026-09-08T17:19:25.380764Z"
+    }
+  },
+  {
+    "id": "8e442d9faeb3dcc5933ed8de547d1565",
+    "projectId": "ainu",
+    "collectionId": "RiEKp9AseAi72DPnWbZQ",
+    "index": 1,
+    "label": "念仏上人粉引歌蝦夷言（国立公文書館）",
+    "manifestUrl": "https://www.digital.archives.go.jp/api/iiif/763077/manifest.json",
+    "thumbnail": "https://www.digital.archives.go.jp/api/content/item/da12/C102619256500/iiif/M1000000000000025439_0044.jp2/full/200,/0/default.jpg",
+    "size": 2,
+    "_firestore": {
+      "createTime": "2026-09-08T13:50:13.990623Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/8e442d9faeb3dcc5933ed8de547d1565",
+      "updateTime": "2026-09-08T14:19:37.382791Z"
+    }
+  },
+  {
+    "id": "1a4e7615e3c42526a62925cba7c68934",
+    "projectId": "ainu",
+    "collectionId": "Rnyk7xIBdEnuLPFhrkHL",
+    "index": 1,
+    "label": "蝦夷漫画（東京藝術大学附属図書館）",
+    "manifestUrl": "https://kokusho.nijl.ac.jp/biblio/100265959/manifest",
+    "thumbnail": "https://kokusho.nijl.ac.jp/api/iiif/100265959/v4/TKGL/TKGL-00639/TKGL-00639-00000.tif/full/200,/0/default.jpg",
+    "size": 25,
+    "_firestore": {
+      "createTime": "2026-09-08T14:49:46.167437Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/1a4e7615e3c42526a62925cba7c68934",
+      "updateTime": "2026-09-08T14:49:46.167437Z"
+    }
+  },
+  {
+    "id": "22d8fca10711120c32c4c0e3f0286d7f",
+    "projectId": "ainu",
+    "collectionId": "RvV7kgyvo1F0sqOwTDSd",
+    "index": 1,
+    "label": "蝦夷松前一円図（北海道立図書館）",
+    "manifestUrl": "https://www3.library.pref.hokkaido.jp/manifest/1668",
+    "thumbnail": "https://www3.library.pref.hokkaido.jp/view/1668/001.tiff/full/90,/0/default.jpg",
+    "size": 2,
+    "_firestore": {
+      "createTime": "2026-09-07T17:37:37.470879Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/22d8fca10711120c32c4c0e3f0286d7f",
+      "updateTime": "2026-09-07T17:37:37.470879Z"
+    }
+  },
+  {
+    "id": "b381756e758e9759c376c74b9cfbc750",
+    "projectId": "ainu",
+    "collectionId": "UTAK479h1ML8NVE1N35x",
+    "index": 1,
+    "label": "夷酋列像附録（北海道大学附属図書館）",
+    "manifestUrl": "https://kokusho.nijl.ac.jp/biblio/100348674/manifest",
+    "thumbnail": "https://kokusho.nijl.ac.jp/api/iiif/100348674/v4/HOKU/HOKU-70007/HOKU-70007-0001.tif/full/200,/0/default.jpg",
+    "size": 17,
+    "_firestore": {
+      "createTime": "2026-09-08T14:35:36.897400Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/b381756e758e9759c376c74b9cfbc750",
+      "updateTime": "2026-09-08T15:03:27.896467Z"
+    }
+  },
+  {
+    "id": "3e34f15b563a79af5bf9f074d2981ce5",
+    "projectId": "ainu",
+    "collectionId": "VkI941m2DAI5JONZgdpb",
+    "index": 1,
+    "label": "近世蝦夷人物誌　初編上・中・下（石水博物館）",
+    "manifestUrl": "https://kokusho.nijl.ac.jp/biblio/300095432/manifest",
+    "thumbnail": "https://kokusho.nijl.ac.jp/api/iiif/300095432/v4/SESM/SESM-90012/SESM-90012-00001.tif/full/200,/0/default.jpg",
+    "size": 107,
+    "_firestore": {
+      "createTime": "2026-09-08T14:49:12.215860Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/3e34f15b563a79af5bf9f074d2981ce5",
+      "updateTime": "2026-09-08T14:49:12.215860Z"
+    }
+  },
+  {
+    "id": "7f8e06d182b5f397fb3f6ad532eb1921",
+    "projectId": "ainu",
+    "collectionId": "WQvn7cZDGI0d3nHplyhY",
+    "index": 1,
+    "label": "蝦夷広覧（北海道大学附属図書館）",
+    "manifestUrl": "https://kokusho.nijl.ac.jp/biblio/100348695/manifest",
+    "thumbnail": "https://kokusho.nijl.ac.jp/api/iiif/100348695/v4/HOKU/HOKU-70028/HOKU-70028-0001.tif/full/200,/0/default.jpg",
+    "size": 57,
+    "_firestore": {
+      "createTime": "2026-09-08T17:28:51.633549Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/7f8e06d182b5f397fb3f6ad532eb1921",
+      "updateTime": "2026-09-08T17:28:51.633549Z"
+    }
+  },
+  {
+    "id": "b454712b20a04a214db1c0f4915e0a88",
+    "projectId": "ainu",
+    "collectionId": "X3XMs05GOfp3i7dnwmih",
+    "index": 1,
+    "label": "蝦夷談筆記（国文学研究資料館）",
+    "manifestUrl": "https://kokusho.nijl.ac.jp/biblio/200019334/manifest",
+    "thumbnail": "https://kokusho.nijl.ac.jp/api/iiif/200019334/v4/NIAC/MIT-X00310-001/MIT-X00310-001-00001.tif/full/200,/0/default.jpg",
+    "size": 33,
+    "_firestore": {
+      "createTime": "2026-09-08T05:18:16.688005Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/b454712b20a04a214db1c0f4915e0a88",
+      "updateTime": "2026-09-08T05:18:16.688005Z"
+    }
+  },
+  {
+    "id": "c35d47eb9331121fbfda6ccbb3adad96",
+    "projectId": "ainu",
+    "collectionId": "X3XMs05GOfp3i7dnwmih",
+    "index": 2,
+    "label": "蝦夷寿那子　1843年写本（東北大学附属図書館）",
+    "manifestUrl": "https://kokusho.nijl.ac.jp/biblio/300125345/manifest",
+    "thumbnail": "https://kokusho.nijl.ac.jp/api/iiif/300125345/v4/THKK/THKK-32906/THKK-32906-0001.tif/full/200,/0/default.jpg",
+    "size": 84,
+    "_firestore": {
+      "createTime": "2026-09-08T14:36:12.202902Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/c35d47eb9331121fbfda6ccbb3adad96",
+      "updateTime": "2026-09-08T14:36:12.202902Z"
+    }
+  },
+  {
+    "id": "3b39c87b316cfe8f7dcce6c33b565a10",
+    "projectId": "ainu",
+    "collectionId": "X8TYKhzfRrrf17d6WdYf",
+    "index": 1,
+    "label": "蝦夷語集　第1冊（国立公文書館）",
+    "manifestUrl": "https://www.digital.archives.go.jp/api/iiif/4271977/manifest.json",
+    "thumbnail": "https://www.digital.archives.go.jp/api/content/item/da12/C101683663800/iiif/M2016081213220247185_0001.jp2/full/200,/0/default.jpg",
+    "size": 102,
+    "_firestore": {
+      "createTime": "2026-09-08T05:18:48.419280Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/3b39c87b316cfe8f7dcce6c33b565a10",
+      "updateTime": "2026-09-08T05:18:48.419280Z"
+    }
+  },
+  {
+    "id": "39c3da992b8efb5aa2a6c560200d3450",
+    "projectId": "ainu",
+    "collectionId": "X8TYKhzfRrrf17d6WdYf",
+    "index": 2,
+    "label": "蝦夷語集　第2冊（国立公文書館）",
+    "manifestUrl": "https://www.digital.archives.go.jp/api/iiif/4271978/manifest.json",
+    "thumbnail": "https://www.digital.archives.go.jp/api/content/item/da12/C101683674000/iiif/M2016081213220847186_0001.jp2/full/200,/0/default.jpg",
+    "size": 88,
+    "_firestore": {
+      "createTime": "2026-09-08T05:19:00.003252Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/39c3da992b8efb5aa2a6c560200d3450",
+      "updateTime": "2026-09-08T05:19:00.003252Z"
+    }
+  },
+  {
+    "id": "c7732253e1c5ac54c5779faeabb395e7",
+    "projectId": "ainu",
+    "collectionId": "X8TYKhzfRrrf17d6WdYf",
+    "index": 3,
+    "label": "蝦夷語集　第3冊（国立公文書館）",
+    "manifestUrl": "https://www.digital.archives.go.jp/api/iiif/4271979/manifest.json",
+    "thumbnail": "https://www.digital.archives.go.jp/api/content/item/da12/C101683682800/iiif/M2016081213221447187_0001.jp2/full/200,/0/default.jpg",
+    "size": 63,
+    "_firestore": {
+      "createTime": "2026-09-08T05:19:13.238457Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/c7732253e1c5ac54c5779faeabb395e7",
+      "updateTime": "2026-09-08T05:19:13.238457Z"
+    }
+  },
+  {
+    "id": "79c1543ebe95755a4314c64865ea91e9",
+    "projectId": "ainu",
+    "collectionId": "X8TYKhzfRrrf17d6WdYf",
+    "index": 4,
+    "label": "蝦夷語集　第4冊（国立公文書館）",
+    "manifestUrl": "https://www.digital.archives.go.jp/api/iiif/4271980/manifest.json",
+    "thumbnail": "https://www.digital.archives.go.jp/api/content/item/da12/C101683689100/iiif/M2016081213222347188_0001.jp2/full/200,/0/default.jpg",
+    "size": 106,
+    "_firestore": {
+      "createTime": "2026-09-08T05:20:01.956974Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/79c1543ebe95755a4314c64865ea91e9",
+      "updateTime": "2026-09-08T05:20:01.956974Z"
+    }
+  },
+  {
+    "id": "703a46fcb21d1ea59d95f201fbe54a95",
+    "projectId": "ainu",
+    "collectionId": "XojdaFBPfR9XCv4QKllL",
+    "index": 1,
+    "label": "東蝦夷夜話　上・中・下（国文学研究資料館）",
+    "manifestUrl": "https://kokusho.nijl.ac.jp/biblio/200005293/manifest",
+    "thumbnail": "https://kokusho.nijl.ac.jp/api/iiif/200005293/v4/image/110_0866/00000003/00000001.tif/full/200,/0/default.jpg",
+    "size": 118,
+    "_firestore": {
+      "createTime": "2026-09-08T14:34:37.425815Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/703a46fcb21d1ea59d95f201fbe54a95",
+      "updateTime": "2026-09-08T14:34:37.425815Z"
+    }
+  },
+  {
+    "id": "09f597e01d86228fc097221eac66d495",
+    "projectId": "ainu",
+    "collectionId": "YC02tFjQZ150OdGzKJrf",
+    "index": 1,
+    "label": "夕張日誌（信州大学附属図書館）",
+    "manifestUrl": "https://kokusho.nijl.ac.jp/biblio/100347493/manifest",
+    "thumbnail": "https://kokusho.nijl.ac.jp/api/iiif/100347493/v4/SSDL/SSDL-50154/SSDL-50154-00001.tif/full/200,/0/default.jpg",
+    "size": 31,
+    "_firestore": {
+      "createTime": "2026-09-08T15:05:33.523444Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/09f597e01d86228fc097221eac66d495",
+      "updateTime": "2026-09-08T15:05:33.523444Z"
+    }
+  },
+  {
+    "id": "8cfc7146452b77ecaecba5301b57ac6d",
+    "projectId": "ainu",
+    "collectionId": "YwKPEM6Y9hJrMHthvYZ7",
+    "index": 1,
+    "label": "久摺日誌（神戸大学附属図書館）",
+    "manifestUrl": "https://kokusho.nijl.ac.jp/biblio/100345464/manifest",
+    "thumbnail": "https://kokusho.nijl.ac.jp/api/iiif/100345464/v4/KOBE/KOBE-00957/KOBE-00957-00000.tif/full/200,/0/default.jpg",
+    "size": 37,
+    "_firestore": {
+      "createTime": "2026-09-08T15:05:05.517310Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/8cfc7146452b77ecaecba5301b57ac6d",
+      "updateTime": "2026-09-08T15:05:05.517310Z"
+    }
+  },
+  {
+    "id": "597e791cb860df4323fba6678625dddc",
+    "projectId": "ainu",
+    "collectionId": "cUlC6xntGaN8xLZBjLXm",
+    "index": 1,
+    "label": "東夷物産誌稿（同志社大学図書館）",
+    "manifestUrl": "https://kokusho.nijl.ac.jp/biblio/300138956/manifest",
+    "thumbnail": "https://kokusho.nijl.ac.jp/api/iiif/300138956/v4/DSSH/DSSH-50028/DSSH-50028-00001.tif/full/200,/0/default.jpg",
+    "size": 52,
+    "_firestore": {
+      "createTime": "2026-09-08T15:14:19.320011Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/597e791cb860df4323fba6678625dddc",
+      "updateTime": "2026-09-08T15:14:19.320011Z"
+    }
+  },
+  {
+    "id": "90aaa0afa9cf2f14fc579f138ed2fca9",
+    "projectId": "ainu",
+    "collectionId": "ckxLwWmpkoKkprUuAqPe",
+    "index": 1,
+    "label": "蝦夷語箋（国立国語研究所）",
+    "manifestUrl": "https://dglb01.ninjal.ac.jp/ninjaldl/ezogosen/001/manifest.json",
+    "thumbnail": "https://dglb01.ninjal.ac.jp/iiif/ezogosen/001/tiff/ezgs001-001.tiff/full/200,/0/default.jpg",
+    "size": 100,
+    "_firestore": {
+      "createTime": "2026-09-07T17:35:18.891802Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/90aaa0afa9cf2f14fc579f138ed2fca9",
+      "updateTime": "2026-09-10T08:42:07.735273Z"
+    }
+  },
+  {
+    "id": "3c6a842abba391c286a5585f16ac97df",
+    "projectId": "ainu",
+    "collectionId": "e16HvAlUp3qITEbgtDLd",
+    "index": 1,
+    "label": "蝦夷道中記　磯谷則吉著（北海道大学附属図書館）",
+    "manifestUrl": "https://kokusho.nijl.ac.jp/biblio/100348726/manifest",
+    "thumbnail": "https://kokusho.nijl.ac.jp/api/iiif/100348726/v4/HOKU/HOKU-70059/HOKU-70059-0001.tif/full/200,/0/default.jpg",
+    "size": 30,
+    "_firestore": {
+      "createTime": "2026-09-08T17:26:35.709964Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/3c6a842abba391c286a5585f16ac97df",
+      "updateTime": "2026-09-08T17:26:35.709964Z"
+    }
+  },
+  {
+    "id": "dbf2128799e5200dcbb6d58e5ccfad7d",
+    "projectId": "ainu",
+    "collectionId": "hkAiRTxc8WS0ksYzwsjQ",
+    "index": 1,
+    "label": "天塩日誌（国文学研究資料館）",
+    "manifestUrl": "https://kokusho.nijl.ac.jp/biblio/200019368/manifest",
+    "thumbnail": "https://kokusho.nijl.ac.jp/api/iiif/200019368/v4/NIAC/MIT-Y01310-004/MIT-Y01310-004-00001.tif/full/200,/0/default.jpg",
+    "size": 37,
+    "_firestore": {
+      "createTime": "2026-09-08T14:57:51.463189Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/dbf2128799e5200dcbb6d58e5ccfad7d",
+      "updateTime": "2026-09-08T15:03:08.086067Z"
+    }
+  },
+  {
+    "id": "fec037d9e5cca849e8a2edf43cc2c162",
+    "projectId": "ainu",
+    "collectionId": "hq07XMPb3A8VgK6ckj9W",
+    "index": 1,
+    "label": "終北録　1857年版（神戸大学附属図書館）",
+    "manifestUrl": "https://kokusho.nijl.ac.jp/biblio/100345422/manifest",
+    "thumbnail": "https://kokusho.nijl.ac.jp/api/iiif/100345422/v4/KOBE/KOBE-00915/KOBE-00915-00000.tif/full/200,/0/default.jpg",
+    "size": 53,
+    "_firestore": {
+      "createTime": "2026-09-08T15:36:00.269204Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/fec037d9e5cca849e8a2edf43cc2c162",
+      "updateTime": "2026-09-08T15:36:00.269204Z"
+    }
+  },
+  {
+    "id": "a7515d24e37857a551db1bc4cf679ac8",
+    "projectId": "ainu",
+    "collectionId": "hqk5Fv7vmw3aVp1RGHNo",
+    "index": 1,
+    "label": "蝦夷旧聞　上・下（北海道大学附属図書館）",
+    "manifestUrl": "https://kokusho.nijl.ac.jp/biblio/100348686/manifest",
+    "thumbnail": "https://kokusho.nijl.ac.jp/api/iiif/100348686/v4/HOKU/HOKU-70019/HOKU-70019-0001.tif/full/200,/0/default.jpg",
+    "size": 92,
+    "_firestore": {
+      "createTime": "2026-09-08T17:28:30.432249Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/a7515d24e37857a551db1bc4cf679ac8",
+      "updateTime": "2026-09-08T17:28:30.432249Z"
+    }
+  },
+  {
+    "id": "2c249601fc9f87def7444e3f6b38fcbd",
+    "projectId": "ainu",
+    "collectionId": "jEHDzx5wtpq3fDpSYrj9",
+    "index": 1,
+    "label": "蝦夷之記（名古屋大学附属図書館）",
+    "manifestUrl": "https://da.adm.thers.ac.jp/iiif/1/classic_books/N004-20230901-01457/manifest.json",
+    "thumbnail": "https://da.adm.thers.ac.jp/iiif/2/thers%2Fpublic%2FN004%2Fslide_1%2F10045506_001.tif/full/220,/0/default.jpg",
+    "size": 52,
+    "_firestore": {
+      "createTime": "2026-09-08T04:53:02.904249Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/2c249601fc9f87def7444e3f6b38fcbd",
+      "updateTime": "2026-09-08T14:22:37.454047Z"
+    }
+  },
+  {
+    "id": "4d4e642c992e76b84404f5ba8a195e5c",
+    "projectId": "ainu",
+    "collectionId": "jmWNtJfceuR0OnaH36gk",
+    "index": 1,
+    "label": "渡島筆記（東北大学附属図書館）",
+    "manifestUrl": "https://kokusho.nijl.ac.jp/biblio/300125390/manifest",
+    "thumbnail": "https://kokusho.nijl.ac.jp/api/iiif/300125390/v4/THKK/THKK-32955/THKK-32955-0001.tif/full/200,/0/default.jpg",
+    "size": 61,
+    "_firestore": {
+      "createTime": "2026-09-08T16:53:06.990080Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/4d4e642c992e76b84404f5ba8a195e5c",
+      "updateTime": "2026-09-08T16:53:06.990080Z"
+    }
+  },
+  {
+    "id": "75923678441de1689e9d73f176a28c3c",
+    "projectId": "ainu",
+    "collectionId": "kwrfgGSk6VvSoGQeCLFI",
+    "index": 1,
+    "label": "蝦夷沿革考　上・下（北海道大学附属図書館）",
+    "manifestUrl": "https://kokusho.nijl.ac.jp/biblio/100348677/manifest",
+    "thumbnail": "https://kokusho.nijl.ac.jp/api/iiif/100348677/v4/HOKU/HOKU-70010/HOKU-70010-0001.tif/full/200,/0/default.jpg",
+    "size": 37,
+    "_firestore": {
+      "createTime": "2026-09-08T17:28:08.240277Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/75923678441de1689e9d73f176a28c3c",
+      "updateTime": "2026-09-08T17:28:08.240277Z"
+    }
+  },
+  {
+    "id": "e4d3bddb0e82b63b09b10ead9a5a354f",
+    "projectId": "ainu",
+    "collectionId": "nR2f8fr6946AkY0dIi5t",
+    "index": 1,
+    "label": "蝦夷行程記　巻之上下（国文学研究資料館）",
+    "manifestUrl": "https://codh.rois.ac.jp/pmjt/book/200021834/manifest.json",
+    "thumbnail": "http://codh.rois.ac.jp/pmjt/iiif/200021834/200021834_00001.tif",
+    "size": 100,
+    "_firestore": {
+      "createTime": "2026-09-07T17:36:39.617968Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/e4d3bddb0e82b63b09b10ead9a5a354f",
+      "updateTime": "2026-09-07T17:36:39.617968Z"
+    }
+  },
+  {
+    "id": "b0101187c679c7d675052b332e94681b",
+    "projectId": "ainu",
+    "collectionId": "pWBwHswsxVonxrmzj0GQ",
+    "index": 1,
+    "label": "石狩日誌（北海道大学附属図書館）",
+    "manifestUrl": "https://kokusho.nijl.ac.jp/biblio/100238417/manifest",
+    "thumbnail": "https://kokusho.nijl.ac.jp/api/iiif/100238417/v4/HOKU/HOKU-00017/HOKU-00017-00000.tif/full/200,/0/default.jpg",
+    "size": 36,
+    "_firestore": {
+      "createTime": "2026-09-08T14:50:41.362116Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/b0101187c679c7d675052b332e94681b",
+      "updateTime": "2026-09-08T14:50:41.362116Z"
+    }
+  },
+  {
+    "id": "0916dafb80cdc48ca7687afcad4a4f35",
+    "projectId": "ainu",
+    "collectionId": "sBlDDbb6hGfxAnNAwreY",
+    "index": 1,
+    "label": "蝦夷記行　第1冊（龍谷大学図書館）",
+    "manifestUrl": "https://da.library.ryukoku.ac.jp/iiif/170161/1/manifest.json",
+    "thumbnail": "https://da2.library.ryukoku.ac.jp/image/?IIIF=/17%2F170161%2F170161-0001.tif/full/200,/0/default.jpg",
+    "size": 18,
+    "_firestore": {
+      "createTime": "2026-04-15T18:03:03.257630Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/0916dafb80cdc48ca7687afcad4a4f35",
+      "updateTime": "2026-09-08T05:21:37.795047Z"
+    }
+  },
+  {
+    "id": "4f5889d5a17d5f2ea180667bdcceb564",
+    "projectId": "ainu",
+    "collectionId": "sBlDDbb6hGfxAnNAwreY",
+    "index": 2,
+    "label": "蝦夷記行　第2冊（龍谷大学図書館）",
+    "manifestUrl": "https://da.library.ryukoku.ac.jp/iiif/170161/2/manifest.json",
+    "thumbnail": "https://da.library.ryukoku.ac.jp/thumbs/17/170161/170161-0001.jpg",
+    "size": 13,
+    "_firestore": {
+      "createTime": "2026-09-08T05:21:51.968183Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/4f5889d5a17d5f2ea180667bdcceb564",
+      "updateTime": "2026-09-08T05:21:51.968183Z"
+    }
+  },
+  {
+    "id": "e1145e020745c4bcb6935a297203b39d",
+    "projectId": "ainu",
+    "collectionId": "sBlDDbb6hGfxAnNAwreY",
+    "index": 3,
+    "label": "蝦夷記行　第3冊（龍谷大学図書館）",
+    "manifestUrl": "https://da.library.ryukoku.ac.jp/iiif/170161/3/manifest.json",
+    "thumbnail": "https://da.library.ryukoku.ac.jp/thumbs/17/170161/170161-0001.jpg",
+    "size": 13,
+    "_firestore": {
+      "createTime": "2026-09-08T05:22:06.136112Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/e1145e020745c4bcb6935a297203b39d",
+      "updateTime": "2026-09-08T05:22:06.136112Z"
+    }
+  },
+  {
+    "id": "5ed88e4bf81add2b8f827fd39269ca51",
+    "projectId": "ainu",
+    "collectionId": "sNC0CMFuOaqcBiZ12lx2",
+    "index": 1,
+    "label": "知床日誌（奈良女子大学学術情報センター）",
+    "manifestUrl": "https://kokusho.nijl.ac.jp/biblio/100210787/manifest",
+    "thumbnail": "https://kokusho.nijl.ac.jp/api/iiif/100210787/v4/0370/0370-003207/0370-003207-0000.tif/full/200,/0/default.jpg",
+    "size": 35,
+    "_firestore": {
+      "createTime": "2026-09-08T15:06:01.097134Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/5ed88e4bf81add2b8f827fd39269ca51",
+      "updateTime": "2026-09-08T15:06:01.097134Z"
+    }
+  },
+  {
+    "id": "a3013422bbda9107097d0fa32db5da97",
+    "projectId": "ainu",
+    "collectionId": "sVXt1SjtlByslbX3n7xX",
+    "index": 1,
+    "label": "蝦夷奇観（北海道大学附属図書館）",
+    "manifestUrl": "https://kokusho.nijl.ac.jp/biblio/100348684/manifest",
+    "thumbnail": "https://kokusho.nijl.ac.jp/api/iiif/100348684/v4/HOKU/HOKU-70017/HOKU-70017-0001.tif/full/200,/0/default.jpg",
+    "size": 52,
+    "_firestore": {
+      "createTime": "2026-04-16T12:28:51.930320Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/a3013422bbda9107097d0fa32db5da97",
+      "updateTime": "2026-09-08T14:22:56.030573Z"
+    }
+  },
+  {
+    "id": "49c52fbd35e846b895457d946ccd4117",
+    "projectId": "ainu",
+    "collectionId": "t1zdivFpOJunIbCHOkmY",
+    "index": 1,
+    "label": "蝦夷嶋巡行記　1799年写本（北海道大学附属図書館）",
+    "manifestUrl": "https://kokusho.nijl.ac.jp/biblio/100348680/manifest",
+    "thumbnail": "https://kokusho.nijl.ac.jp/api/iiif/100348680/v4/HOKU/HOKU-70013/HOKU-70013-0001.tif/full/200,/0/default.jpg",
+    "size": 56,
+    "_firestore": {
+      "createTime": "2026-09-08T16:56:07.192246Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/49c52fbd35e846b895457d946ccd4117",
+      "updateTime": "2026-09-08T16:56:07.192246Z"
+    }
+  },
+  {
+    "id": "8702485d4f2347f4fdceb14ce549594e",
+    "projectId": "ainu",
+    "collectionId": "w5bsUYl8trfYDaik9dm1",
+    "index": 1,
+    "label": "唐松の根（大阪大学附属図書館）",
+    "manifestUrl": "https://kokusho.nijl.ac.jp/biblio/100365024/manifest",
+    "thumbnail": "https://kokusho.nijl.ac.jp/api/iiif/100365024/v4/OSAK/OSAK-70148/OSAK-70148-0001.tif/full/200,/0/default.jpg",
+    "size": 44,
+    "_firestore": {
+      "createTime": "2026-09-08T17:25:54.072617Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/8702485d4f2347f4fdceb14ce549594e",
+      "updateTime": "2026-09-08T17:25:54.072617Z"
+    }
+  },
+  {
+    "id": "5753c0f00b7a2abbda3578ca625cd495",
+    "projectId": "ainu",
+    "collectionId": "wa8HydOAmtzvjpk4h2ji",
+    "index": 1,
+    "label": "十勝日誌（信州大学附属図書館）",
+    "manifestUrl": "https://kokusho.nijl.ac.jp/biblio/100347501/manifest",
+    "thumbnail": "https://kokusho.nijl.ac.jp/api/iiif/100347501/v4/SSDL/SSDL-50162/SSDL-50162-00001.tif/full/200,/0/default.jpg",
+    "size": 32,
+    "_firestore": {
+      "createTime": "2026-09-08T15:04:41.956124Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/5753c0f00b7a2abbda3578ca625cd495",
+      "updateTime": "2026-09-08T15:04:41.956124Z"
+    }
+  },
+  {
+    "id": "78bad9d1d865cce38f75ae7da5bc9f3b",
+    "projectId": "ainu",
+    "collectionId": "wrJ3XveeCTILNPMEJsNz",
+    "index": 1,
+    "label": "蝦夷風俗物産質問筆記（神戸大学附属図書館）",
+    "manifestUrl": "https://kokusho.nijl.ac.jp/biblio/100345405/manifest",
+    "thumbnail": "https://kokusho.nijl.ac.jp/api/iiif/100345405/v4/KOBE/KOBE-00898/KOBE-00898-00000.tif/full/200,/0/default.jpg",
+    "size": 26,
+    "_firestore": {
+      "createTime": "2026-09-08T16:54:22.319059Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/78bad9d1d865cce38f75ae7da5bc9f3b",
+      "updateTime": "2026-09-08T16:54:22.319059Z"
+    }
+  },
+  {
+    "id": "68a601be4612d9c9d5bc5c0dd7e26d66",
+    "projectId": "ainu",
+    "collectionId": "xtEarK2hNZae4SB0ZFzt",
+    "index": 1,
+    "label": "蝦夷人言葉集（同志社大学図書館）",
+    "manifestUrl": "https://kokusho.nijl.ac.jp/biblio/300138935/manifest",
+    "thumbnail": "https://kokusho.nijl.ac.jp/api/iiif/300138935/v4/DSSH/DSSH-50007/DSSH-50007-00001.tif/full/200,/0/default.jpg",
+    "size": 13,
+    "_firestore": {
+      "createTime": "2026-09-08T16:20:25.720982Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/68a601be4612d9c9d5bc5c0dd7e26d66",
+      "updateTime": "2026-09-08T16:20:25.720982Z"
+    }
+  },
+  {
+    "id": "9987c791c64b854f7fadde0412de937a",
+    "projectId": "ainu",
+    "collectionId": "y9UrqHfBYj27gtrIGAD5",
+    "index": 1,
+    "label": "蝦夷草紙　第1冊（龍谷大学図書館）",
+    "manifestUrl": "https://da.library.ryukoku.ac.jp/iiif/170155/1/manifest.json",
+    "thumbnail": "https://da2.library.ryukoku.ac.jp/image/?IIIF=/17%2F170155%2F170155-0001.tif/full/200,/0/default.jpg",
+    "size": 63,
+    "_firestore": {
+      "createTime": "2026-04-15T17:06:58.200375Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/9987c791c64b854f7fadde0412de937a",
+      "updateTime": "2026-09-08T05:37:08.218924Z"
+    }
+  },
+  {
+    "id": "60cea8fb013aea6ece937dde8bffc2bb",
+    "projectId": "ainu",
+    "collectionId": "y9UrqHfBYj27gtrIGAD5",
+    "index": 2,
+    "label": "蝦夷草紙（国文学研究資料館）",
+    "manifestUrl": "https://kokusho.nijl.ac.jp/biblio/200019346/manifest",
+    "thumbnail": "https://kokusho.nijl.ac.jp/api/iiif/200019346/v4/NIAC/MIT-X00310-005/MIT-X00310-005-00001.tif/full/200,/0/default.jpg",
+    "size": 129,
+    "_firestore": {
+      "createTime": "2026-04-15T17:08:05.074430Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/60cea8fb013aea6ece937dde8bffc2bb",
+      "updateTime": "2026-09-07T06:12:03.936333Z"
+    }
+  },
+  {
+    "id": "b93ce6401f4732f11fadf04457b0f5e1",
+    "projectId": "ainu",
+    "collectionId": "y9UrqHfBYj27gtrIGAD5",
+    "index": 3,
+    "label": "蝦夷草紙　第2冊（龍谷大学図書館）",
+    "manifestUrl": "https://da.library.ryukoku.ac.jp/iiif/170155/2/manifest.json",
+    "thumbnail": "https://da.library.ryukoku.ac.jp/thumbs/17/170155/170155-0001.jpg",
+    "size": 42,
+    "_firestore": {
+      "createTime": "2026-09-08T05:22:57.428664Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/b93ce6401f4732f11fadf04457b0f5e1",
+      "updateTime": "2026-09-08T05:22:57.428664Z"
+    }
+  },
+  {
+    "id": "d5205fca447978417ccc7e88f4c27798",
+    "projectId": "ainu",
+    "collectionId": "zgNDJPWdozhS2TOth0qO",
+    "index": 1,
+    "label": "蝦夷地写生帖（北海道大学附属図書館）",
+    "manifestUrl": "https://kokusho.nijl.ac.jp/biblio/100348724/manifest",
+    "thumbnail": "https://kokusho.nijl.ac.jp/api/iiif/100348724/v4/HOKU/HOKU-70057/HOKU-70057-0001.tif/full/200,/0/default.jpg",
+    "size": 36,
+    "_firestore": {
+      "createTime": "2026-09-08T17:29:11.904505Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/d5205fca447978417ccc7e88f4c27798",
+      "updateTime": "2026-09-08T17:29:11.904505Z"
+    }
+  },
+  {
+    "id": "6b33c8ce461677af6f32ef91ae85acec",
+    "projectId": "ainu",
+    "collectionId": "zjyQGzvYLtlSvJSG5Gj5",
+    "index": 1,
+    "label": "北海道蝦夷語地名解　第1–3篇（国立国会図書館）",
+    "manifestUrl": "https://dl.ndl.go.jp/api/iiif/992037/manifest.json",
+    "thumbnail": "https://dl.ndl.go.jp/api/iiif/992037/R0000001/full/200,/0/default.jpg",
+    "size": 292,
+    "_firestore": {
+      "createTime": "2026-09-07T17:36:18.959365Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/entries/6b33c8ce461677af6f32ef91ae85acec",
+      "updateTime": "2026-09-07T17:36:18.959365Z"
+    }
+  }
+]
