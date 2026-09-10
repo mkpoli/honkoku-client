@@ -17,6 +17,7 @@
           "url": "http://*"
         }
       ]
-    }
+    },
+    "core:window:allow-close"
   ]
 }
