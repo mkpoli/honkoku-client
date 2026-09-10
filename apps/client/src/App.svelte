@@ -28,7 +28,7 @@
   import { entryCanvases, entryData } from "./data";
   import { parseRoute, href } from "./routes";
   import type { Route } from "./routes";
-  import { savedTheme, setTheme } from "./theme";
+  import { savedTheme, setTheme, type Theme } from "./theme";
   import { soundEnabled, setSound } from "./sound";
   import Home from "./components/Home.svelte";
   import ProjectScreen from "./components/Project.svelte";
@@ -57,6 +57,11 @@
     direction = $state("forward");
   let generation = 0;
   let sound = $state(soundEnabled());
+  const themeOptions: { value: Theme; label: string; glyph: string }[] = [
+    { value: "system", label: "システム", glyph: "◐" },
+    { value: "light", label: "ライト", glyph: "☀" },
+    { value: "dark", label: "ダーク", glyph: "☾" },
+  ];
   let leaveWorkbench = $state<() => Promise<void>>();
   let navigation = 0;
   let acceptedHash = location.hash;
@@ -249,27 +254,34 @@
       /></label
     >
     <div class="top-controls">
-      <details class="theme-menu">
-        <summary>テーマ</summary>
-        <div class="theme-options">
-          <label class="theme-control"
-            ><span class="caption muted">テーマ</span><select
-              aria-label="表示テーマ"
-              bind:value={theme}
-              onchange={() => setTheme(theme)}
-              ><option value="system">システム</option><option value="light"
-                >ライト</option
-              ><option value="dark">ダーク</option></select
-            ></label
-          ><label class="sound-control"
-            ><input
-              type="checkbox"
-              bind:checked={sound}
-              onchange={() => setSound(sound)}
-            />効果音</label
+      <div class="theme-switch" role="radiogroup" aria-label="表示テーマ">
+        {#each themeOptions as option (option.value)}
+          <button
+            type="button"
+            role="radio"
+            aria-checked={theme === option.value}
+            class:active={theme === option.value}
+            title={option.label}
+            onclick={() => {
+              theme = option.value;
+              setTheme(theme);
+            }}
+            ><span class="theme-glyph" aria-hidden="true">{option.glyph}</span
+            ><span class="theme-label">{option.label}</span></button
           >
-        </div>
-      </details>
+        {/each}
+      </div>
+      <button
+        type="button"
+        class="sound-toggle"
+        aria-pressed={sound}
+        aria-label="効果音"
+        title={sound ? "効果音を切る" : "効果音を鳴らす"}
+        onclick={() => {
+          sound = !sound;
+          setSound(sound);
+        }}>♪</button
+      >
       {#if session}<div class="signed-user">
           <Avatar
             user={profile ?? {

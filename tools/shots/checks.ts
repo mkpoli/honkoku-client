@@ -153,8 +153,7 @@ export async function checkInteractions(browser: Browser, origin: string) {
     panel.scrollHeight <= panel.clientHeight + 1,
     "columns wrap instead of overflowing downward",
   );
-  await page.locator(".theme-menu summary").click();
-  await page.getByRole("combobox", { name: "表示テーマ" }).selectOption("dark");
+  await page.getByRole("radio", { name: "ダーク", exact: true }).click();
   assert.equal(await page.locator("html").getAttribute("data-theme"), "dark");
   assert.equal(
     await page
@@ -162,9 +161,7 @@ export async function checkInteractions(browser: Browser, origin: string) {
       .evaluate((e) => getComputedStyle(e).backgroundColor),
     "rgb(27, 24, 22)",
   );
-  await page
-    .getByRole("combobox", { name: "表示テーマ" })
-    .selectOption("system");
+  await page.getByRole("radio", { name: "システム", exact: true }).click();
   await page.emulateMedia({ colorScheme: "light" });
   assert.equal(
     await page
@@ -172,7 +169,6 @@ export async function checkInteractions(browser: Browser, origin: string) {
       .evaluate((e) => getComputedStyle(e).backgroundColor),
     "rgb(244, 242, 238)",
   );
-  await page.locator(".theme-menu summary").click();
   await page.evaluate(async (id) => {
     const { fixtureInvoke } = await import("/src/dev/fixtures.ts");
     const pages = (await fixtureInvoke("list_pages", { entryId: id })) as {
@@ -402,13 +398,11 @@ export async function checkEditing(
       .first()
       .click();
     assert.equal(await raw.inputValue(), `${beforeOcr}\n${ocr}`);
-    await page.locator(".theme-menu summary").click();
-    await page.getByRole("checkbox", { name: "効果音", exact: true }).uncheck();
+    await page.getByRole("button", { name: "効果音", exact: true }).click();
     assert.equal(
       await page.evaluate(() => localStorage.getItem("honkoku.sound")),
       "off",
     );
-    await page.locator(".theme-menu summary").click();
     await page.getByRole("button", { name: "破棄", exact: true }).click();
     await page.getByRole("button", { name: "破棄する", exact: true }).click();
     await page.getByRole("button", { name: "編集開始", exact: true }).waitFor();
