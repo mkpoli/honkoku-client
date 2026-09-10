@@ -1,0 +1,9 @@
+工房 uses three adjoining library panes and a split transcription workspace, with compact tool rows, visible panel boundaries and a continuous bottom status bar. Teal identifies selection, focus and primary actions. Manuscript paper retains its warm colour in both themes.
+
+Light colour tokens are background #F1F3F5, panel #FAFBFC, inset #E8EDF0, border #CBD3DA, foreground #202A33, secondary text #52616D, accent #087F83 and selection #DCEEEE. Dark tokens are background #202830, panel #252F38, inset #1B2229, border #3B4853, foreground #EDF2F5, secondary text #ADBCC8, accent #55C4C0 and selection #284447. The scan highlight uses the theme accent at approximately 18% opacity. Status labels distinguish 未着手, 翻刻中 and 完了 alongside neutral or teal indicators.
+
+The typeface references are IBM Plex Sans with Noto Sans JP for interface text, IBM Plex Mono for counts and identifiers, and Noto Serif JP for the transcription and rendered annotation examples. Interface text is approximately 14–16 px, section headings 18–22 px and main transcription text 26–28 px. Ruby and the two adjacent vertical lines of 割書 use approximately half the main text size. Transcription columns read from top to bottom, progressing from right to left.
+
+Controls use 4 px corner radii and 1 px borders. Spacing follows a 4 px base, with 8 px between compact controls, 12–16 px panel padding and 24 px between larger groups. The native title bar and bottom status bar remain compact. The command search displays ⌘K; hover labels expose insertion shortcuts, and the save state includes Ctrl+S.
+
+Rare marks use readable Japanese control names. The より ligature is expanded to より in the transcription and OCR display. Ruby appears beside its base character, 割書 occupies two small vertical columns, 見せ消ち has a vertical strike, page boundaries use a divider and missing characters use an empty square. Manuscript imagery, entry status breakdowns and editing activity are illustrative.

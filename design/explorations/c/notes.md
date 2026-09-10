@@ -1,0 +1,11 @@
+Direction C — 遊戯 pairs rounded, outlined surfaces with progress rings, stacked status bars and compact rewards. Persimmon marks the active selection and work in progress; matcha marks completion; ultramarine distinguishes categories; warm yellow marks points, streaks and uncertain OCR. The editor remains quiet, with a small completion acknowledgment below it. Manuscript paper retains its warm original colour in both themes.
+
+The light palette uses canvas #FAF8F2, surface #FFFFFF, primary text #222A3D, secondary text #657083 and border #E6E3DC. Its accents are persimmon #E66A45, matcha #748B48, ultramarine #4558D9 and yellow #E6B84A. Unstarted pages use #BEC2C9; selected surfaces use #FFF0E8.
+
+The dark palette uses canvas #141C30, surface #1D2840, editor #19243A, primary text #F3F1E9, secondary text #B3BDD0 and border #34415B. Its accents are persimmon #F18A68, matcha #A4BE75, ultramarine #8D9AFF and yellow #EBC86A. Unstarted pages use #64718A. The active manuscript column has a translucent persimmon overlay; the surrounding scan keeps its natural brightness.
+
+The type specification is M PLUS Rounded 1c for Japanese interface text, Inter for numerals, and Noto Serif JP for the transcription. Headings use weights 600–700; controls use 400–500. Main headings are 26–32 px, interface labels 16–18 px, metadata 14 px and transcription text 25–28 px. These are the generation specifications; raster lettering and colours are visual approximations of the named fonts and tokens.
+
+Cards and major panels have a 12 px radius; compact controls use 6 px and status pills 16 px. Spacing follows a 4 px base, with 8 px control gaps, 16 px panel padding and 24 px outer margins. Borders are 1 px. The library presents projects, collections and entries in three persistent columns. The workbench pairs the manuscript with a right-to-left vertical editor, keeping page navigation, insertion tools, OCR and notes visible below.
+
+Rare ligatures use readable expanded forms: ゟ appears as より in the transcription and OCR candidate. Palette buttons name repetition marks and label the ligatures より, しめ and コト. The editor shows ruby, two-line small text, a struck character, a page boundary and a hollow unreadable-character box. Entry status counts and editor names are illustrative; the project totals, collection names and entry page counts follow the supplied data.
