@@ -28,7 +28,7 @@
     unreadNotificationCount,
   } from "@honkoku/client-api/invoke";
   import type { ConnectionOutcome } from "@honkoku/client-api/invoke";
-  import { allPages, errorMessage, label } from "./lib";
+  import { allPages, errorMessage, label, status, statusClass } from "./lib";
   import { entryCanvases, entryData } from "./data";
   import { parseRoute, href } from "./routes";
   import type { Route } from "./routes";
@@ -92,7 +92,8 @@
     loginError = "";
     try {
       await sessionListeners;
-      if (!isTauri()) throw new Error("デスクトップアプリでログインしてください。");
+      if (!isTauri())
+        throw new Error("デスクトップアプリでログインしてください。");
       await sessionSignIn(provider);
     } catch (e) {
       loginError = errorMessage(e);
@@ -184,7 +185,10 @@
       if (g === generation) {
         error = errorMessage(e);
         fixtureMissing =
-          typeof e === "object" && e !== null && "kind" in e && e.kind === "fixture";
+          typeof e === "object" &&
+          e !== null &&
+          "kind" in e &&
+          e.kind === "fixture";
       }
     } finally {
       if (g === generation) loading = false;
@@ -308,16 +312,42 @@
   });
 </script>
 
+{#snippet breadcrumbs()}
+  <nav class="breadcrumb" aria-label="パンくず">
+    <a href="#/" aria-current={isHome ? "page" : undefined}>⌂ホーム</a
+    >{#if project}<span>›</span><a href={href({ projectId: project.id })}
+        >{project.title}</a
+      >{/if}{#if collection && project}<span>›</span><a
+        href={href({ projectId: project.id, collectionId: collection.id })}
+        >{collection.title}</a
+      >{/if}{#if entry}<span>›</span><a href={href({ entryId: entry.id })}
+        >{label(entry.label)}</a
+      >{/if}
+    {#if workbench && entry}<span class="page-count"
+        >{route.pageIndex! + 1}／{entry.size}コマ</span
+      >{/if}
+  </nav>
+{/snippet}
+
 <div class="app-shell" class:reading={workbench}>
   <header class="topbar">
-    <a class="brand" href="#/">みんなで翻刻</a><label class="search top-search"
-      ><span aria-hidden="true">⌕</span><input
-        aria-label="全プロジェクトを検索"
-        placeholder="プロジェクトを検索"
-        disabled={!isHome}
-        bind:value={search}
-      /></label
-    >
+    {#if workbench}
+      {@render breadcrumbs()}
+      {@const current = pages.find((p) => p.index === route.pageIndex)}
+      {#if current}<span class="status {statusClass(current.status)}"
+          >{status(current.status).symbol}{status(current.status).label}</span
+        >{/if}
+    {:else}
+      <a class="brand" href="#/">みんなで翻刻</a><label
+        class="search top-search"
+        ><span aria-hidden="true">⌕</span><input
+          aria-label="全プロジェクトを検索"
+          placeholder="プロジェクトを検索"
+          disabled={!isHome}
+          bind:value={search}
+        /></label
+      >
+    {/if}
     <div class="top-controls">
       <div class="theme-switch" role="radiogroup" aria-label="表示テーマ">
         {#each themeOptions as option (option.value)}
@@ -327,6 +357,7 @@
             aria-checked={theme === option.value}
             class:active={theme === option.value}
             title={option.label}
+            aria-label={option.label}
             onclick={() => {
               theme = option.value;
               setTheme(theme);
@@ -347,7 +378,22 @@
           setSound(sound);
         }}>♪</button
       >
-      {#if session}<div class="signed-user">
+      {#if workbench}<button
+          class="account-avatar"
+          aria-label={session ? "ログアウト" : "ログイン"}
+          onclick={() => {
+            loginError = "";
+            signInDialog = session ? "signout" : "signin";
+          }}
+          ><Avatar
+            user={profile ?? {
+              uid: session?.uid ?? "",
+              displayName: session?.display_name ?? "利用者",
+            }}
+            small
+          /></button
+        >
+      {:else if session}<div class="signed-user">
           <Avatar
             user={profile ?? {
               uid: session.uid,
@@ -375,17 +421,7 @@
         >{/if}
     </div>
   </header>
-  <nav class="breadcrumb" aria-label="パンくず">
-    <a href="#/" aria-current={isHome ? "page" : undefined}>⌂ホーム</a
-    >{#if project}<span>›</span><a href={href({ projectId: project.id })}
-        >{project.title}</a
-      >{/if}{#if collection && project}<span>›</span><a
-        href={href({ projectId: project.id, collectionId: collection.id })}
-        >{collection.title}</a
-      >{/if}{#if entry}<span>›</span><a href={href({ entryId: entry.id })}
-        >{label(entry.label)}</a
-      >{/if}
-  </nav>
+  {#if !workbench}{@render breadcrumbs()}{/if}
   {#if loginError && !signInDialog}<div class="message error" role="alert">
       {loginError}<button onclick={() => (loginError = "")} aria-label="閉じる"
         >×</button
