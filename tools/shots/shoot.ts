@@ -1,4 +1,9 @@
-import { checkInteractions, checkEditing, checkAlignment } from "./checks";
+import {
+  checkInteractions,
+  checkEditing,
+  checkAlignment,
+  checkQuietWorkbench,
+} from "./checks";
 import { chromium, webkit, type Page } from "playwright";
 import { mkdir } from "node:fs/promises";
 import { resolve } from "node:path";
@@ -29,6 +34,7 @@ async function available() {
   }
 }
 let server: ReturnType<typeof Bun.spawn> | undefined;
+let serverLogs: Promise<unknown> | undefined;
 async function stopServer() {
   if (!server) return;
   const p = Bun.spawn(
@@ -62,7 +68,23 @@ async function stopServer() {
   }
   if (server.exitCode === null) server.kill("SIGTERM");
   await server.exited;
-  console.log("Owned dev server stopped.");
+  await serverLogs;
+  const check = Bun.spawn(
+    [
+      "systemctl",
+      "--user",
+      "list-units",
+      "--plain",
+      "--no-legend",
+      "--state=running",
+      `devrun-${server.pid}-*.scope`,
+    ],
+    { stdout: "pipe", stderr: "ignore" },
+  );
+  const remaining = await new Response(check.stdout).text();
+  await check.exited;
+  if (remaining.trim()) throw Error("Owned dev server scope is still running.");
+  console.log("Owned dev server stopped; no running descendants.");
 }
 process.on("SIGINT", () => {
   void stopServer().then(() => process.exit(130));
@@ -105,9 +127,26 @@ try {
       ],
       {
         cwd: root,
-        stdout: Bun.file(resolve(output, "vite.log")),
-        stderr: Bun.file(resolve(output, "vite-error.log")),
+        env: {
+          ...process.env,
+          CHOKIDAR_USEPOLLING: "1",
+          CHOKIDAR_INTERVAL: "1500",
+        },
+        stdout: "pipe",
+        stderr: "pipe",
       },
+    );
+    serverLogs = Promise.all(
+      [
+        [server.stdout, "vite.log"],
+        [server.stderr, "vite-error.log"],
+      ].map(async ([stream, filename]) => {
+        const log = await new Response(stream as ReadableStream).text();
+        await Bun.write(
+          resolve(output, filename as string),
+          log.replace(/\/home\/[^/\s]+/g, "~"),
+        );
+      }),
     );
     for (let attempt = 0; attempt < 100; attempt++) {
       if (await available()) break;
@@ -120,15 +159,18 @@ try {
   }
   browser = await chromium.launch({ headless: true });
   for (const theme of ["light", "dark"] as const)
+    await checkQuietWorkbench(browser, origin, theme);
+  for (const theme of ["light", "dark"] as const)
     await checkAlignment(browser, origin, theme);
-  await checkInteractions(browser, origin);
   const webkitBrowser = await webkit.launch({ headless: true });
   try {
+    await checkQuietWorkbench(webkitBrowser, origin, "light", "-webkit");
     await checkAlignment(webkitBrowser, origin, "light", "-webkit");
     await checkEditing(webkitBrowser, origin, "light", "-webkit");
   } finally {
     await webkitBrowser.close();
   }
+  await checkInteractions(browser, origin);
   for (const theme of ["light", "dark"] as const) {
     const context = await browser.newContext({
       viewport: { width: 1600, height: 1000 },
