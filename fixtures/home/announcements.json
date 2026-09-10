@@ -1,0 +1,67 @@
+[
+  {
+    "id": "SCbWkgUksrJj9K2PE5Bq",
+    "title": "10月2日（金）20:00〜 ニコ生「みんなで翻刻してみた」を放映します",
+    "description": "番組ページ [https://live.nicovideo.jp/watch/lv351272956](https://live.nicovideo.jp/watch/lv351272956)",
+    "display": true,
+    "createdAt": "2026-08-28T12:54:54.081Z",
+    "_firestore": {
+      "createTime": "2026-08-28T12:54:54.114025Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/adminAnnouncements/SCbWkgUksrJj9K2PE5Bq",
+      "updateTime": "2026-08-28T12:54:54.114025Z"
+    },
+    "createdBy": "Jlt0nvv4zzRJKb3FW7K27pNh2aa2"
+  },
+  {
+    "id": "62faKUDcAjTNSUZLkvGW",
+    "title": "8月28日（金）20:00〜 ニコ生「みんなで翻刻してみた」を放映します",
+    "description": "番組ページ　[https://live.nicovideo.jp/watch/lv351256234](https://live.nicovideo.jp/watch/lv351256234)",
+    "display": true,
+    "createdAt": "2026-08-27T00:20:52.603Z",
+    "_firestore": {
+      "createTime": "2026-08-27T00:20:52.646974Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/adminAnnouncements/62faKUDcAjTNSUZLkvGW",
+      "updateTime": "2026-08-27T00:20:52.646974Z"
+    },
+    "createdBy": "L0Y4vkKWJoRDB7aen9mYzHAQiCa2"
+  },
+  {
+    "id": "DD6LTMvIgcWaZd7oR6cU",
+    "title": "メッセージ機能が追加されました",
+    "description": "メッセージ機能が追加されました（ヘッダーの右上の手紙のアイコン）。管理者から個別の参加者に連絡がある際に利用する予定です。現時点では参加者間の連絡には利用できません",
+    "display": true,
+    "createdAt": "2026-07-06T04:27:46.153Z",
+    "_firestore": {
+      "createTime": "2026-07-06T04:27:46.174407Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/adminAnnouncements/DD6LTMvIgcWaZd7oR6cU",
+      "updateTime": "2026-07-06T04:27:46.174407Z"
+    },
+    "createdBy": "L0Y4vkKWJoRDB7aen9mYzHAQiCa2"
+  },
+  {
+    "id": "XQCwibKchiuXeHC14L3w",
+    "title": "第3回古文書解読コンテストのエントリー開始",
+    "description": "第3回古文書解読コンテストのエントリーが開始しています。詳しくは[公式サイト](https://komonjo-contest.com)をご覧ください&#x9;",
+    "display": true,
+    "createdAt": "2026-06-21T02:37:56.941Z",
+    "_firestore": {
+      "createTime": "2026-06-21T02:37:56.957531Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/adminAnnouncements/XQCwibKchiuXeHC14L3w",
+      "updateTime": "2026-06-21T02:37:56.957531Z"
+    },
+    "createdBy": "L0Y4vkKWJoRDB7aen9mYzHAQiCa2"
+  },
+  {
+    "id": "TpLvBiA378KHofJ5T6oK",
+    "title": "みんなで翻刻OCRを追加しました",
+    "description": "みんなで翻刻の入力データを用いて学習したOCRエンジン「みんなで翻刻OCR」（https://yuta1984.github.io/honkoku-ocr-web/）をみんなで翻刻本体に導入しました。翻刻画面の「OCR」タブでNDL古典籍OCR-Liteと選択することができます。\n\nNDL古典籍OCRと比較して認識にとても時間がかかります。気長にお待ちください。\n\nなお精度に関するご感想をフォーラムでお待ちしています。",
+    "display": true,
+    "createdAt": "2026-06-09T08:51:01.661Z",
+    "_firestore": {
+      "createTime": "2026-06-09T08:51:01.675200Z",
+      "name": "projects/honkoku3-c466c/databases/(default)/documents/adminAnnouncements/TpLvBiA378KHofJ5T6oK",
+      "updateTime": "2026-06-09T08:51:01.675200Z"
+    },
+    "createdBy": "L0Y4vkKWJoRDB7aen9mYzHAQiCa2"
+  }
+]
