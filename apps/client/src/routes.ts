@@ -1,4 +1,7 @@
 export interface Route {
+  search?: boolean;
+  query?: string;
+  column?: number;
   projectId?: string;
   collectionId?: string;
   entryId?: string;
@@ -8,7 +11,19 @@ export interface Route {
 }
 export function parseRoute(hash: string): Route {
   try {
-    const path = hash.replace(/^#/, "") || "/";
+    const raw = hash.replace(/^#/, "") || "/";
+    const split = raw.indexOf("?");
+    const path = split < 0 ? raw : raw.slice(0, split);
+    const params = new URLSearchParams(split < 0 ? "" : raw.slice(split + 1));
+    if (path === "/search")
+      return { search: true, query: params.get("q") ?? "" };
+    const columnText = params.get("column");
+    if (
+      columnText !== null &&
+      (!/^\d+$/.test(columnText) || !Number.isSafeInteger(Number(columnText)))
+    )
+      return { invalid: true };
+    const column = columnText === null ? undefined : Number(columnText);
     if (path === "/") return {};
     if (import.meta.env?.DEV && path === "/spike/editor")
       return { editorSpike: true };
@@ -27,7 +42,12 @@ export function parseRoute(hash: string): Route {
     )
       return {
         entryId: decodeURIComponent(entry[1]),
-        ...(entry[2] === undefined ? {} : { pageIndex: Number(entry[2]) }),
+        ...(entry[2] === undefined
+          ? {}
+          : {
+              pageIndex: Number(entry[2]),
+              ...(column === undefined ? {} : { column }),
+            }),
       };
   } catch {
     /* Invalid percent encoding is an unknown route. */
@@ -35,8 +55,10 @@ export function parseRoute(hash: string): Route {
   return { invalid: true };
 }
 export function href(route: Route): string {
+  if (route.search)
+    return `#/search?q=${encodeURIComponent(route.query ?? "")}`;
   if (route.entryId)
-    return `#/entries/${encodeURIComponent(route.entryId)}${route.pageIndex === undefined ? "" : `/pages/${route.pageIndex}`}`;
+    return `#/entries/${encodeURIComponent(route.entryId)}${route.pageIndex === undefined ? "" : `/pages/${route.pageIndex}${route.column === undefined ? "" : `?column=${route.column}`}`}`;
   if (route.projectId)
     return `#/projects/${encodeURIComponent(route.projectId)}${route.collectionId ? `/collections/${encodeURIComponent(route.collectionId)}` : ""}`;
   return "#/";

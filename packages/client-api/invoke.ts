@@ -174,3 +174,26 @@ export interface ReadRegion {
 }
 export const regionCached = <T>(resource: ReadRegion) => invoke<T | null>("region_cached", { resource });
 export const regionRefresh = <T>(resource: ReadRegion) => invoke<T>("region_refresh", { resource });
+export async function searchStatus(): Promise<import("./types").SearchStatus> {
+  if (isTauri()) return invoke("search_status");
+  return { present: true, commit: null, page_count: 0, last_build: null, size: 0 };
+}
+export const searchChooseDump = () => invoke<string | null>("search_choose_dump");
+export const searchBuild = (dumpPath?: string, cloneDump = false) =>
+  invoke<import("./types").SearchStatus>("search_build", { dumpPath, cloneDump });
+export const searchSync = () => invoke<number>("search_sync");
+export async function searchQuery(query: import("./types").SearchQuery): Promise<import("./types").SearchResults> {
+  if (isTauri()) return invoke("search_query", { query });
+  const { fixtureSearch } = await import("../../apps/client/src/dev/search");
+  return fixtureSearch(query);
+}
+export async function onSearchProgress(handler: (progress: import("./types").SearchProgress) => void) {
+  if (!isTauri()) return () => {};
+  const { listen } = await import("@tauri-apps/api/event");
+  return listen<import("./types").SearchProgress>("search-progress", (event) => handler(event.payload));
+}
+export async function onSearchError(handler: (error: import("./types").AppError) => void) {
+  if (!isTauri()) return () => {};
+  const { listen } = await import("@tauri-apps/api/event");
+  return listen<import("./types").AppError>("search-error", (event) => handler(event.payload));
+}

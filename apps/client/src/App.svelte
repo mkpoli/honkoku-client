@@ -38,6 +38,7 @@
   import type { Route } from "./routes";
   import { savedTheme, setTheme, type Theme } from "./theme";
   import { soundEnabled, setSound } from "./sound";
+  import Search from "./components/Search.svelte";
   import Home from "./components/Home.svelte";
   import ProjectScreen from "./components/Project.svelte";
   import EntryScreen from "./components/Entry.svelte";
@@ -95,7 +96,11 @@
   let navigation = 0;
   let acceptedHash = location.hash;
   let isHome = $derived(
-    !route.projectId && !route.entryId && !route.invalid && !route.editorSpike,
+    !route.projectId &&
+      !route.entryId &&
+      !route.invalid &&
+      !route.editorSpike &&
+      !route.search,
   );
   let workbench = $derived(route.pageIndex !== undefined);
   async function identity() {
@@ -195,6 +200,7 @@
       error = "ページが見つかりません。ホームから選び直してください。";
       return;
     }
+    if (next.search) return;
     const scope = String(accountGeneration);
     if (!next.projectId && !next.entryId) {
       await projectsRegion.load(
@@ -390,7 +396,8 @@
 {#snippet breadcrumbs()}
   <nav class="breadcrumb" aria-label="パンくず">
     <a href="#/" aria-current={isHome ? "page" : undefined}>⌂ホーム</a
-    >{#if project}<span>›</span><a href={href({ projectId: project.id })}
+    >{#if route.search}<span>›</span><span aria-current="page">全文検索</span
+      >{/if}{#if project}<span>›</span><a href={href({ projectId: project.id })}
         >{project.title}</a
       >{/if}{#if collection && project}<span>›</span><a
         href={href({ projectId: project.id, collectionId: collection.id })}
@@ -410,16 +417,21 @@
           >{status(current.status).symbol}{status(current.status).label}</span
         >{/if}
     {:else}
-      <a class="brand" href="#/">みんなで翻刻</a><label
-        class="search top-search"
-        ><span aria-hidden="true">⌕</span><input
-          aria-label="全プロジェクトを検索"
-          placeholder="プロジェクトを検索"
-          disabled={!isHome}
-          bind:value={search}
-        /></label
-      >
+      <a class="brand" href="#/">みんなで翻刻</a>
     {/if}
+    <label class="search top-search"
+      ><span aria-hidden="true">⌕</span><input
+        aria-label="翻刻を検索"
+        placeholder={isHome
+          ? "プロジェクトを絞り込み・Enterで全文検索"
+          : "翻刻を検索"}
+        onkeydown={(event) => {
+          if (event.key === "Enter" && !event.isComposing)
+            location.hash = href({ search: true, query: search });
+        }}
+        bind:value={search}
+      /></label
+    >
     <div class="top-controls">
       <div class="theme-switch" role="radiogroup" aria-label="表示テーマ">
         {#each themeOptions as option (option.value)}
@@ -516,10 +528,12 @@
         <button onclick={() => load(route)}>再試行</button><a href="#/"
           >ホームへ</a
         >
-      </div>{:else}{#key route.editorSpike ? "editor" : (route.entryId ?? route.projectId ?? "home")}<div
+      </div>{:else}{#key route.editorSpike ? "editor" : route.search ? "search" : (route.entryId ?? route.projectId ?? "home")}<div
           class="route-screen"
         >
-          {#if route.editorSpike && EditorSpike}<EditorSpike
+          {#if route.search}<Search
+              query={route.query ?? ""}
+            />{:else if route.editorSpike && EditorSpike}<EditorSpike
             />{:else if isHome}<Home
               {projects}
               {projectsRegion}
@@ -547,6 +561,7 @@
                   leaveWorkbench = guard;
                 }}
                 index={route.pageIndex!}
+                column={route.column}
               />{:else if workbench}<p class="error" role="alert">
                 指定されたコマがありません。
               </p>{:else}<EntryScreen
@@ -586,3 +601,16 @@
     onclose={() => (signInDialog = null)}
   />
 {/if}
+
+<style>
+  .reading .top-search {
+    inline-size: 200px;
+    margin-inline-start: 0;
+    padding-block: 0;
+    flex-shrink: 1;
+    min-inline-size: 100px;
+  }
+  .reading .top-search input {
+    font-size: 13px;
+  }
+</style>

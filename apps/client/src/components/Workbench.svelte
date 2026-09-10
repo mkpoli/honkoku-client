@@ -50,6 +50,7 @@
     pages,
     canvases,
     index,
+    column,
     session,
     onpage,
     registerLeave,
@@ -64,6 +65,7 @@
     pages: Page[];
     canvases: Canvas[];
     index: number;
+    column?: number;
     session: SessionInfo | null;
     onpage: (page: Page) => void;
     registerLeave: (guard: (() => Promise<void>) | undefined) => void;
@@ -606,6 +608,24 @@
       notice = "";
     }, 6000);
     return () => clearTimeout(timer);
+  });
+  $effect(() => {
+    const requested = column;
+    const pageIndex = index;
+    const count = columns.length;
+    const pending = pagesPending;
+    verifying;
+    if (requested === undefined || pending) return;
+    void tick().then(() => {
+      if (pageIndex !== index || requested !== column || requested >= count)
+        return;
+      columnChange(requested);
+      document
+        .querySelector(
+          `.transcription-reader [data-column-index="${requested}"]`,
+        )
+        ?.scrollIntoView({ block: "nearest", inline: "nearest" });
+    });
   });
   $effect(() => {
     if (!session && editing) {
