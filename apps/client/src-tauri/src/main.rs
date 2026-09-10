@@ -217,6 +217,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             ocr::ocr_publish_page,
             signin::session_sign_in,
             signin::session_capture,
+            signin::session_sign_in_retry,
+            signin::session_sign_in_complete,
             commands::session_import,
             commands::session_current,
             commands::session_clear,

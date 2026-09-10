@@ -7,10 +7,12 @@
   ],
   "remote": {
     "urls": [
-      "https://honkoku3-c466c.firebaseapp.com/*"
+      "https://honkoku3-c466c.firebaseapp.com/__client_signin"
     ]
   },
   "permissions": [
-    "allow-session-capture"
+    "allow-session-capture",
+    "allow-session-sign-in-retry",
+    "allow-session-sign-in-complete"
   ]
 }

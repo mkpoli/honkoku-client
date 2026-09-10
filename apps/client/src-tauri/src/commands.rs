@@ -53,12 +53,23 @@ pub(crate) async fn attach_session(
     editing: &EditingState,
     session: Session,
 ) -> Result<SessionInfo, AppError> {
+    attach_session_with(state, editing, session, |session| {
+        Ok(state.store.save(session)?)
+    })
+    .await
+}
+pub(crate) async fn attach_session_with(
+    state: &AppState,
+    editing: &EditingState,
+    session: Session,
+    persist: impl FnOnce(&Session) -> Result<(), AppError>,
+) -> Result<SessionInfo, AppError> {
     let mut connection = state.connection.write().await;
     let info = SessionInfo::new(&session, state.store.kind());
     let client = state
         .anonymous()?
         .with_session(TokenManager::new(session.clone(), state.store.clone())?);
-    state.store.save(&session)?;
+    persist(&session)?;
     connection.client = client;
     connection.session = Some(info.clone());
     editing.pages.lock().await.clear();

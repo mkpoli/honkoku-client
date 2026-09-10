@@ -207,6 +207,20 @@ impl SessionStore for DesktopStore {
     }
 }
 
+// Verification uses TokenManager without writing unverified credentials to disk.
+struct VolatileStore;
+impl SessionStore for VolatileStore {
+    fn load(&self) -> Result<Option<Session>> {
+        Ok(None)
+    }
+    fn save(&self, _: &Session) -> Result<()> {
+        Ok(())
+    }
+    fn clear(&self) -> Result<()> {
+        Ok(())
+    }
+}
+
 pub fn import_dev_session(path: impl AsRef<Path>) -> Result<Session> {
     Ok(serde_json::from_slice(&std::fs::read(path)?)?)
 }
@@ -399,34 +413,108 @@ pub fn sign_in_page_url(provider: SignInProvider, event_id: &str) -> Result<reqw
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct CapturedSession {
+    pub attempt_id: String,
     uid: String,
-    email: Option<String>,
-    display_name: Option<String>,
-    providers: Vec<String>,
     refresh_token: String,
     id_token: String,
-    expires_at: Timestamp,
 }
 impl CapturedSession {
-    pub fn into_session(self, provider: SignInProvider) -> Result<Session> {
-        if self.uid.is_empty()
-            || self.refresh_token.is_empty()
-            || self.id_token.is_empty()
-            || self.expires_at.0 <= OffsetDateTime::now_utc()
-            || !self.providers.iter().any(|id| id == provider.id())
-        {
+    pub async fn verify(self, provider: SignInProvider) -> Result<Session> {
+        self.verify_with_endpoints(
+            provider,
+            "https://identitytoolkit.googleapis.com/v1/accounts:lookup",
+            TOKEN_ENDPOINT,
+        )
+        .await
+    }
+    async fn verify_with_endpoints(
+        self,
+        provider: SignInProvider,
+        lookup: &str,
+        refresh: &str,
+    ) -> Result<Session> {
+        if self.uid.is_empty() || self.refresh_token.is_empty() || self.id_token.is_empty() {
             return Err(Error::Invalid("invalid captured session".into()));
         }
-        Ok(Session {
+        let http = reqwest::Client::builder()
+            .timeout(Duration::from_secs(30))
+            .redirect(reqwest::redirect::Policy::none())
+            .build()?;
+        let mut url = reqwest::Url::parse(lookup)
+            .map_err(|_| Error::Invalid("invalid lookup endpoint".into()))?;
+        url.query_pairs_mut().append_pair("key", FIREBASE_API_KEY);
+        let response = http
+            .post(url)
+            .json(&serde_json::json!({"idToken": self.id_token}))
+            .send()
+            .await
+            .map_err(|e| Error::Http(e.without_url()))?;
+        if !response.status().is_success() {
+            return Err(Error::Invalid(format!(
+                "account lookup HTTP {}",
+                response.status()
+            )));
+        }
+        #[derive(Deserialize)]
+        #[serde(rename_all = "camelCase")]
+        struct Provider {
+            provider_id: String,
+        }
+        #[derive(Deserialize)]
+        #[serde(rename_all = "camelCase")]
+        struct User {
+            local_id: String,
+            email: Option<String>,
+            display_name: Option<String>,
+            #[serde(default)]
+            provider_user_info: Vec<Provider>,
+        }
+        #[derive(Deserialize)]
+        struct Lookup {
+            users: Vec<User>,
+        }
+        let lookup: Lookup = response
+            .json()
+            .await
+            .map_err(|e| Error::Http(e.without_url()))?;
+        if lookup.users.len() != 1 {
+            return Err(Error::Invalid("invalid account lookup identity".into()));
+        }
+        let user = lookup.users.into_iter().next().ok_or(Error::SignedOut)?;
+        if user.local_id != self.uid
+            || !user
+                .provider_user_info
+                .iter()
+                .any(|p| p.provider_id == provider.id())
+        {
+            return Err(Error::Invalid(
+                "invalid account lookup identity or provider".into(),
+            ));
+        }
+        let session = Session {
             api_key: FIREBASE_API_KEY.into(),
-            uid: self.uid,
-            email: self.email,
-            display_name: self.display_name,
-            providers: self.providers,
+            uid: user.local_id,
+            email: user.email,
+            display_name: user.display_name,
+            providers: user
+                .provider_user_info
+                .into_iter()
+                .map(|p| p.provider_id)
+                .collect(),
             refresh_token: self.refresh_token,
             id_token: self.id_token,
-            expires_at: self.expires_at,
-        })
+            // Force one refresh, regardless of any expiry claimed by the page.
+            expires_at: Timestamp(OffsetDateTime::UNIX_EPOCH),
+        };
+        let manager = TokenManager::with_endpoint(session, Arc::new(VolatileStore), refresh)?;
+        manager.id_token().await?;
+        manager
+            .state
+            .lock()
+            .await
+            .session
+            .clone()
+            .ok_or(Error::SignedOut)
     }
 }
 
@@ -448,32 +536,5 @@ mod sign_in_tests {
             assert_eq!(params["event"], "random-event");
         }
         assert!(serde_json::from_str::<SignInProvider>("\"github.com\"").is_err());
-    }
-
-    #[test]
-    fn captured_credentials_are_validated() {
-        let valid = serde_json::json!({"uid":"user", "email":null, "displayName":null,
-            "providers":["google.com"], "refreshToken":"refresh", "idToken":"id",
-            "expiresAt":"2099-01-01T00:00:00Z"});
-        let capture: CapturedSession = serde_json::from_value(valid.clone()).unwrap();
-        assert_eq!(
-            capture
-                .into_session(SignInProvider::Google)
-                .unwrap()
-                .api_key,
-            FIREBASE_API_KEY
-        );
-        for (key, value) in [
-            ("uid", serde_json::json!("")),
-            ("refreshToken", serde_json::json!("")),
-            ("idToken", serde_json::json!("")),
-            ("expiresAt", serde_json::json!("2000-01-01T00:00:00Z")),
-            ("providers", serde_json::json!(["twitter.com"])),
-        ] {
-            let mut invalid = valid.clone();
-            invalid[key] = value;
-            let capture: CapturedSession = serde_json::from_value(invalid).unwrap();
-            assert!(capture.into_session(SignInProvider::Google).is_err());
-        }
     }
 }
