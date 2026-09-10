@@ -10,8 +10,8 @@ export function plainColumn(source: string): string {
         )
       )
         return "";
-      if (node.kind === "warigaki") return node.segments!.join("");
-      return node.segments?.[0] ?? node.source;
+      if (node.kind === "warigaki") return node.segments!.map(plainColumn).join("");
+      return node.segments ? plainColumn(node.segments[0]) : node.source;
     })
     .join("");
 }

@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import fixture from "../../fixtures/api/page-minna-ocr.json";
 import { pageLines, type CanvasLine } from "../client-api/ocr";
 import type { Page } from "../client-api/types";
-import { alignColumns, dice, transcriptionColumns } from "./align";
+import { alignColumns, dice, transcriptionColumns, plainColumn } from "./align";
 const lines = (...texts: string[]): CanvasLine[] =>
   texts.map((text, index) => ({
     index: index + 10,
@@ -76,4 +76,10 @@ test("folding, multiset bigrams and plain source columns", () => {
     { sourceIndex: 2, text: "峰" },
     { sourceIndex: 4, text: "一行二行讀ム" },
   ]);
+});
+
+test("nested readings do not enter facsimile matching text", () => {
+  expect(
+    plainColumn("《割書：《振り仮名：峰｜みね》｜《見せ消ち：旧｜新》》"),
+  ).toBe("峰旧");
 });
