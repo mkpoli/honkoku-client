@@ -1,5 +1,5 @@
 import { parseLine } from "./syntax";
-export { parse, serialize, parseLine } from "./syntax";
+export { parse, serialize, parseLine, allowsChild } from "./syntax";
 export type {
   SyntaxTree,
   SyntaxNode,
@@ -124,19 +124,34 @@ export function renderInline(nodes: Inline[]): string {
         case "editorial":
         case "comment":
         case "glyph":
-          return `<span class="markup-${node.kind}">${escape(node.text)}</span>`;
-        case "ruby": {
-          const ruby = `<ruby>${escape(node.base)}<rp>（</rp><rt>${escape(node.annotation)}</rt><rp>）</rp></ruby>`;
-          return node.segments?.[2] === undefined
-            ? ruby
-            : `<ruby class="markup-double-ruby">${ruby}<rt class="markup-left-ruby">${escape(node.segments[2])}</rt></ruby>`;
-        }
+          return `<span class="markup-${node.kind} editor-${node.kind}">${escape(node.text)}</span>`;
+        case "ruby":
         case "warichu":
-          return `<span class="markup-warichu">${(node.segments ?? [node.base, node.annotation]).map((part) => `<span>${escape(part)}</span>`).join("")}</span>`;
-        case "correction":
-          return `<span class="markup-correction"><s>${escape(node.base)}</s><span>${escape(node.annotation)}</span></span>`;
+        case "correction": {
+          const kind = {
+            ruby: "ruby",
+            warichu: "warigaki",
+            correction: "misekechi",
+          }[node.kind];
+          const values = node.segments ?? [node.base, node.annotation];
+          const tag = kind === "ruby" ? "ruby" : "span";
+          return `<${tag} class="editor-annotation editor-${kind}">${values
+            .map((part, i) => {
+              const role =
+                kind === "warigaki"
+                  ? `line-${i}`
+                  : i === 0
+                    ? "base"
+                    : i === 1
+                      ? "right"
+                      : "left";
+              const content = renderInline(parseInline(part));
+              return `<span class="editor-segment editor-${role}">${kind === "ruby" && i > 0 ? `<rt class="editor-reading">${content}</rt>` : content}</span>`;
+            })
+            .join("")}</${tag}>`;
+        }
         case "emphasis":
-          return `<span class="markup-emphasis">${[...graphemes.segment(node.base)].map((g) => `<ruby>${escape(g.segment)}<rt>${escape(node.annotation)}</rt></ruby>`).join("")}</span>`;
+          return `<span class="editor-annotation editor-kenten" style="--kenten-mark: &quot;${escape(node.annotation)}&quot;"><span class="editor-segment editor-base">${renderInline(parseInline(node.base))}</span></span>`;
         case "reference":
           return `<button class="markup-reference" data-note="${node.number}" aria-label="注記${node.number}">＃${node.number}</button>`;
         case "reading":
