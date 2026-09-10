@@ -4,6 +4,7 @@ import { mkdir } from "node:fs/promises";
 export async function checkEditor(browser: Browser, origin: string) {
   const context = await browser.newContext({
     viewport: { width: 1600, height: 1000 },
+    deviceScaleFactor: 2,
     locale: "ja-JP",
     reducedMotion: "reduce",
   });
@@ -81,128 +82,15 @@ export async function checkEditor(browser: Browser, origin: string) {
     await reset(page, "峰\r\n変えない＃００１\r《未知：原文》");
     await select(page, 1, 2);
     await page.getByRole("button", { name: "振り仮名", exact: true }).click();
-    await page.getByLabel("読み", { exact: true }).fill("みね");
-    await page.getByRole("button", { name: "挿入", exact: true }).click();
+    await page.keyboard.insertText("みね");
     assert.equal(
       await source(page),
       "《振り仮名：峰｜みね》\r\n変えない＃００１\r《未知：原文》",
     );
     await equal(page);
-    await page.getByRole("button", { name: "元に戻す", exact: true }).click();
+    await page.keyboard.press("ArrowRight");
+    await page.keyboard.press("Control+z");
     assert.equal(await source(page), "峰\r\n変えない＃００１\r《未知：原文》");
-    await equal(page);
-    await page.getByRole("button", { name: "やり直す", exact: true }).click();
-    await page.locator(".editor-ruby > .editor-right").click();
-    await page.keyboard.type("A");
-    assert.ok((await source(page)).includes("A"));
-    await equal(page);
-
-    for (const [button, expected] of [
-      ["割書", "《割書：峰｜》"],
-      ["見せ消ち", "《見せ消ち：峰｜》"],
-    ]) {
-      await reset(page, "峰\n残す");
-      await select(page, 1, 2);
-      await page.getByRole("button", { name: button, exact: true }).click();
-      await page.getByRole("button", { name: "挿入", exact: true }).click();
-      assert.equal(await source(page), expected + "\n残す");
-      await equal(page);
-    }
-    await reset(page, "前後");
-    await select(page, 2);
-    await page.getByRole("button", { name: "割書", exact: true }).click();
-    await page.getByLabel("1行目", { exact: true }).fill("一");
-    await page.getByLabel("2行目", { exact: true }).fill("二");
-    await page.getByRole("button", { name: "挿入", exact: true }).click();
-    const secondLine = page
-      .locator(".editor-warigaki > .editor-segment")
-      .nth(1);
-    await secondLine.click({ position: { x: 6, y: 1 } });
-    await page.keyboard.press("ArrowDown");
-    await page.keyboard.type("x");
-    assert.equal(await source(page), "前《割書：一｜二x》後");
-    assert.equal(
-      await secondLine.evaluate((e) => getComputedStyle(e).fontSize),
-      "13px",
-    );
-    await equal(page);
-    await reset(page, "前後");
-    await select(page, 2);
-    await page.getByRole("button", { name: "割書", exact: true }).click();
-    await page.getByLabel("1行目", { exact: true }).fill("一");
-    await page.getByRole("button", { name: "挿入", exact: true }).click();
-    await page.locator(".editor-warigaki > .editor-segment").nth(1).click();
-    await page.keyboard.type("two");
-    assert.equal(await source(page), "前《割書：一｜two》後");
-    await equal(page);
-    await reset(page, "文\n残す");
-    await select(page, 2);
-    await page.getByRole("button", { name: "欠字", exact: true }).hover();
-    await page.getByRole("button", { name: "欠字□", exact: true }).click();
-    await page.getByRole("button", { name: "注記", exact: true }).click();
-    await page.getByLabel("注記の内容", { exact: true }).fill("欄外の注記");
-    await page.getByRole("button", { name: "追加", exact: true }).click();
-    await page.getByRole("button", { name: "合字", exact: true }).hover();
-    await page.getByRole("button", { name: "合字ゟ", exact: true }).click();
-    assert.equal(await source(page), "文□＃1ゟ\n残す");
-    await equal(page);
-    await page.getByRole("button", { name: "原文表示", exact: true }).click();
-    await page
-      .getByRole("textbox", { name: "原文を編集", exact: true })
-      .fill(
-        "【右丁】\r\n《割書：一｜二｜三｜四》\r\n【左丁】\n《振り仮名：未｜いまだ｜ズ》",
-      );
-    await equal(page);
-    await page.getByRole("button", { name: "原文表示", exact: true }).click();
-    assert.equal(await page.locator(".editor-half-divider").count(), 2);
-    assert.equal(
-      await page.locator(".editor-warigaki > .editor-segment").count(),
-      4,
-    );
-    assert.equal(
-      await page.locator(".editor-ruby > .editor-segment").count(),
-      3,
-    );
-    for (const selector of [
-      ".editor-warigaki > .editor-segment",
-      ".editor-ruby > .editor-segment",
-    ]) {
-      const count = await page.locator(selector).count();
-      for (let i = 0; i < count; i++) {
-        await page.locator(selector).nth(i).click();
-        await page.keyboard.type("x");
-        await equal(page);
-      }
-    }
-    assert.equal((await source(page)).match(/x/g)?.length, 7);
-
-    await reset(page, "《振り仮名：峰｜みね》\n残す");
-    await select(page, 3);
-    await page.locator(".vertical-editor").evaluate((dom) => {
-      const data = new DataTransfer();
-      data.setData("text/plain", "a\nb");
-      dom.dispatchEvent(
-        new ClipboardEvent("paste", {
-          bubbles: true,
-          cancelable: true,
-          clipboardData: data,
-        }),
-      );
-    });
-    assert.equal(await source(page), "《振り仮名：a\nb峰｜みね》\n残す");
-    await equal(page);
-    await reset(page, "一\r\n二\r三");
-    const rawInput = page.getByRole("textbox", { name: "原文", exact: true });
-    await rawInput.focus();
-    await rawInput.evaluate((e: HTMLTextAreaElement) =>
-      e.setSelectionRange(2, 2),
-    );
-    await page.keyboard.type("X");
-    assert.equal(await source(page), "一\r\nX二\r三");
-    await press("Control+z");
-    assert.equal(await source(page), "一\r\n二\r三");
-    await press("Control+Shift+z");
-    assert.equal(await source(page), "一\r\nX二\r三");
     await reset(page, "前後\r\n保存＃００１");
     await select(page, 2);
     const cdp = await context.newCDPSession(page);
@@ -355,6 +243,52 @@ export async function checkEditor(browser: Browser, origin: string) {
     assert.equal(await source(page), "前かな後\n別列");
     await equal(page);
 
+    for (const [key, expected] of [
+      ["Control+r", "前《振り仮名：仮名｜》後"],
+      ["Control+w", "前《割書：仮名｜》後"],
+      ["Control+m", "前《見せ消ち：｜仮名》後"],
+    ]) {
+      await reset(page, "前後");
+      await select(page, 2);
+      await page.keyboard.press(key);
+      await cdp.send("Input.imeSetComposition", {
+        text: "かな",
+        selectionStart: 2,
+        selectionEnd: 2,
+      });
+      await cdp.send("Input.insertText", { text: "仮名" });
+      await page.waitForTimeout(100);
+      assert.equal(await source(page), expected);
+      await equal(page);
+    }
+    await reset(page, "前後");
+    await select(page, 2);
+    await page.keyboard.press("Control+w");
+    await page.keyboard.press("Control+r");
+    await page.keyboard.press("Tab");
+    await cdp.send("Input.imeSetComposition", {
+      text: "かな",
+      selectionStart: 2,
+      selectionEnd: 2,
+    });
+    await cdp.send("Input.insertText", { text: "仮名" });
+    await page.waitForTimeout(100);
+    assert.equal(await source(page), "前《割書：《振り仮名：｜仮名》｜》後");
+    await equal(page);
+
+    await reset(page, "前《振り仮名：峰｜みね》後");
+    await select(page, 4, 5);
+    await page.keyboard.press("Backspace");
+    await cdp.send("Input.imeSetComposition", {
+      text: "かな",
+      selectionStart: 2,
+      selectionEnd: 2,
+    });
+    await cdp.send("Input.insertText", { text: "仮名" });
+    await page.waitForTimeout(100);
+    assert.equal(await source(page), "前《振り仮名：仮名｜みね》後");
+    await equal(page);
+
     const benchmark = Array.from(
       { length: 20 },
       (_, i) =>
@@ -487,4 +421,311 @@ async function select(page: Page, from: number, to = from) {
     },
     { from, to },
   );
+}
+
+export async function checkInlineEditor(
+  browser: Browser,
+  origin: string,
+  theme: "light" | "dark",
+  suffix = "",
+) {
+  const context = await browser.newContext({
+    viewport: { width: 2000, height: 1100 },
+    deviceScaleFactor: 2,
+    locale: "ja-JP",
+    colorScheme: theme,
+    reducedMotion: "reduce",
+  });
+  const page = await context.newPage();
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  const button = (name: string) =>
+    page.getByRole("button", { name, exact: true });
+  try {
+    await page.goto(origin + "/#/spike/editor");
+    await page.locator(".vertical-editor").waitFor();
+    await page.evaluate(() => document.fonts.ready);
+    await reset(page, "一二三\n四五六");
+    await select(page, 1);
+    const points = await page.evaluate(() => {
+      const columns = document.querySelectorAll(
+        ".vertical-editor .transcription-column",
+      );
+      return [...columns].map((column) => {
+        const range = document.createRange();
+        range.setStart(column.firstChild!, 0);
+        range.setEnd(column.firstChild!, 1);
+        const r = range.getBoundingClientRect();
+        return { x: (r.left + r.right) / 2, y: r.top, advance: r.height };
+      });
+    });
+    await page.mouse.move(points[0].x, points[0].y + 1);
+    await page.mouse.down();
+    await page.mouse.move(points[1].x, points[1].y + points[1].advance * 2, {
+      steps: 20,
+    });
+    await page.mouse.up();
+    assert.equal(
+      await page.evaluate(() => {
+        const v = window.editorSpike!.view;
+        return v.someProp("clipboardTextSerializer")!(
+          v.state.selection.content(),
+          v,
+        );
+      }),
+      "一二三\n四五",
+    );
+    assert.equal(
+      await page.evaluate(() => window.getSelection()!.isCollapsed),
+      false,
+    );
+    if (!suffix) {
+      await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+      await page.keyboard.press("Control+c");
+      assert.equal(
+        await page.evaluate(() => navigator.clipboard.readText()),
+        "一二三\n四五",
+      );
+    }
+    await select(page, 6);
+    await page.keyboard.press("Shift+ArrowRight");
+    assert.equal(
+      await page.evaluate(() => window.editorSpike!.view.state.selection.empty),
+      false,
+    );
+    await select(page, 1);
+    await page.keyboard.press("Control+a");
+    assert.equal(
+      await page.evaluate(() => window.editorSpike!.view.state.selection.to),
+      4,
+    );
+    await page.keyboard.press("Control+a");
+    assert.equal(
+      await page.evaluate(() => window.editorSpike!.view.state.selection.to),
+      9,
+    );
+
+    await reset(page, "かな漢字かな");
+    const kanji = await page
+      .locator(".transcription-column")
+      .first()
+      .evaluate((el) => {
+        const range = document.createRange();
+        range.setStart(el.firstChild!, 2);
+        range.setEnd(el.firstChild!, 3);
+        const r = range.getBoundingClientRect();
+        return { x: (r.left + r.right) / 2, y: r.top + 2 };
+      });
+    await page.mouse.dblclick(kanji.x, kanji.y);
+    assert.equal(
+      await page.evaluate(() => window.getSelection()!.toString()),
+      "漢字",
+    );
+
+    await reset(page, "前後");
+    await select(page, 2);
+    await page.keyboard.press("Control+w");
+    assert.equal(await source(page), "前《割書：｜》後");
+    await page.keyboard.insertText("一");
+    await page.keyboard.press("Enter");
+    await page.keyboard.insertText("二");
+    assert.equal(await source(page), "前《割書：一｜二》後");
+    await page.keyboard.press("Enter");
+    await page.keyboard.press("Enter");
+    await page.keyboard.press("Enter");
+    assert.equal(await source(page), "前《割書：一｜二｜｜》後");
+    await page.keyboard.press("Backspace");
+    await page.keyboard.press("Backspace");
+    assert.equal(await source(page), "前《割書：一｜二》後");
+    await page.keyboard.press("Control+r");
+    await page.keyboard.insertText("峰");
+    await page.keyboard.press("Tab");
+    await page.keyboard.insertText("みね");
+    await page.keyboard.press("Control+w");
+    assert.match(
+      await page.locator(".editor-status").innerText(),
+      /入れられません/,
+    );
+    await page.keyboard.press("ArrowRight");
+    assert.equal(
+      await source(page),
+      "前《割書：一｜二《振り仮名：峰｜みね》》後",
+    );
+    await equal(page);
+    await page.keyboard.press("Escape");
+    await page.keyboard.insertText("続");
+    assert.equal(
+      await source(page),
+      "前《割書：一｜二《振り仮名：峰｜みね》》続後",
+    );
+    await page.screenshot({
+      path: `.local/shots/14-inline-editing-${theme}${suffix}.png`,
+      caret: "initial",
+    });
+
+    for (const key of ["Control+r", "Control+w", "Control+m"]) {
+      await reset(page, "前後");
+      await select(page, 2);
+      await page.keyboard.press(key);
+      await page.keyboard.press("Escape");
+      assert.equal(await source(page), "前後");
+    }
+    await reset(page, "前後");
+    await select(page, 2);
+    await page.keyboard.press("Control+w");
+    await page.keyboard.press("Control+r");
+    await page.keyboard.insertText("山");
+    await page.keyboard.press("Tab");
+    await page.keyboard.insertText("やま");
+    await page.keyboard.press("ArrowRight");
+    await page.keyboard.press("Enter");
+    await page.keyboard.insertText("川");
+    assert.equal(
+      await source(page),
+      "前《割書：《振り仮名：山｜やま》｜川》後",
+    );
+    await equal(page);
+
+    await page.keyboard.press("Escape");
+    await select(page, 2);
+    await page.locator(".vertical-editor").evaluate((dom) => {
+      const clipboardData = new DataTransfer();
+      clipboardData.setData(
+        "text/plain",
+        "《割書：《振り仮名：峰｜みね》｜二》",
+      );
+      dom.dispatchEvent(
+        new ClipboardEvent("paste", {
+          bubbles: true,
+          cancelable: true,
+          clipboardData,
+        }),
+      );
+    });
+    assert.ok(
+      (await source(page)).startsWith("前《割書：《振り仮名：峰｜みね》｜二》"),
+    );
+    assert.equal(await page.locator(".editor-warigaki").count(), 2);
+    await equal(page);
+    await button("原文表示").click();
+    const raw = page.getByRole("textbox", { name: "原文を編集", exact: true });
+    for (const title of ["振り仮名", "割書", "見せ消ち"]) {
+      await raw.fill("前後");
+      await raw.evaluate((el: HTMLTextAreaElement) =>
+        el.setSelectionRange(1, 1),
+      );
+      await button(title).click();
+      assert.equal(await raw.inputValue(), `前《${title}：｜》後`);
+      await page.keyboard.insertText("一");
+      assert.equal(await raw.inputValue(), `前《${title}：一｜》後`);
+    }
+    await raw.fill("前後");
+    await raw.evaluate((el: HTMLTextAreaElement) => el.setSelectionRange(1, 1));
+    await page.keyboard.press("Control+n");
+    assert.equal(await raw.inputValue(), "前＃1後");
+    assert.equal(
+      await page
+        .getByLabel("注記の内容", { exact: true })
+        .evaluate((e) => e === document.activeElement),
+      true,
+    );
+    await page.keyboard.insertText("欄外の注記");
+    await page.keyboard.press("Escape");
+    assert.equal(await raw.evaluate((e) => e === document.activeElement), true);
+    await button("原文表示").click();
+
+    const layout = await Bun.file(
+      new URL("../../fixtures/markup/layout-samples.txt", import.meta.url),
+    ).text();
+    await reset(page, layout);
+    await select(page, 1);
+    const { parseInline, renderInline } = await import("../../packages/markup");
+    const html = layout
+      .split("\n")
+      .map(
+        (line) =>
+          `<div class="transcription-column">${renderInline(parseInline(line))}</div>`,
+      )
+      .join("");
+    await page.evaluate((html) => {
+      const panel = document.querySelector(".editor-source-panel")!;
+      panel.innerHTML =
+        '<div class="pane-toolbar"><h2>表示</h2></div><div class="transcription"><div class="columns">' +
+        html +
+        "</div></div>";
+      document.querySelector<HTMLElement>(
+        ".editor-spike-panes",
+      )!.style.gridTemplateColumns = "1fr 1fr";
+    }, html);
+    await page.evaluate(() => document.fonts.ready);
+    const geometry = await page
+      .locator(".editor-annotation")
+      .evaluateAll((nodes) =>
+        nodes.flatMap((el) => {
+          const rect = el.getBoundingClientRect();
+          const font = parseFloat(getComputedStyle(el).fontSize);
+          if (el.classList.contains("editor-ruby")) {
+            const reading = el
+              .querySelector(":scope > .editor-right")!
+              .getBoundingClientRect();
+            return [
+              {
+                kind: "ruby",
+                centered: Math.abs(
+                  reading.top + reading.height / 2 - rect.top - rect.height / 2,
+                ),
+                right: reading.left >= rect.right - 1,
+                compact:
+                  rect.height <=
+                  el.firstElementChild!.getBoundingClientRect().height + 1,
+              },
+            ];
+          }
+          if (el.classList.contains("editor-warigaki")) {
+            const lines = [...el.children].map((line) =>
+              line.getBoundingClientRect(),
+            );
+            return [
+              {
+                kind: "warigaki",
+                centered: Math.max(
+                  ...lines.map((line) => Math.abs(line.top - rect.top)),
+                ),
+                right: lines.every(
+                  (line, i) => !i || lines[i - 1].left >= line.right - 1,
+                ),
+                compact:
+                  Math.abs(
+                    rect.height - Math.max(...lines.map((line) => line.height)),
+                  ) < 1,
+              },
+            ];
+          }
+          return [];
+        }),
+      );
+    for (const item of geometry) {
+      assert.ok(item.centered < 1, JSON.stringify(item));
+      assert.ok(item.right && item.compact, JSON.stringify(item));
+    }
+    await page.mouse.move(0, 0);
+    await page.screenshot({
+      path: `.local/shots/14-layout-samples-${theme}${suffix}.png`,
+    });
+    assert.equal(
+      await page
+        .locator(
+          ".vertical-editor .editor-warigaki .editor-ruby > .editor-right",
+        )
+        .first()
+        .evaluate((el) => getComputedStyle(el).fontSize),
+      "6.5px",
+    );
+    assert.deepEqual(errors, []);
+    console.log(
+      `Inline editor checks passed (${theme}${suffix}): drag, script runs, keyboard selection, source clipboard, shells, nesting, raw templates, notes, layout.`,
+    );
+  } finally {
+    await context.close();
+  }
 }

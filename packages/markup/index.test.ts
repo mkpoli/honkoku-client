@@ -15,7 +15,7 @@ describe("transcription projection", () => {
       ).map((n) => n.kind),
     ).toEqual(["ruby", "warichu", "correction", "emphasis"]);
     expect(renderInline(parseInline("《振り仮名：峰｜みね》"))).toContain(
-      "<rt>みね</rt>",
+      '<rt class="editor-reading">みね</rt>',
     );
   });
   test("unfamiliar and malformed syntax survives as text", () => {

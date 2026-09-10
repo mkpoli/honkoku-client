@@ -15,7 +15,13 @@ import { Decoration, DecorationSet, EditorView } from "prosemirror-view";
 import { history, undo, redo, closeHistory } from "prosemirror-history";
 import { keymap } from "prosemirror-keymap";
 import { baseKeymap } from "prosemirror-commands";
-import { transcriptionColumns, parse, type SyntaxNode } from "@honkoku/markup";
+import {
+  transcriptionColumns,
+  parse,
+  parseLine,
+  allowsChild,
+  type SyntaxNode,
+} from "@honkoku/markup";
 export { undo, redo, TextSelection };
 
 const annotationNames: Record<string, string> = {
@@ -39,20 +45,29 @@ const nodes: Record<string, NodeSpec> = {
   text: { group: "inline" },
   segment: {
     inline: true,
-    content: "text*",
-    attrs: { role: { default: "base" } },
+    content: "inline*",
+    attrs: {
+      role: { default: "base" },
+      reading: { default: false },
+      placeholder: { default: false },
+    },
     toDOM: (node) => [
       "span",
       {
         class: `editor-segment editor-${node.attrs.role}`,
         "data-segment": node.attrs.role,
+        "data-placeholder": String(node.attrs.placeholder),
       },
-      0,
+      node.attrs.reading ? ["rt", { class: "editor-reading" }, 0] : 0,
     ],
     parseDOM: [
       {
-        tag: "span[data-segment]",
-        getAttrs: (e) => ({ role: e.getAttribute("data-segment") }),
+        tag: "[data-segment]",
+        getAttrs: (e) => ({
+          role: e.getAttribute("data-segment"),
+          reading: !!e.querySelector("rt"),
+          placeholder: e.getAttribute("data-placeholder") === "true",
+        }),
       },
     ],
   },
@@ -108,7 +123,7 @@ for (const name of [...Object.keys(annotationNames), "return", "okurigana"]) {
       form: { default: "bracket" },
     },
     toDOM: (node) => [
-      "span",
+      name === "ruby" ? "ruby" : "span",
       {
         class: `editor-annotation editor-${name}`,
         "data-annotation": name,
@@ -118,7 +133,7 @@ for (const name of [...Object.keys(annotationNames), "return", "okurigana"]) {
     ],
     parseDOM: [
       {
-        tag: `span[data-annotation="${name}"]`,
+        tag: `[data-annotation="${name}"]`,
         getAttrs: (e) => ({ form: e.getAttribute("data-form") ?? "bracket" }),
       },
     ],
@@ -127,7 +142,7 @@ for (const name of [...Object.keys(annotationNames), "return", "okurigana"]) {
 export const schema = new Schema({ nodes });
 function parts(node: PMNode): string[] {
   const values: string[] = [];
-  node.forEach((child) => values.push(child.textContent));
+  node.forEach((child) => values.push(columnSource(child)));
   return values;
 }
 export function annotation(
@@ -143,8 +158,12 @@ export function annotation(
     attrs,
     values.map((text, i) =>
       schema.nodes.segment.create(
-        { role: roles[i] },
-        text ? schema.text(text) : undefined,
+        {
+          role: roles[i],
+          reading: kind === "ruby" && i > 0,
+          placeholder: !text,
+        },
+        text ? parseLine(text).map(project) : schema.text("\u200b"),
       ),
     ),
   );
@@ -174,8 +193,8 @@ export function fromMarkup(source: string): PMNode {
   );
 }
 function inlineSource(node: PMNode): string {
-  if (node.isText || node.type.name === "raw" || node.type.name === "segment")
-    return node.textContent;
+  if (node.isText || node.type.name === "raw") return node.textContent;
+  if (node.type.name === "segment") return columnSource(node);
   if (node.type.name === "source") return node.attrs.source;
   const values = parts(node);
   if (
@@ -192,7 +211,7 @@ function inlineSource(node: PMNode): string {
 export function columnSource(column: PMNode): string {
   let value = "";
   column.forEach((node) => (value += inlineSource(node)));
-  return value;
+  return column.attrs.placeholder ? value.replace("\u200b", "") : value;
 }
 export function toMarkup(doc: PMNode): string {
   let source = "";
@@ -290,37 +309,171 @@ export function sourcePatches(tr: Transaction): SourcePatch[] {
   }
   return patches;
 }
-export const wrapSelection =
-  (kind: "ruby" | "warigaki" | "misekechi", reading = ""): Command =>
+export type ConstructKind = "ruby" | "warigaki" | "misekechi";
+function canInsert(state: EditorState, kind: string): boolean {
+  const { $from, $to } = state.selection;
+  if (!$from.sameParent($to)) return false;
+  const parent =
+    $from.parent.type.name === "segment"
+      ? $from.node($from.depth - 1).type.name
+      : $from.parent.type.name;
+  if (!allowsChild(parent, kind)) return false;
+  let valid = true;
+  state.selection.content().content.descendants((node) => {
+    if (node.type.name === "column" || node.type.name === "segment") return;
+    if (
+      !allowsChild(
+        kind,
+        node.type.name === "source" ? node.attrs.kind : node.type.name,
+      )
+    )
+      valid = false;
+  });
+  return valid;
+}
+export const insertAnnotation =
+  (kind: ConstructKind, values: string[]): Command =>
   (state, dispatch) => {
-    const { from, to, $from, $to } = state.selection;
-    if ($from.depth !== 1 || $to.depth !== 1 || !$from.sameParent($to))
-      return false;
-    let plain = true;
-    state.doc.nodesBetween(from, to, (node) => {
-      if (!node.isText && node.type.name !== "column") plain = false;
-    });
-    if (!plain) return false;
-    const value = state.doc.textBetween(from, to);
-    if (dispatch)
-      dispatch(
-        closeHistory(state.tr)
-          .replaceSelectionWith(annotation(kind, [value, reading]), false)
-          .scrollIntoView(),
-      );
+    if (!canInsert(state, kind)) return false;
+    const node = annotation(kind, values);
+    const tr = closeHistory(state.tr).replaceSelectionWith(node, false);
+    dispatch?.(tr.scrollIntoView());
     return true;
   };
-export const insertAnnotation =
-  (kind: "ruby" | "warigaki" | "misekechi", values: string[]): Command =>
+export const wrapSelection =
+  (kind: ConstructKind, reading = ""): Command =>
   (state, dispatch) => {
-    if (!wrapSelection(kind)(state)) return false;
+    if (!canInsert(state, kind)) return false;
+    const { from, to, empty } = state.selection;
+    const value = columnSource(
+      state.selection.$from.parent.cut(
+        state.selection.$from.parentOffset,
+        state.selection.$to.parentOffset,
+      ),
+    );
+    const node = annotation(kind, [kind === "warigaki" ? "" : value, reading]);
+    const tr = closeHistory(state.tr).replaceWith(from, to, node);
+    const first = from + 2;
+    const target =
+      kind !== "warigaki" && (!empty || kind === "misekechi")
+        ? first + node.firstChild!.nodeSize
+        : first;
     dispatch?.(
-      closeHistory(state.tr)
-        .replaceSelectionWith(annotation(kind, values), false)
-        .scrollIntoView(),
+      tr.setSelection(TextSelection.create(tr.doc, target)).scrollIntoView(),
     );
     return true;
   };
+export const selectColumn: Command = (state, dispatch) => {
+  const { $head, from, to } = state.selection;
+  const start = $head.start(1),
+    end = $head.end(1);
+  dispatch?.(
+    state.tr.setSelection(
+      TextSelection.create(
+        state.doc,
+        from === start && to === end ? 1 : start,
+        from === start && to === end ? state.doc.content.size - 1 : end,
+      ),
+    ),
+  );
+  return true;
+};
+/** Navigate the closest editable compound without splitting its source column. */
+export function shellKey(key: string, backwards = false): Command {
+  return (state, dispatch) => {
+    const { $head } = state.selection;
+    if ($head.parent.type.name !== "segment") return false;
+    const depth = $head.depth - 1,
+      node = $head.node(depth);
+    const index = $head.index(depth),
+      start = $head.before(depth);
+    const move = (pos: number, tr = state.tr) => {
+      dispatch?.(
+        tr.setSelection(TextSelection.create(tr.doc, pos)).scrollIntoView(),
+      );
+      return true;
+    };
+    if (key === "Escape" || key === "ArrowRight")
+      return move(start + node.nodeSize);
+    if (key === "Tab" || (key === "Enter" && node.type.name === "warigaki")) {
+      const next = index + (backwards ? -1 : 1);
+      if (next < 0) return move(start);
+      if (next < node.childCount) {
+        let pos = start + 2;
+        for (let i = 0; i < next; i++) pos += node.child(i).nodeSize;
+        return move(pos);
+      }
+      if (key === "Enter" && node.childCount < 4) {
+        const pos = start + node.nodeSize - 1;
+        const tr = state.tr.insert(
+          pos,
+          schema.nodes.segment.create(
+            { role: `line-${next}`, placeholder: true },
+            schema.text("\u200b"),
+          ),
+        );
+        return move(pos + 1, tr);
+      }
+      if (key === "Enter") return true;
+      return move(start + node.nodeSize);
+    }
+    if (
+      key === "Backspace" &&
+      !columnSource($head.parent) &&
+      node.type.name === "warigaki"
+    ) {
+      if (index === 0 && parts(node).every((part) => !part))
+        return move(start, state.tr.delete(start, start + node.nodeSize));
+      if (index === 1 && node.childCount === 2) {
+        const content = schema.nodes.column.create(
+          null,
+          parseLine(columnSource(node.firstChild!)).map(project),
+        ).content;
+        return move(
+          start + content.size,
+          state.tr.replaceWith(start, start + node.nodeSize, content),
+        );
+      }
+      if (index === node.childCount - 1 && node.childCount > 2) {
+        const from = $head.before();
+        return move(from - 1, state.tr.delete(from, $head.after()));
+      }
+      return true;
+    }
+    return false;
+  };
+}
+function activeShells(state: EditorState): Set<number> {
+  const result = new Set<number>();
+  const { $head } = state.selection;
+  for (let depth = 1; depth <= $head.depth; depth++)
+    if (["ruby", "warigaki", "misekechi"].includes($head.node(depth).type.name))
+      result.add($head.before(depth));
+  return result;
+}
+function emptyShells(
+  state: EditorState,
+  positions: Set<number>,
+  force = false,
+): Transaction | null {
+  const tr = state.tr;
+  const removals: { from: number; to: number }[] = [];
+  state.doc.descendants((node, pos) => {
+    if (!["ruby", "warigaki", "misekechi"].includes(node.type.name)) return;
+    if (
+      positions.has(pos) &&
+      parts(node).every((part) => !part) &&
+      (force ||
+        state.selection.head <= pos ||
+        state.selection.head >= pos + node.nodeSize)
+    ) {
+      removals.push({ from: pos, to: pos + node.nodeSize });
+      return false;
+    }
+  });
+  for (const { from, to } of removals.reverse()) tr.delete(from, to);
+  return removals.length ? tr : null;
+}
 export const insertText =
   (text: string): Command =>
   (state, dispatch) => {
@@ -330,11 +483,7 @@ export const insertText =
 export const insertSource =
   (text: string): Command =>
   (state, dispatch) => {
-    if (
-      state.selection.$from.depth !== 1 ||
-      !state.selection.$from.sameParent(state.selection.$to)
-    )
-      return false;
+    if (!canInsert(state, "reference")) return false;
     const node = parse(text).columns[0].nodes[0];
     if (!node) return false;
     dispatch?.(
@@ -351,7 +500,8 @@ export const replaceSource =
     if (next.eq(state.doc)) return true;
     const tr = closeHistory(state.tr)
       .replaceWith(0, state.doc.content.size, next.content)
-      .setDocAttribute("newline", next.attrs.newline);
+      .setDocAttribute("newline", next.attrs.newline)
+      .setMeta("replaceSource", true);
     dispatch?.(tr);
     return true;
   };
@@ -363,6 +513,14 @@ function caretPositions(doc: PMNode, columnIndex: number): number[] {
   const column = doc.child(columnIndex);
   if (!column.childCount) positions.push(offset + 1);
   column.descendants((node, pos) => {
+    if (
+      node.type.name === "segment" &&
+      node.attrs.placeholder &&
+      !columnSource(node)
+    ) {
+      positions.push(offset + 2 + pos);
+      return false;
+    }
     if (node.isText) {
       for (const part of segmenter.segment(node.text!))
         positions.push(offset + 1 + pos + part.index);
@@ -463,6 +621,50 @@ function decorations(doc: PMNode): DecorationSet {
   });
   return DecorationSet.create(doc, decorations);
 }
+function textPoint(view: EditorView, position: number) {
+  const point = view.domAtPos(position);
+  if (
+    point.node.nodeType === Node.TEXT_NODE &&
+    point.node.textContent === "\u200b"
+  )
+    return { node: point.node, offset: 1 };
+  if (point.node.nodeType === Node.ELEMENT_NODE) {
+    const next = point.node.childNodes[point.offset];
+    const previous = point.node.childNodes[point.offset - 1];
+    if (next?.nodeType === Node.TEXT_NODE)
+      return { node: next, offset: next.textContent === "\u200b" ? 1 : 0 };
+    if (previous?.nodeType === Node.TEXT_NODE)
+      return { node: previous, offset: previous.textContent!.length };
+  }
+  return point;
+}
+function normalizeFields(state: EditorState): Transaction | null {
+  const tr = state.tr;
+  const fields: { node: PMNode; pos: number }[] = [];
+  state.doc.descendants((node, pos) => {
+    if (
+      node.type.name === "segment" &&
+      ((node.attrs.placeholder && columnSource(node)) ||
+        (!node.attrs.placeholder && !node.content.size))
+    )
+      fields.push({ node, pos });
+  });
+  for (const { node, pos } of fields.reverse()) {
+    if (!node.content.size) {
+      tr.insertText("\u200b", pos + 1);
+      tr.setNodeMarkup(pos, undefined, { ...node.attrs, placeholder: true });
+      continue;
+    }
+    let offset = -1;
+    node.forEach((child, childPos) => {
+      if (child.isText && child.text!.includes("\u200b"))
+        offset = childPos + child.text!.indexOf("\u200b");
+    });
+    if (offset >= 0) tr.delete(pos + 1 + offset, pos + 2 + offset);
+    tr.setNodeMarkup(pos, undefined, { ...node.attrs, placeholder: false });
+  }
+  return fields.length ? tr : null;
+}
 /** Resolve vertical caret geometry from the adjacent character, including annotation fields. */
 export function verticalCaretRect(view: EditorView, position: number) {
   let { node, offset } = view.domAtPos(position);
@@ -516,6 +718,32 @@ export function verticalCaretRect(view: EditorView, position: number) {
   };
 }
 
+function pointerPosition(view: EditorView, x: number, y: number): number {
+  const columns = [...view.dom.children] as HTMLElement[];
+  const distance = (el: HTMLElement) => {
+    const r = el.getBoundingClientRect();
+    return Math.max(r.left - x, x - r.right, 0);
+  };
+  const column = columns.reduce((a, b) => (distance(b) < distance(a) ? b : a));
+  let positions = caretPositions(view.state.doc, columns.indexOf(column));
+  const segment = view.dom.ownerDocument
+    .elementFromPoint(x, y)
+    ?.closest(".editor-segment");
+  if (segment && view.dom.contains(segment)) {
+    const from = view.posAtDOM(segment, 0),
+      to = view.posAtDOM(segment, segment.childNodes.length);
+    const fields = positions.filter((pos) => pos >= from && pos <= to);
+    if (fields.length) positions = fields;
+  }
+  return positions
+    .map((pos) => {
+      const r = verticalCaretRect(view, pos);
+      const dx = Math.max(r.left - x, x - r.right, 0);
+      return { pos, distance: dx * dx + (r.top - y) ** 2 };
+    })
+    .sort((a, b) => a.distance - b.distance || b.pos - a.pos)[0].pos;
+}
+
 export interface EditorUpdate {
   source: string;
   serialized: string;
@@ -528,6 +756,7 @@ export function createEditor(
   source: string,
   onUpdate: (update: EditorUpdate) => void = () => {},
   oncolumnchange: (index: number) => void = () => {},
+  onstatus: (message: string) => void = () => {},
 ) {
   let current = source;
   let composing = false;
@@ -570,6 +799,22 @@ export function createEditor(
       },
     },
   });
+  let dragAnchor: number | undefined;
+  function dragMove(event: MouseEvent) {
+    if (dragAnchor === undefined || view.isDestroyed) return;
+    const pos = pointerPosition(view, event.clientX, event.clientY);
+    view.dispatch(
+      view.state.tr
+        .setSelection(TextSelection.create(view.state.doc, dragAnchor, pos))
+        .scrollIntoView(),
+    );
+    event.preventDefault();
+  }
+  function stopDrag() {
+    dragAnchor = undefined;
+    document.removeEventListener("mousemove", dragMove);
+    document.removeEventListener("mouseup", stopDrag);
+  }
   const view = new EditorView(element, {
     state: EditorState.create({
       doc: fromMarkup(source),
@@ -607,6 +852,32 @@ export function createEditor(
       spellcheck: "false",
     },
     nodeViews: {
+      segment(node, editorView, getPos) {
+        const dom = document.createElement("span");
+        dom.className = `editor-segment editor-${node.attrs.role}`;
+        dom.dataset.segment = node.attrs.role;
+        dom.dataset.placeholder = String(node.attrs.placeholder);
+        dom.classList.toggle("editor-empty-field", !!node.attrs.placeholder);
+        const contentDOM = node.attrs.reading
+          ? document.createElement("rt")
+          : dom;
+        if (contentDOM !== dom) {
+          contentDOM.className = "editor-reading";
+          dom.append(contentDOM);
+        }
+        return {
+          dom,
+          contentDOM,
+          setSelection(anchor, head) {
+            const pos = getPos();
+            if (pos === undefined) return;
+            const a = textPoint(editorView, pos + 1 + anchor);
+            const b = textPoint(editorView, pos + 1 + head);
+            const selection = dom.ownerDocument.getSelection();
+            selection?.setBaseAndExtent(a.node, a.offset, b.node, b.offset);
+          },
+        };
+      },
       kenten(node) {
         const dom = document.createElement("span");
         dom.className = "editor-annotation editor-kenten";
@@ -631,7 +902,13 @@ export function createEditor(
         event.keyCode === 229
       )
         return false;
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "a")
+        return selectColumn(view.state, view.dispatch);
       if (event.ctrlKey || event.metaKey || event.altKey) return false;
+      if (!event.shiftKey && shellKey(event.key)(view.state, view.dispatch))
+        return true;
+      if (event.key === "Tab")
+        return shellKey(event.key, event.shiftKey)(view.state, view.dispatch);
       if (
         [
           "ArrowUp",
@@ -647,6 +924,37 @@ export function createEditor(
       return false;
     },
     handleDOMEvents: {
+      blur: (view, event) => {
+        const target = event.relatedTarget as Node | null;
+        const workspace = view.dom.closest(".editor-workspace");
+        if (target && workspace?.contains(target)) return false;
+        if (!composing && !view.composing) {
+          const tr = emptyShells(view.state, activeShells(view.state), true);
+          if (tr) view.dispatch(tr);
+        }
+        return false;
+      },
+      beforeinput: (view, event) => {
+        if (
+          event.inputType !== "insertText" ||
+          event.data === null ||
+          event.isComposing ||
+          composing ||
+          view.composing
+        )
+          return false;
+        event.preventDefault();
+        if (
+          view.state.selection.$from.depth > 1 &&
+          /[《》｜\r\n]/u.test(event.data)
+        ) {
+          onstatus("この欄では区切り記号を入力できません。");
+          return true;
+        }
+        onstatus("");
+        view.dispatch(view.state.tr.insertText(event.data).scrollIntoView());
+        return true;
+      },
       mousedown: (view, event) => {
         if (
           event.button !== 0 ||
@@ -655,37 +963,6 @@ export function createEditor(
           (event.target as HTMLElement).closest("[data-note]")
         )
           return false;
-        const segment = (event.target as HTMLElement).closest<HTMLElement>(
-          ".editor-segment",
-        );
-        if (segment) {
-          const start = view.posAtDOM(segment, 0),
-            end = start + (segment.textContent?.length ?? 0);
-          const positions = caretPositions(
-            view.state.doc,
-            view.state.doc.resolve(start).index(0),
-          ).filter((pos) => pos >= start && pos <= end);
-          const nearest = positions
-            .map((pos) => {
-              const rect = verticalCaretRect(view, pos);
-              return { pos, distance: Math.abs(rect.top - event.clientY) };
-            })
-            .sort((a, b) => a.distance - b.distance)[0];
-          if (nearest) {
-            view.dispatch(
-              view.state.tr.setSelection(
-                TextSelection.create(
-                  view.state.doc,
-                  event.shiftKey ? view.state.selection.anchor : nearest.pos,
-                  nearest.pos,
-                ),
-              ),
-            );
-            view.focus();
-            event.preventDefault();
-            return true;
-          }
-        }
         const columns = [...view.dom.children] as HTMLElement[];
         const last = columns.at(-1)!;
         if (event.clientX < last.getBoundingClientRect().left - 4) {
@@ -697,77 +974,78 @@ export function createEditor(
             TextSelection.create(tr.doc, tr.doc.content.size - 1),
           );
           view.dispatch(tr.scrollIntoView());
-          view.focus();
-          event.preventDefault();
-          return true;
-        }
-        if ((event.target as HTMLElement).closest(".editor-annotation"))
-          return false;
-        const distanceToColumn = (column: HTMLElement) => {
-          const rect = column.getBoundingClientRect();
-          return Math.max(
-            rect.left - event.clientX,
-            event.clientX - rect.right,
-            0,
-          );
-        };
-        const column =
-          (event.target as HTMLElement).closest<HTMLElement>(
-            ".transcription-column",
-          ) ??
-          columns.reduce((nearest, column) =>
-            distanceToColumn(column) < distanceToColumn(nearest)
-              ? column
-              : nearest,
-          );
-
-        const index = columns.indexOf(column);
-        const positions = caretPositions(view.state.doc, index);
-        const closest = positions
-          .map((pos) => {
-            const rect = verticalCaretRect(view, pos);
-            const dx = Math.max(
-              rect.left - event.clientX,
-              event.clientX - rect.right,
-              0,
-            );
-            return { pos, distance: dx * dx + (rect.top - event.clientY) ** 2 };
-          })
-          .sort((a, b) => a.distance - b.distance || b.pos - a.pos)[0];
-        // Let the browser start drag selections on text; resolve the remaining column space.
-        if (closest && closest.distance > 400) {
-          view.dispatch(
-            view.state.tr.setSelection(
-              TextSelection.create(
-                view.state.doc,
-                event.shiftKey ? view.state.selection.anchor : closest.pos,
-                closest.pos,
+        } else {
+          const pos = pointerPosition(view, event.clientX, event.clientY);
+          if (event.detail === 2) {
+            const $pos = view.state.doc.resolve(pos);
+            const parent = $pos.parent;
+            const script = (c: string) =>
+              /[\p{Script=Hiragana}\p{Script=Katakana}ー]/u.test(c)
+                ? "kana"
+                : /\p{Script=Han}/u.test(c)
+                  ? "kanji"
+                  : /[a-z0-9]/i.test(c)
+                    ? "latin"
+                    : c;
+            // Script runs are bounded by inline nodes.
+            const child = parent.childAfter($pos.parentOffset);
+            const previous = parent.childBefore($pos.parentOffset);
+            const run = child.node?.isText ? child : previous;
+            if (run.node?.isText) {
+              const value = run.node.text!;
+              let at = Math.max(0, $pos.parentOffset - run.offset);
+              if (verticalCaretRect(view, pos).top > event.clientY) at--;
+              const graphemes = [
+                ...new Intl.Segmenter("ja", {
+                  granularity: "grapheme",
+                }).segment(value),
+              ];
+              let index = graphemes.findIndex(
+                (part) => part.index + part.segment.length > at,
+              );
+              if (index < 0) index = graphemes.length - 1;
+              let first = index,
+                last = index;
+              while (
+                first > 0 &&
+                script(graphemes[first - 1].segment) ===
+                  script(graphemes[index].segment)
+              )
+                first--;
+              while (
+                last + 1 < graphemes.length &&
+                script(graphemes[last + 1].segment) ===
+                  script(graphemes[index].segment)
+              )
+                last++;
+              const from = graphemes[first].index;
+              const to = graphemes[last].index + graphemes[last].segment.length;
+              view.dispatch(
+                view.state.tr.setSelection(
+                  TextSelection.create(
+                    view.state.doc,
+                    $pos.start() + run.offset + from,
+                    $pos.start() + run.offset + to,
+                  ),
+                ),
+              );
+            }
+          } else {
+            const anchor = event.shiftKey ? view.state.selection.anchor : pos;
+            view.dispatch(
+              view.state.tr.setSelection(
+                TextSelection.create(view.state.doc, anchor, pos),
               ),
-            ),
-          );
-          view.focus();
-          event.preventDefault();
-          return true;
+            );
+            stopDrag();
+            dragAnchor = anchor;
+            document.addEventListener("mousemove", dragMove);
+            document.addEventListener("mouseup", stopDrag);
+          }
         }
-        return false;
-      },
-      mousemove: (view, event) => {
-        const target = event.target as HTMLElement;
-        if (target.closest("[data-note]")) return false;
-        const hit = view.posAtCoords({
-          left: event.clientX,
-          top: event.clientY,
-        });
-        let text = false;
-        if (hit) {
-          const rect = verticalCaretRect(view, hit.pos);
-          text =
-            event.clientX >= rect.left - 3 &&
-            event.clientX <= rect.right + 3 &&
-            Math.abs(rect.top - event.clientY) < 28;
-        }
-        view.dom.style.cursor = text ? "text" : "default";
-        return false;
+        view.focus();
+        event.preventDefault();
+        return true;
       },
       compositionstart: () => {
         composing = true;
@@ -788,7 +1066,12 @@ export function createEditor(
         return false;
       },
     },
-    clipboardTextSerializer: (slice) => {
+    clipboardTextSerializer: (slice, editorView) => {
+      const { $from, $to } = editorView.state.selection;
+      if ($from.sameParent($to) && $from.parent.type.name === "segment")
+        return columnSource(
+          $from.parent.cut($from.parentOffset, $to.parentOffset),
+        );
       if (slice.content.firstChild?.type.name === "column")
         return toMarkup(schema.nodes.doc.create(null, slice.content));
       let result = "";
@@ -800,12 +1083,34 @@ export function createEditor(
       const text = event.clipboardData?.getData("text/plain");
       if (text === undefined) return false;
       if (view.state.selection.$from.depth > 1) {
-        if (/[\r\n]/.test(text))
-          return replaceSource(toMarkup(view.state.tr.insertText(text).doc))(
-            view.state,
-            view.dispatch,
-          );
-        return insertText(text)(view.state, view.dispatch);
+        const children = parseLine(text);
+        const parent = view.state.selection.$from.node(
+          view.state.selection.$from.depth - 1,
+        ).type.name;
+        if (
+          /[\r\n]/.test(text) ||
+          children.some(
+            (node) =>
+              !allowsChild(parent, node.kind) ||
+              (node.kind === "raw" && /[《》｜]/u.test(node.source)),
+          )
+        ) {
+          onstatus("ここにはこの原文を貼り付けられません。");
+          return true;
+        }
+        onstatus("");
+        view.dispatch(
+          view.state.tr
+            .replaceSelection(
+              new Slice(
+                schema.nodes.column.create(null, children.map(project)).content,
+                0,
+                0,
+              ),
+            )
+            .scrollIntoView(),
+        );
+        return true;
       }
       const doc = fromMarkup(text);
       view.dispatch(
@@ -816,10 +1121,35 @@ export function createEditor(
       return true;
     },
     dispatchTransaction(tr) {
+      const previousShells = activeShells(view.state);
+      const mappedShells = new Set(
+        [...previousShells].map((pos) => tr.mapping.map(pos)),
+      );
       const patches = sourcePatches(tr);
       current = applyPatches(current, patches);
       view.updateState(view.state.apply(tr));
+      if (tr.selectionSet && view.hasFocus() && !composing && !view.composing) {
+        const { anchor, head } = view.state.selection;
+        const a = textPoint(view, anchor),
+          b = textPoint(view, head);
+        view.dom.ownerDocument
+          .getSelection()
+          ?.setBaseAndExtent(a.node, a.offset, b.node, b.offset);
+      }
       publish(patches);
+      if (!composing && !view.composing) {
+        const placeholders = normalizeFields(view.state);
+        if (placeholders) view.dispatch(placeholders);
+      }
+      if (
+        tr.selectionSet &&
+        !composing &&
+        !view.composing &&
+        !tr.getMeta("replaceSource")
+      ) {
+        const cleanup = emptyShells(view.state, mappedShells);
+        if (cleanup) view.dispatch(cleanup);
+      }
     },
   });
   let lastColumn: number | undefined;
@@ -885,7 +1215,14 @@ export function createEditor(
     setSource,
     focusColumn,
     setHighlightedColumn,
-    destroy: () => view.destroy(),
+    leaveShell() {
+      const tr = emptyShells(view.state, activeShells(view.state), true);
+      if (tr) view.dispatch(tr);
+    },
+    destroy: () => {
+      stopDrag();
+      view.destroy();
+    },
   };
 }
 

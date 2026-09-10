@@ -44,6 +44,41 @@ const constructs: Record<string, [SyntaxKind, number, number]> = {
   箱: ["box", 1, 1],
   場所: ["place", 1, 1],
 };
+/** Editable children of each compound field. */
+export function allowsChild(parent: string, child: string): boolean {
+  if (
+    [
+      "text",
+      "raw",
+      "gap",
+      "reference",
+      "return",
+      "okurigana",
+      "editorial",
+    ].includes(child)
+  )
+    return true;
+  if (parent === "column") return child !== "comment" && child !== "divider";
+  if (parent === "warigaki") return child === "ruby" || child === "misekechi";
+  if (parent === "misekechi") return child === "ruby";
+  return false;
+}
+function splitFields(source: string): string[] {
+  const fields: string[] = [];
+  let depth = 0,
+    start = 0;
+  for (let i = 0; i < source.length; i++) {
+    if (source[i] === "《" || source[i] === "【" || source[i] === "（") depth++;
+    else if (source[i] === "》" || source[i] === "】" || source[i] === "）")
+      depth--;
+    else if (source[i] === "｜" && depth === 0) {
+      fields.push(source.slice(start, i));
+      start = i + 1;
+    }
+  }
+  fields.push(source.slice(start));
+  return fields;
+}
 export function parseLine(text: string, start = 0): SyntaxNode[] {
   const nodes: SyntaxNode[] = [];
   let pos = 0;
@@ -89,12 +124,10 @@ export function parseLine(text: string, start = 0): SyntaxNode[] {
       const open = rest[0],
         close = open === "《" ? "》" : "】";
       let depth = 0,
-        end = 0,
-        nested = false;
+        end = 0;
       for (; end < rest.length; end++) {
         if (rest[end] === open) {
           depth++;
-          if (depth > 1) nested = true;
         }
         if (rest[end] === close && --depth === 0) {
           end++;
@@ -102,7 +135,7 @@ export function parseLine(text: string, start = 0): SyntaxNode[] {
         }
       }
       const token = rest.slice(0, end);
-      if (depth !== 0 || nested || /[《》【】]/u.test(token.slice(1, -1))) {
+      if (depth !== 0) {
         add("raw", end);
         continue;
       }
@@ -112,12 +145,19 @@ export function parseLine(text: string, start = 0): SyntaxNode[] {
       }
       const match = /^《([^：]+)：([\s\S]*)》$/.exec(token);
       const rule = match && constructs[match[1]];
-      const segments = match?.[2].split("｜");
+      const segments = match ? splitFields(match[2]) : undefined;
       if (
         rule &&
         segments &&
         segments.length >= rule[1] &&
-        segments.length <= rule[2]
+        segments.length <= rule[2] &&
+        segments.every((field) =>
+          parseLine(field).every(
+            (child) =>
+              allowsChild(rule[0], child.kind) &&
+              !(child.kind === "raw" && /[《》【】]/u.test(child.source)),
+          ),
+        )
       )
         add(rule[0], end, segments, "bracket");
       else add("raw", end);

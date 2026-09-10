@@ -598,7 +598,7 @@
       (event.target as HTMLElement).closest<HTMLElement>("[data-note]");
     const show = (event: Event) => {
       const target = targetOf(event);
-      if (!target) return;
+      if (!target || document.querySelector(".editor-note-popover")) return;
       clearTimeout(noteTimer);
       noteList = false;
       noteIndex = Number(target.dataset.note) - 1;

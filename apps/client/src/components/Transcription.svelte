@@ -1,4 +1,5 @@
 <script lang="ts">
+  import "../../../../packages/editor/style.css";
   import { onDestroy } from "svelte";
   import {
     parseInline,
@@ -21,6 +22,8 @@
   let host: HTMLDivElement;
   let timer: ReturnType<typeof setTimeout>;
   let pinned = false;
+  let currentColumn = $state(-1);
+  $effect(() => { source; currentColumn = -1; });
   let groups = $derived.by(() => {
     const indices = new Map(
       transcriptionColumns(source).map((column, index) => [
@@ -53,6 +56,7 @@
     oncolumnchange?.(index);
   }
   export function focusColumn(index: number) {
+    currentColumn = index;
     change(index);
     pinned = true;
     host
@@ -97,6 +101,7 @@
         {#each group.columns as column}
           <div
             class="transcription-column"
+            class:editor-active-column={currentColumn === column.index && column.index >= 0}
             class:alignment-active-column={column.index >= 0 &&
               highlightedColumn === column.index}
             data-column-index={column.index >= 0 ? column.index : undefined}
@@ -106,7 +111,7 @@
             onmouseleave={() => {
               if (!pinned) change(-1);
             }}
-            onfocus={() => change(column.index)}
+            onfocus={() => { currentColumn = column.index; change(column.index); }}
             onclick={() => focusColumn(column.index)}
             onkeydown={(event) => {
               if (event.key === "ArrowLeft" || event.key === "ArrowRight") {

@@ -112,3 +112,21 @@ test("deterministic arbitrary UTF-16 round trips", () => {
     expect(serialize(parse(text))).toBe(text);
   }
 });
+
+test("compound fields split only at their own separators", () => {
+  const source =
+    "《割書：《振り仮名：峰｜みね》の字｜《見せ消ち：旧｜《振り仮名：新｜しん》》》";
+  expect(parseLine(source)[0]).toMatchObject({
+    kind: "warigaki",
+    segments: [
+      "《振り仮名：峰｜みね》の字",
+      "《見せ消ち：旧｜《振り仮名：新｜しん》》",
+    ],
+  });
+  expect(serialize(parse(source))).toBe(source);
+  for (const source of [
+    "《振り仮名：《割書：一｜二》｜あ》",
+    "《割書：《割書：一｜二》｜三》",
+  ])
+    expect(parseLine(source)[0].kind).toBe("raw");
+});

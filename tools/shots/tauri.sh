@@ -6,12 +6,12 @@ route="${2:-}"
 repo="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$repo"
 mkdir -p .local/logs "$(dirname "$out")"
-export GDK_BACKEND=x11 WEBKIT_DISABLE_DMABUF_RENDERER=1 LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe MESA_LOADER_DRIVER_OVERRIDE=llvmpipe
+export GDK_SCALE=2 GDK_DPI_SCALE=1 GDK_BACKEND=x11 WEBKIT_DISABLE_DMABUF_RENDERER=1 LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe MESA_LOADER_DRIVER_OVERRIDE=llvmpipe
 unset WAYLAND_DISPLAY
 export HONKOKU_SHOT_OUT="$out" HONKOKU_SHOT_ROUTE="$route"
 HONKOKU_SHOT_PORT="$(bun -e 'const server = Bun.serve({port: 0, fetch: () => new Response()}); console.log(server.port); server.stop(true)')"
 export HONKOKU_SHOT_PORT
-xvfb-run -a -s '-screen 0 1600x1000x24' bash <<'CAPTURE'
+xvfb-run -a -s '-screen 0 3200x2000x24' bash <<'CAPTURE'
 set -euo pipefail
 export TAURI_CONFIG="{\"build\":{\"devUrl\":\"http://127.0.0.1:$HONKOKU_SHOT_PORT/$HONKOKU_SHOT_ROUTE\"}}"
 cargo build -p honkoku-client 2>&1 | sed -u -E 's@/home/[^/[:space:]]+@~@g'

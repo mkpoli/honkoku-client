@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 import { EditorState, TextSelection } from "prosemirror-state";
 import { history, undo, redo } from "prosemirror-history";
 import {
+  columnSource,
   fromMarkup,
   toMarkup,
   sourcePatches,
@@ -187,7 +188,7 @@ test("vertical navigation enters an empty annotation field", () => {
   const e = editor("《割書：一｜》");
   let empty = -1;
   e.state.doc.descendants((node, pos) => {
-    if (node.type.name === "segment" && !node.content.size) empty = pos + 1;
+    if (node.type.name === "segment" && !columnSource(node)) empty = pos + 1;
   });
   e.dispatch(
     e.state.tr.setSelection(TextSelection.create(e.state.doc, empty - 2)),
@@ -196,4 +197,43 @@ test("vertical navigation enters an empty annotation field", () => {
   expect(e.state.selection.head).toBe(empty);
   e.dispatch(e.state.tr.insertText("二"));
   expect(e.source).toBe("《割書：一｜二》");
+});
+
+test("nested shells navigate, serialize and enforce grammar", async () => {
+  const { shellKey, selectColumn } = await import("./index");
+  const e = editor("前後\n別列");
+  e.dispatch(e.state.tr.setSelection(TextSelection.create(e.state.doc, 2)));
+  expect(wrapSelection("warigaki")(e.state, e.dispatch)).toBe(true);
+  expect(e.source).toBe("前《割書：｜》後\n別列");
+  expect(wrapSelection("ruby")(e.state, e.dispatch)).toBe(true);
+  e.dispatch(e.state.tr.insertText("峰"));
+  shellKey("Tab")(e.state, e.dispatch);
+  e.dispatch(e.state.tr.insertText("みね"));
+  expect(wrapSelection("warigaki")(e.state, e.dispatch)).toBe(false);
+  shellKey("ArrowRight")(e.state, e.dispatch);
+  shellKey("Enter")(e.state, e.dispatch);
+  e.dispatch(e.state.tr.insertText("二"));
+  expect(e.source).toBe("前《割書：《振り仮名：峰｜みね》｜二》後\n別列");
+  expect(toMarkup(fromMarkup(e.source))).toBe(e.source);
+  shellKey("Enter")(e.state, e.dispatch);
+  shellKey("Enter")(e.state, e.dispatch);
+  shellKey("Enter")(e.state, e.dispatch);
+  expect(e.source).toBe("前《割書：《振り仮名：峰｜みね》｜二｜｜》後\n別列");
+  shellKey("Backspace")(e.state, e.dispatch);
+  expect(e.source).toBe("前《割書：《振り仮名：峰｜みね》｜二｜》後\n別列");
+  selectColumn(e.state, e.dispatch);
+  expect(e.state.selection.from).toBe(1);
+  selectColumn(e.state, e.dispatch);
+  expect(e.state.selection.to).toBe(e.state.doc.content.size - 1);
+});
+
+test("removing the last empty warigaki line preserves its remaining text", async () => {
+  const { shellKey } = await import("./index");
+  const e = editor("前後");
+  e.dispatch(e.state.tr.setSelection(TextSelection.create(e.state.doc, 2)));
+  wrapSelection("warigaki")(e.state, e.dispatch);
+  e.dispatch(e.state.tr.insertText("一"));
+  shellKey("Enter")(e.state, e.dispatch);
+  shellKey("Backspace")(e.state, e.dispatch);
+  expect(e.source).toBe("前一後");
 });
