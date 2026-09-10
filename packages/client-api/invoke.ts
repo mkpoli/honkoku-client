@@ -161,3 +161,16 @@ export async function pageDraftTextAndNotes(entryId: string, index: number, text
 export const historyOpen = (entryId: string, index: number) => invoke<void>("history_open", { entryId, index });
 export const historyRecent = (limit = 8) => invoke<import("./types").RecentWork[]>("history_recent", { limit });
 export const historyClear = () => invoke<void>("history_clear");
+
+export const ocrDiagnostics = () => invoke<import("./types").OcrDiagnostics>("ocr_diagnostics");
+export const ocrDoctor = () => invoke<string>("ocr_doctor");
+export const ocrRepairModels = () => invoke<import("./types").OcrStatus>("ocr_repair_models");
+export const editingPages = () => invoke<Page[]>("editing_pages");
+export const projectPageActivity = (projectId: string) => invoke<Record<string, string>>("project_page_activity", { projectId });
+export interface ReadRegion {
+  kind: "projects" | "project" | "collections" | "collection" | "entry" | "pages" | "entries" | "collectionProgress" | "entryProgress";
+  id?: string;
+  ids?: string[];
+}
+export const regionCached = <T>(resource: ReadRegion) => invoke<T | null>("region_cached", { resource });
+export const regionRefresh = <T>(resource: ReadRegion) => invoke<T>("region_refresh", { resource });

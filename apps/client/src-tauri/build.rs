@@ -3,6 +3,9 @@ fn main() {
         tauri_build::AppManifest::new().commands(&[
             "ocr_status",
             "editing_pages",
+            "project_page_activity",
+            "region_cached",
+            "region_refresh",
             "ocr_diagnostics",
             "ocr_doctor",
             "ocr_repair_models",
