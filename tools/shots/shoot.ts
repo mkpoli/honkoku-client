@@ -1,5 +1,6 @@
 import { checkInlineEditor } from "./editor-checks";
 import {
+  checkKunten,
   checkSearch,
   checkRegionTimeout,
   checkWorkbenchParity,
@@ -163,6 +164,8 @@ try {
       throw Error("Vite did not start on the assigned port.");
   }
   browser = await chromium.launch({ headless: true });
+  for (const theme of ["light", "dark"] as const)
+    await checkKunten(browser, origin, theme);
   for (const theme of ["light", "dark"] as const)
     await checkSearch(browser, origin, theme);
   await checkRegionTimeout(browser, origin);

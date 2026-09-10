@@ -73,9 +73,7 @@ export async function checkInteractions(browser: Browser, origin: string) {
     .getByRole("button", { name: "開発用セッションを読み込む", exact: true })
     .click();
   await page.locator(".own-record").waitFor();
-  await page
-    .getByRole("textbox", { name: "翻刻を検索", exact: true })
-    .fill("");
+  await page.getByRole("textbox", { name: "翻刻を検索", exact: true }).fill("");
   const feed = page.locator(".home-centre>.timeline-panel");
   await page.waitForFunction(
     () =>
@@ -978,10 +976,7 @@ export async function checkQuietWorkbench(
     await page.goto(`${origin}/#/entries/${entry}/pages/3`);
     await button("編集開始").waitFor();
     await page.waitForLoadState("networkidle");
-    assert.equal(
-      await page.locator(".topbar input").count(),
-      1,
-    );
+    assert.equal(await page.locator(".topbar input").count(), 1);
     assert.ok(
       !(await page.locator(".topbar").innerText()).includes("みんなで翻刻"),
     );
@@ -1789,6 +1784,217 @@ export async function checkSearch(
       path: resolve(import.meta.dir, "../../.local/shots/search-failure.png"),
     });
     throw error;
+  } finally {
+    await context.close();
+  }
+}
+
+export async function checkKunten(
+  browser: Browser,
+  origin: string,
+  theme: "light" | "dark",
+) {
+  const context = await browser.newContext({
+    viewport: { width: 1600, height: 1000 },
+    locale: "ja-JP",
+    colorScheme: theme,
+    permissions: ["clipboard-read", "clipboard-write"],
+    reducedMotion: "reduce",
+  });
+  await context.addInitScript(
+    (theme) => localStorage.setItem("honkoku.theme", theme),
+    theme,
+  );
+  const page = await context.newPage();
+  page.setDefaultTimeout(10000);
+  page.setDefaultNavigationTimeout(20000);
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  const set = async (text: string, from?: number, to?: number) =>
+    page.evaluate(
+      async ({ text, from, to }) => {
+        const { TextSelection } = await import("/src/dev/editor-harness.ts");
+        const e = window.editorSpike!;
+        e.setSource(text);
+        e.view.dispatch(
+          e.view.state.tr.setSelection(
+            TextSelection.create(
+              e.view.state.doc,
+              from ?? e.view.state.doc.content.size - 1,
+              to,
+            ),
+          ),
+        );
+        e.view.focus();
+      },
+      { text, from, to },
+    );
+  const source = () => page.evaluate(() => window.editorSpike!.source);
+  try {
+    await page.goto(origin + "/#/spike/editor");
+    await page.locator(".vertical-editor").waitFor();
+    console.log("Kunten: palette insertion");
+    await set("故");
+    const kana = page.getByRole("toolbar", { name: "送り仮名", exact: true });
+    await kana.getByRole("button", { name: "送り仮名", exact: true }).hover();
+    assert.equal(await kana.locator(".palette-glyphs > button").count(), 24);
+    await kana.getByRole("button", { name: "送り仮名ニ", exact: true }).click();
+    assert.equal(await source(), "故￣ニ");
+    const input = kana.getByRole("textbox", { name: "その他の送り仮名" });
+    await input.fill("によりて");
+    await input.press("Enter");
+    assert.equal(await source(), "故￣ニ￣ニヨリテ");
+    console.log("Kunten: reload custom presets");
+    await page.reload();
+    await page.locator(".vertical-editor").waitFor();
+    await kana.getByRole("button", { name: "送り仮名", exact: true }).hover();
+    await kana
+      .getByRole("button", { name: "送り仮名ニヨリテ", exact: true })
+      .waitFor();
+    const height = await page
+      .locator(".palette-glyphs")
+      .evaluate((el) => ({
+        palette: el.getBoundingClientRect().height,
+        editor: el.closest(".editor-workspace")!.getBoundingClientRect().height,
+      }));
+    assert.ok(height.palette <= height.editor * 0.4 + 1);
+    await page.screenshot({
+      path: resolve(".local/shots", `17-okurigana-palette-${theme}.png`),
+    });
+    await kana
+      .getByRole("button", { name: "送り仮名ニヨリテを忘れる", exact: true })
+      .click();
+    assert.equal(
+      await kana
+        .getByRole("button", { name: "送り仮名ニヨリテ", exact: true })
+        .count(),
+      0,
+    );
+    await set("故");
+    const expressions = page.getByRole("toolbar", {
+      name: "常用句",
+      exact: true,
+    });
+    await expressions
+      .getByRole("button", { name: "常用句", exact: true })
+      .hover();
+    await expressions
+      .getByRole("button", { name: "御座候", exact: true })
+      .click();
+    assert.equal(await source(), "故御座候");
+    if (theme === "light")
+      await page.screenshot({
+        path: resolve(".local/shots", "17-expressions-palette-light.png"),
+      });
+    await expressions
+      .getByRole("textbox", { name: "その他の常用句" })
+      .fill("奉願上候");
+    await expressions
+      .getByRole("textbox", { name: "その他の常用句" })
+      .press("Enter");
+    assert.equal(await source(), "故御座候奉願上候");
+    await page.reload();
+    await page.locator(".vertical-editor").waitFor();
+    await expressions
+      .getByRole("button", { name: "常用句", exact: true })
+      .hover();
+    await expressions
+      .getByRole("button", { name: "常用句奉願上候", exact: true })
+      .waitFor();
+    await page.mouse.move(20, 20);
+    console.log("Kunten: clipboard round trips");
+    for (const markup of [
+      "￣ニ",
+      "＿レ",
+      "《振り仮名：峰｜みね》",
+      "《割書：a｜b》",
+      "《割書：《振り仮名：峰｜みね》｜b》",
+      "＃００１",
+      "【注釈】",
+    ]) {
+      await set(markup, 1);
+      await page.keyboard.press("Control+a");
+      await page.keyboard.press("Control+c");
+      assert.equal(
+        await page.evaluate(() => navigator.clipboard.readText()),
+        markup,
+      );
+      await set("");
+      await page.keyboard.press("Control+v");
+      assert.equal(await source(), markup);
+    }
+    await set("讀￣ニシテ", 4, 5);
+    await page.keyboard.press("Control+c");
+    assert.equal(
+      await page.evaluate(() => navigator.clipboard.readText()),
+      "￣ニ",
+    );
+    await set("故");
+    await page.keyboard.press("Control+v");
+    assert.equal(await source(), "故￣ニ");
+    await page.keyboard.press("Backspace");
+    assert.equal(await source(), "故");
+    await page.keyboard.insertText("￣");
+    await page.keyboard.insertText("ニ");
+    assert.equal(
+      await page.locator(".vertical-editor .editor-okurigana").count(),
+      1,
+    );
+    await set("￣ニ", 1, 6);
+    await page.keyboard.press("Control+x");
+    assert.equal(
+      await page.evaluate(() => navigator.clipboard.readText()),
+      "￣ニ",
+    );
+    assert.equal(await source(), "");
+    console.log("Kunten: layout geometry");
+    await set(
+      "讀＿レ￣ム次\n故￣ニ東都￣ノ親戚￣ニ告￣テ其是非￣ヲ問￣ニ\n讀￣ニシテ＿レ次",
+    );
+    await page.getByRole("button", { name: "表示を確認", exact: true }).click();
+    await page.evaluate(() => document.fonts.ready);
+    const geometry = await page.evaluate(() => {
+      const bounds = (node: Node) => {
+        const range = document.createRange();
+        range.selectNodeContents(node);
+        const r = range.getBoundingClientRect();
+        return { x: (r.left + r.right) / 2, top: r.top, bottom: r.bottom };
+      };
+      return [".vertical-editor", ".editor-source-panel .transcription"]
+        .map((selector) => {
+          const root = document.querySelector(selector)!;
+          return [...root.querySelectorAll(".transcription-column")]
+            .filter((_, i) => i === 0 || i === 2)
+            .map((column) => {
+              const reading = column.querySelector(".markup-reading") ?? column;
+              const base = bounds(reading.firstChild!);
+              const okuri = bounds(column.querySelector(".kunten-okurigana")!);
+              const kaeriten = bounds(column.querySelector(".kunten-return")!);
+              const last = column.lastChild!;
+              const next = bounds(last);
+              return { base, okuri, kaeriten, next };
+            });
+        })
+        .flat();
+    });
+    for (const { base, okuri, kaeriten, next } of geometry) {
+      assert.ok(okuri.x > base.x, JSON.stringify({ base, okuri }));
+      assert.ok(kaeriten.x < base.x, JSON.stringify({ base, kaeriten }));
+      assert.ok(okuri.top >= base.top + 10);
+      assert.ok(kaeriten.top >= base.top + 10);
+      assert.ok(
+        next.top >= Math.max(okuri.bottom, kaeriten.bottom) - 2,
+        JSON.stringify({ okuri, kaeriten, next }),
+      );
+    }
+    if (theme === "light")
+      await page.screenshot({
+        path: resolve(".local/shots", "17-kunten-layout-light.png"),
+      });
+    assert.deepEqual(errors, []);
+    console.log(
+      `Kunten, corpus palette and clipboard checks passed (${theme}).`,
+    );
   } finally {
     await context.close();
   }
