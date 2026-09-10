@@ -41,11 +41,16 @@ export async function invoke<T>(
     );
     return result;
   } catch (error) {
-    window.dispatchEvent(
-      new CustomEvent<ConnectionOutcome>("honkoku:connection", {
-        detail: { connected: false },
-      }),
-    );
+    const kind =
+      typeof error === "object" && error !== null && "kind" in error
+        ? String((error as { kind: unknown }).kind)
+        : "";
+    if (kind === "network" || kind === "timeout" || kind === "transport")
+      window.dispatchEvent(
+        new CustomEvent<ConnectionOutcome>("honkoku:connection", {
+          detail: { connected: false },
+        }),
+      );
     throw error;
   }
 }

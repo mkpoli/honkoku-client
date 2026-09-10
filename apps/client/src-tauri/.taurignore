@@ -1,0 +1,11 @@
+target/
+gen/
+../node_modules/
+../dist/
+../../../node_modules/
+../../../target/
+../../../.local/
+../../../design/
+../../../fixtures/
+../../../docs/
+../../../tools/

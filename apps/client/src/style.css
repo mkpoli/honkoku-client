@@ -1141,7 +1141,7 @@ main {
   max-height: none;
   padding: 0 4px;
   overflow-wrap: anywhere;
-  height: 100%;
+  height: var(--column-height, 100%);
   flex: 0 0 auto;
 }
 .transcription.horizontal {

@@ -83,6 +83,18 @@
     element.addEventListener("click", click);
     return { destroy: () => element.removeEventListener("click", click) };
   }
+  function measureColumns(element: HTMLElement) {
+    const apply = () => {
+      const available = element.clientHeight;
+      if (available > 0)
+        element.style.setProperty("--column-height", `${available}px`);
+    };
+    const observer = new ResizeObserver(apply);
+    observer.observe(element);
+    if (element.parentElement) observer.observe(element.parentElement);
+    apply();
+    return { destroy: () => observer.disconnect() };
+  }
   onMount(() => {
     const keys = (e: KeyboardEvent) => {
       if (
@@ -157,7 +169,7 @@
                 onclick={() => (half = half === g.label ? "" : g.label)}
                 >{g.label}</button
               >{/if}
-            <div class="columns">
+            <div class="columns" use:measureColumns>
               {#each g.columns as column}<div class="transcription-column">
                   {@html renderInline(column)}
                 </div>{/each}
