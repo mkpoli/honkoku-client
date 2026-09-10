@@ -6,6 +6,8 @@
     Page,
     SessionInfo,
     SaveOptions,
+    PageNote,
+    JsonValue,
   } from "@honkoku/client-api/types";
   import { alignColumns, transcriptionColumns } from "@honkoku/markup";
   import { pageLinesWithLocal as pageLines } from "../../../../packages/client-api/ocr";
@@ -24,7 +26,8 @@
   import type { EditorUpdate } from "@honkoku/editor";
   import {
     pageLock,
-    pageDraft,
+    pageDraftWithNotes,
+    isTauri,
     pageSave,
     pageDiscard,
     pageLockState,
@@ -54,7 +57,6 @@
     registerLeave: (guard: (() => Promise<void>) | undefined) => void;
   } = $props();
   let page = $derived(pages.find((p) => p.index === index)!);
-  let pageNotes = $derived(notes(page));
   let swapped = $state(false),
     horizontal = $state(false),
     half = $state(""),
@@ -72,6 +74,81 @@
       ? (page.tempText ?? page.text)
       : page.text,
   );
+  let tempNotes = $state<(JsonValue | null)[]>([]);
+  let pageNotes = $derived(
+    notes({
+      ...page,
+      notes: editing
+        ? tempNotes
+        : page.status === "editing" && page.syncMode
+          ? (page.tempNotes ?? page.notes)
+          : page.notes,
+    }),
+  );
+  let noteCount = $derived(pageNotes.filter(Boolean).length);
+  let hasReferences = $derived(
+    /＃[0-9０-９]+/.test(editing ? source : displayedSource),
+  );
+  let ocrOpen = $state(sessionStorage.getItem("honkoku.ocr.open") === "true");
+  let showLines = $state(false);
+  let noteList = $state(false);
+  let noteAnchor = $state<HTMLElement>();
+  let notePosition = $state({ x: 0, y: 0 });
+  let noteTimer: ReturnType<typeof setTimeout>;
+  function positionNote(target: HTMLElement) {
+    noteAnchor = target;
+    const rect = target.getBoundingClientRect();
+    notePosition = {
+      x: Math.max(8, Math.min(rect.left, innerWidth - 336)),
+      y: Math.max(8, Math.min(rect.bottom + 4, innerHeight - 250)),
+    };
+  }
+  function closeNotes() {
+    clearTimeout(noteTimer);
+    noteIndex = null;
+    noteList = false;
+  }
+  function deferClose() {
+    clearTimeout(noteTimer);
+    noteTimer = setTimeout(() => {
+      if (
+        document.activeElement !== noteAnchor &&
+        !document
+          .querySelector(".note-popover")
+          ?.contains(document.activeElement)
+      )
+        closeNotes();
+    }, 180);
+  }
+  function changeNote(content: string | null, index?: number) {
+    const position = index ?? tempNotes.length;
+    const now = new Date().toISOString();
+    const old = pageNotes[position];
+    const note: PageNote | null =
+      content === null
+        ? null
+        : {
+            id: old?.id ?? "",
+            type: "note",
+            content,
+            markdown: content,
+            createdBy: old?.createdBy ?? session!.uid,
+            createdAt: old?.createdAt ?? now,
+            updatedAt: now,
+          };
+    tempNotes = [...tempNotes];
+    tempNotes[position] = note as JsonValue;
+    saveState = "未保存の変更";
+    remember();
+    queue?.request(draftPayload());
+    closeNotes();
+    return position;
+  }
+  const draftPayload = () => JSON.stringify({ text: source, notes: tempNotes });
+  const notesPending = () =>
+    isTauri() &&
+    JSON.stringify(tempNotes) !== JSON.stringify(page.tempNotes ?? page.notes);
+
   let localOcr = $state<LocalOcrPage | null>(null);
   let lineModel = $derived(
     pageLines({ ocr: { ...page.ocr, local: localOcr } }, canvases[index]),
@@ -91,7 +168,7 @@
       );
       saveState = "未保存の変更";
       remember();
-      queue?.request(source);
+      queue?.request(draftPayload());
       return;
     }
     const instance = editorInstance;
@@ -165,7 +242,13 @@
   }
   const storageKey = () => `honkoku.edit.${session?.uid}.${entry.id}.${index}`;
   function localDraft():
-    { source: string; draft: string; updatedAt?: string | null } | undefined {
+    | {
+        source: string;
+        draft: string;
+        notes?: (JsonValue | null)[];
+        updatedAt?: string | null;
+      }
+    | undefined {
     try {
       return (
         JSON.parse(localStorage.getItem(storageKey()) ?? "null") ?? undefined
@@ -182,6 +265,7 @@
         storageKey(),
         JSON.stringify({
           source,
+          notes: tempNotes,
           draft: acknowledged,
           updatedAt: draftUpdatedAt,
         }),
@@ -247,6 +331,8 @@
     draftUpdatedAt = locked.updatedAt;
     source =
       local && local.source !== local.draft ? local.source : acknowledged;
+    tempNotes =
+      local?.notes ?? structuredClone(locked.tempNotes ?? locked.notes);
     editing = true;
     recovered = "";
     saveState = locked.tempTextChanged
@@ -259,15 +345,26 @@
     const entryId = entry.id,
       pageIndex = index;
     queue = new Drafts(
-      async (text) => {
+      async (payload) => {
+        const { text, notes: pendingNotes } = JSON.parse(payload) as {
+          text: string;
+          notes: (JsonValue | null)[];
+        };
         saveState = "送信中";
-        const draft = await pageDraft(entryId, pageIndex, text);
+        const draft = await pageDraftWithNotes(
+          entryId,
+          pageIndex,
+          text,
+          pendingNotes,
+        );
         acknowledged = text;
         draftUpdatedAt = draft.updatedAt;
         onpage(draft);
         remember();
         saveState =
-          source === text
+          source === text &&
+          JSON.stringify(tempNotes) === JSON.stringify(pendingNotes) &&
+          !notesPending()
             ? `下書き保存${new Date().toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })}`
             : "未保存の変更";
         notice = "";
@@ -278,7 +375,7 @@
       },
     );
     remember();
-    if (source !== acknowledged) queue.request(source);
+    if (source !== acknowledged || local?.notes) queue.request(draftPayload());
   }
   function update(value: EditorUpdate) {
     composing = value.composing;
@@ -286,7 +383,7 @@
     source = value.source;
     saveState = "未保存の変更";
     remember();
-    queue?.request(source);
+    queue?.request(draftPayload());
   }
   function start() {
     act(async () => begin(await pageLock(entry.id, index, false)));
@@ -332,7 +429,11 @@
           JSON.stringify(options),
         );
       } catch {}
-      await queue!.flush(source);
+      await queue!.flush(draftPayload());
+      if (notesPending())
+        throw Error(
+          "注記の変更はこの端末に保存されています。このバージョンでは注記をサイトに保存できません。本文と注記は下書きに残ります。",
+        );
       saveState = "送信中";
       const saved = await pageSave(entry.id, index, options);
       await queue!.stop();
@@ -384,7 +485,7 @@
     source += `${source && !/[\r\n]$/.test(source) ? (source.match(/\r\n|\r|\n/)?.[0] ?? "\n") : ""}${text}`;
     saveState = "未保存の変更";
     remember();
-    queue?.request(source);
+    queue?.request(draftPayload());
   }
   async function leave() {
     await operation;
@@ -410,6 +511,9 @@
       editing = false;
       currentColumn = -1;
       hoveredLine = null;
+      showLines = false;
+      localOcr = null;
+      closeNotes();
       source = "";
       recovered = "";
       saveState = "";
@@ -452,7 +556,6 @@
     };
   });
   let strip: HTMLDivElement;
-  let notePanel: HTMLElement;
   $effect(() => {
     index;
     noteIndex = null;
@@ -491,21 +594,50 @@
       location.hash = href({ entryId: entry.id, pageIndex: next });
   }
   function references(element: HTMLElement) {
+    const targetOf = (event: Event) =>
+      (event.target as HTMLElement).closest<HTMLElement>("[data-note]");
+    const show = (event: Event) => {
+      const target = targetOf(event);
+      if (!target) return;
+      clearTimeout(noteTimer);
+      noteList = false;
+      noteIndex = Number(target.dataset.note) - 1;
+      positionNote(target);
+    };
     const click = (event: MouseEvent) => {
-      const target = (event.target as HTMLElement).closest<HTMLButtonElement>(
-        "[data-note]",
-      );
-      if (target) {
-        noteIndex = Number(target.dataset.note) - 1;
-        void tick().then(() =>
-          notePanel
-            .querySelector(`[data-note-index="${noteIndex}"]`)
-            ?.scrollIntoView({ block: "nearest" }),
-        );
+      const target = targetOf(event);
+      if (!target) return;
+      show(event);
+      if (editing && pageNotes[noteIndex!]) {
+        editor?.editNote(noteIndex!, pageNotes[noteIndex!]!.content);
+        closeNotes();
       }
     };
+    const leave = (event: Event) => {
+      if (targetOf(event)) deferClose();
+    };
+    const key = (event: KeyboardEvent) => {
+      if (event.key === "Escape") closeNotes();
+    };
+    element.addEventListener("pointerover", show);
+    element.addEventListener("focusin", show);
+    element.addEventListener("pointerout", leave);
+    element.addEventListener("focusout", leave);
     element.addEventListener("click", click);
-    return { destroy: () => element.removeEventListener("click", click) };
+    element.addEventListener("keydown", key);
+    element.addEventListener("scroll", closeNotes, true);
+    return {
+      destroy() {
+        element.removeEventListener("pointerover", show);
+        element.removeEventListener("focusin", show);
+        element.removeEventListener("pointerout", leave);
+        element.removeEventListener("focusout", leave);
+        element.removeEventListener("click", click);
+        element.removeEventListener("keydown", key);
+        element.removeEventListener("scroll", closeNotes, true);
+        clearTimeout(noteTimer);
+      },
+    };
   }
   onMount(() => {
     const unload = () => {
@@ -572,12 +704,10 @@
         disabled={index === 0}
         onclick={() => go(index - 1)}
         aria-label="前のコマ">‹</button
-      ><strong>{index + 1}／{entry.size}コマ</strong><button
+      ><button
         disabled={index === pages.length - 1}
         onclick={() => go(index + 1)}
         aria-label="次のコマ">›</button
-      ><span class="status {statusClass(page.status)}"
-        >{status(page.status).symbol}{status(page.status).label}</span
       ><span class="caption muted edit-status" role="status"
         >{saveState || (editing ? "未保存の変更" : "閲覧のみ")}</span
       >
@@ -665,6 +795,28 @@
       {:else if session}<button class="primary" disabled={busy} onclick={start}
           >編集開始</button
         >{/if}
+      {#if noteCount && !hasReferences}<button
+          class="notes-count"
+          aria-expanded={noteList}
+          onclick={(event) => {
+            noteList = !noteList;
+            noteIndex = null;
+            positionNote(event.currentTarget);
+          }}>注記{noteCount}件</button
+        >{/if}
+      <button
+        aria-pressed={ocrOpen}
+        aria-controls="ocr-drawer"
+        onclick={() => {
+          ocrOpen = !ocrOpen;
+          sessionStorage.setItem("honkoku.ocr.open", String(ocrOpen));
+        }}>OCR</button
+      >
+      <button
+        aria-pressed={showLines}
+        disabled={!lineModel.lines.length}
+        onclick={() => (showLines = !showLines)}>行枠</button
+      >
       <button onclick={() => (swapped = !swapped)}>⇄左右を入れ替え</button
       ><button
         disabled={editing}
@@ -687,7 +839,7 @@
         : ""}
     </div>{/if}
   <div class="workbench-panes" class:swapped>
-    <section class="panel transcription-panel">
+    <section class="panel transcription-panel" use:references>
       <div class="pane-toolbar">
         <h2>翻刻</h2>
         <span class="caption muted"
@@ -702,9 +854,10 @@
             onupdate={update}
             oncolumnchange={columnChange}
             {highlightedColumn}
+            onnote={changeNote}
           />
         </div>{:else}
-        <div class="transcription-reader" use:references>
+        <div class="transcription-reader">
           <Transcription
             bind:this={transcription}
             source={displayedSource}
@@ -715,53 +868,40 @@
           />
         </div>
       {/if}
+      <div
+        id="ocr-drawer"
+        class="ocr-drawer"
+        hidden={!ocrOpen}
+        inert={!ocrOpen}
+      >
+        <button
+          class="drawer-close"
+          aria-label="OCRを閉じる"
+          onclick={() => {
+            ocrOpen = false;
+            sessionStorage.setItem("honkoku.ocr.open", "false");
+          }}>×</button
+        >
+        <OcrPanel
+          {page}
+          {editing}
+          disabled={busy || composing}
+          onresult={(result) => (localOcr = result)}
+          oninsert={insertOcr}
+          oninsertall={appendOcr}
+        />
+      </div>
     </section>
     <Facsimile
       canvas={canvases[index]}
       pageNumber={index + 1}
       bind:half
       {lineModel}
+      {showLines}
       highlightedLine={selectedLine}
       onlineselect={selectLine}
       onlinehover={(line) => (hoveredLine = line)}
     />
-  </div>
-  <div class="workbench-supplement">
-    <OcrPanel
-      {page}
-      {editing}
-      disabled={busy || composing}
-      onresult={(result) => (localOcr = result)}
-      oninsert={insertOcr}
-      oninsertall={appendOcr}
-    />
-    <section class="panel notes-panel" bind:this={notePanel}>
-      <h2>注記</h2>
-      <div class="scroll">
-        {#each pageNotes as n, i}{#if n}<article
-              class="note"
-              class:highlighted={noteIndex === i}
-              data-note-index={i}
-            >
-              <strong>＃{i + 1}</strong>
-              <p>{n.content}</p>
-              <div class="caption muted">
-                {n.createdBy
-                  ? (authors[n.createdBy] ?? "名前を確認中")
-                  : "名前不明"}・{date(n.createdAt)}
-              </div>
-            </article>{/if}{/each}{#if !pageNotes.some(Boolean)}<p
-            class="muted"
-          >
-            注記はありません。
-          </p>{/if}{#if noteIndex !== null && !pageNotes[noteIndex]}<p
-            class="muted"
-            role="status"
-          >
-            この番号の注記はありません。
-          </p>{/if}
-      </div>
-    </section>
   </div>
   <nav
     class="panel filmstrip"
@@ -807,3 +947,51 @@
     </div>
   </nav>
 </div>
+
+{#if noteList || noteIndex !== null}
+  <div
+    class="note-popover"
+    role="dialog"
+    aria-label="注記"
+    tabindex="-1"
+    style:left={`${notePosition.x}px`}
+    style:top={`${notePosition.y}px`}
+    onmouseenter={() => clearTimeout(noteTimer)}
+    onmouseleave={deferClose}
+    onfocusin={() => clearTimeout(noteTimer)}
+    onfocusout={(event) => {
+      if (!event.currentTarget.contains(event.relatedTarget as Node))
+        deferClose();
+    }}
+    onkeydown={(event) => {
+      if (event.key === "Escape") {
+        noteAnchor?.focus();
+        closeNotes();
+      }
+    }}
+  >
+    <button class="note-close" aria-label="注記を閉じる" onclick={closeNotes}
+      >×</button
+    >
+    {#each pageNotes as n, i}{#if n && (noteList || noteIndex === i)}
+        <article class="note" data-note-index={i}>
+          <strong>＃{i + 1}</strong>
+          <p>{n?.content ?? "この番号の注記はありません。"}</p>
+          {#if n}<div class="caption muted">
+              {n.createdBy
+                ? (authors[n.createdBy] ?? "名前を確認中")
+                : "名前不明"}・{date(n.createdAt)}
+            </div>{/if}
+          {#if editing && n}<button
+              onclick={() => {
+                editor?.editNote(i, n.content);
+                closeNotes();
+              }}>注記を編集</button
+            >{/if}
+        </article>
+      {/if}{/each}
+    {#if noteIndex !== null && !pageNotes[noteIndex]}<p>
+        この番号の注記はありません。
+      </p>{/if}
+  </div>
+{/if}

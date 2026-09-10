@@ -161,3 +161,39 @@ test("textarea edits preserve untouched CRLF and CR lines", () => {
   expect(textareaSource("一\r\n二", "一\n二")).toBe("一\r\n二");
   expect(textareaSource("一\r\n二", "一\n新\n二")).toBe("一\r\n新\r\n二");
 });
+
+test("dialog annotations preserve four editable fields and surrounding source", async () => {
+  const { insertAnnotation } = await import("./index");
+  const e = editor("前後\r\n残す＃００１");
+  e.dispatch(e.state.tr.setSelection(TextSelection.create(e.state.doc, 2)));
+  expect(
+    insertAnnotation("warigaki", ["一", "二", "三", "四"])(e.state, e.dispatch),
+  ).toBe(true);
+  expect(toMarkup(e.state.doc)).toBe(
+    "前《割書：一｜二｜三｜四》後\r\n残す＃００１",
+  );
+  let second = -1;
+  e.state.doc.descendants((node, pos) => {
+    if (node.type.name === "segment" && node.attrs.role === "line-1")
+      second = pos + 1;
+  });
+  e.dispatch(e.state.tr.insertText("追記", second + 1));
+  expect(toMarkup(e.state.doc)).toBe(
+    "前《割書：一｜二追記｜三｜四》後\r\n残す＃００１",
+  );
+});
+
+test("vertical navigation enters an empty annotation field", () => {
+  const e = editor("《割書：一｜》");
+  let empty = -1;
+  e.state.doc.descendants((node, pos) => {
+    if (node.type.name === "segment" && !node.content.size) empty = pos + 1;
+  });
+  e.dispatch(
+    e.state.tr.setSelection(TextSelection.create(e.state.doc, empty - 2)),
+  );
+  moveCaret("ArrowDown")(e.state, e.dispatch);
+  expect(e.state.selection.head).toBe(empty);
+  e.dispatch(e.state.tr.insertText("二"));
+  expect(e.source).toBe("《割書：一｜二》");
+});

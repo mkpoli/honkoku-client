@@ -310,6 +310,17 @@ export const wrapSelection =
       );
     return true;
   };
+export const insertAnnotation =
+  (kind: "ruby" | "warigaki" | "misekechi", values: string[]): Command =>
+  (state, dispatch) => {
+    if (!wrapSelection(kind)(state)) return false;
+    dispatch?.(
+      closeHistory(state.tr)
+        .replaceSelectionWith(annotation(kind, values), false)
+        .scrollIntoView(),
+    );
+    return true;
+  };
 export const insertText =
   (text: string): Command =>
   (state, dispatch) => {
@@ -356,8 +367,8 @@ function caretPositions(doc: PMNode, columnIndex: number): number[] {
       for (const part of segmenter.segment(node.text!))
         positions.push(offset + 1 + pos + part.index);
       positions.push(offset + 1 + pos + node.nodeSize);
-    } else if (node.isLeaf || (node.isTextblock && !node.content.size)) {
-      positions.push(offset + 1 + pos + (node.isTextblock ? 1 : 0));
+    } else if (node.isLeaf || (node.inlineContent && !node.content.size)) {
+      positions.push(offset + 1 + pos + (node.isLeaf ? 0 : 1));
       if (node.isLeaf) positions.push(offset + 1 + pos + node.nodeSize);
     }
   });
@@ -414,11 +425,24 @@ function decorations(doc: PMNode): DecorationSet {
       Decoration.widget(
         pos + 1,
         () => {
-          const span = document.createElement("span");
+          const span = document.createElement(
+            node.attrs.kind === "reference" ? "button" : "span",
+          );
+          if (node.attrs.kind === "reference") {
+            span.dataset.note = String(
+              Number(node.attrs.source.slice(1).normalize("NFKC")),
+            );
+            span.setAttribute("type", "button");
+          }
           span.className = `editor-token markup-${node.attrs.kind === "gap" ? "glyph" : node.attrs.kind}`;
           span.textContent = node.attrs.source;
           span.contentEditable = "false";
-          span.setAttribute("aria-label", node.attrs.source);
+          span.setAttribute(
+            "aria-label",
+            node.attrs.kind === "reference"
+              ? `注記${span.dataset.note}`
+              : node.attrs.source,
+          );
           return span;
         },
         {
@@ -439,6 +463,59 @@ function decorations(doc: PMNode): DecorationSet {
   });
   return DecorationSet.create(doc, decorations);
 }
+/** Resolve vertical caret geometry from the adjacent character, including annotation fields. */
+export function verticalCaretRect(view: EditorView, position: number) {
+  let { node, offset } = view.domAtPos(position);
+  if (node.nodeType === Node.ELEMENT_NODE) {
+    const next = node.childNodes[offset],
+      previous = node.childNodes[offset - 1];
+    if (next?.nodeType === Node.TEXT_NODE) {
+      node = next;
+      offset = 0;
+    } else if (previous?.nodeType === Node.TEXT_NODE) {
+      node = previous;
+      offset = previous.textContent!.length;
+    }
+  }
+  if (node.nodeType === Node.TEXT_NODE && node.textContent?.length) {
+    const range = document.createRange();
+    const text = node.textContent;
+    const segments = [
+      ...new Intl.Segmenter("ja", { granularity: "grapheme" }).segment(text),
+    ];
+    const next = segments.find((part) => part.index >= offset);
+    const start = next?.index ?? segments.at(-1)!.index;
+    range.setStart(node, start);
+    range.setEnd(node, next ? start + next.segment.length : offset);
+    const rect = range.getBoundingClientRect();
+    return {
+      left: rect.left,
+      right: rect.right,
+      top: next ? rect.top : rect.bottom,
+      bottom: next ? rect.top : rect.bottom,
+    };
+  }
+  const rect = view.coordsAtPos(position);
+  const parent = view.state.doc.resolve(position).parent;
+  const dom =
+    node.nodeType === Node.ELEMENT_NODE
+      ? (node as HTMLElement)
+      : node.parentElement;
+  if (dom && !parent.content.size) {
+    const box = dom.getBoundingClientRect();
+    return {
+      left: box.left + 2,
+      right: box.right - 2,
+      top: box.top + 1,
+      bottom: box.top + 1,
+    };
+  }
+  return {
+    ...rect,
+    right: rect.right > rect.left ? rect.right : rect.left + 22,
+  };
+}
+
 export interface EditorUpdate {
   source: string;
   serialized: string;
@@ -570,6 +647,128 @@ export function createEditor(
       return false;
     },
     handleDOMEvents: {
+      mousedown: (view, event) => {
+        if (
+          event.button !== 0 ||
+          composing ||
+          view.composing ||
+          (event.target as HTMLElement).closest("[data-note]")
+        )
+          return false;
+        const segment = (event.target as HTMLElement).closest<HTMLElement>(
+          ".editor-segment",
+        );
+        if (segment) {
+          const start = view.posAtDOM(segment, 0),
+            end = start + (segment.textContent?.length ?? 0);
+          const positions = caretPositions(
+            view.state.doc,
+            view.state.doc.resolve(start).index(0),
+          ).filter((pos) => pos >= start && pos <= end);
+          const nearest = positions
+            .map((pos) => {
+              const rect = verticalCaretRect(view, pos);
+              return { pos, distance: Math.abs(rect.top - event.clientY) };
+            })
+            .sort((a, b) => a.distance - b.distance)[0];
+          if (nearest) {
+            view.dispatch(
+              view.state.tr.setSelection(
+                TextSelection.create(
+                  view.state.doc,
+                  event.shiftKey ? view.state.selection.anchor : nearest.pos,
+                  nearest.pos,
+                ),
+              ),
+            );
+            view.focus();
+            event.preventDefault();
+            return true;
+          }
+        }
+        const columns = [...view.dom.children] as HTMLElement[];
+        const last = columns.at(-1)!;
+        if (event.clientX < last.getBoundingClientRect().left - 4) {
+          const tr = closeHistory(view.state.tr).insert(
+            view.state.doc.content.size,
+            schema.nodes.column.create(),
+          );
+          tr.setSelection(
+            TextSelection.create(tr.doc, tr.doc.content.size - 1),
+          );
+          view.dispatch(tr.scrollIntoView());
+          view.focus();
+          event.preventDefault();
+          return true;
+        }
+        if ((event.target as HTMLElement).closest(".editor-annotation"))
+          return false;
+        const distanceToColumn = (column: HTMLElement) => {
+          const rect = column.getBoundingClientRect();
+          return Math.max(
+            rect.left - event.clientX,
+            event.clientX - rect.right,
+            0,
+          );
+        };
+        const column =
+          (event.target as HTMLElement).closest<HTMLElement>(
+            ".transcription-column",
+          ) ??
+          columns.reduce((nearest, column) =>
+            distanceToColumn(column) < distanceToColumn(nearest)
+              ? column
+              : nearest,
+          );
+
+        const index = columns.indexOf(column);
+        const positions = caretPositions(view.state.doc, index);
+        const closest = positions
+          .map((pos) => {
+            const rect = verticalCaretRect(view, pos);
+            const dx = Math.max(
+              rect.left - event.clientX,
+              event.clientX - rect.right,
+              0,
+            );
+            return { pos, distance: dx * dx + (rect.top - event.clientY) ** 2 };
+          })
+          .sort((a, b) => a.distance - b.distance || b.pos - a.pos)[0];
+        // Let the browser start drag selections on text; resolve the remaining column space.
+        if (closest && closest.distance > 400) {
+          view.dispatch(
+            view.state.tr.setSelection(
+              TextSelection.create(
+                view.state.doc,
+                event.shiftKey ? view.state.selection.anchor : closest.pos,
+                closest.pos,
+              ),
+            ),
+          );
+          view.focus();
+          event.preventDefault();
+          return true;
+        }
+        return false;
+      },
+      mousemove: (view, event) => {
+        const target = event.target as HTMLElement;
+        if (target.closest("[data-note]")) return false;
+        const hit = view.posAtCoords({
+          left: event.clientX,
+          top: event.clientY,
+        });
+        let text = false;
+        if (hit) {
+          const rect = verticalCaretRect(view, hit.pos);
+          text =
+            event.clientX >= rect.left - 3 &&
+            event.clientX <= rect.right + 3 &&
+            Math.abs(rect.top - event.clientY) < 28;
+        }
+        view.dom.style.cursor = text ? "text" : "default";
+        return false;
+      },
       compositionstart: () => {
         composing = true;
         publish();

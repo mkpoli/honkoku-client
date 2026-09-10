@@ -84,6 +84,9 @@ export function fixtureEdit(
     if (command === "page_draft")
       Object.assign(page, {
         tempText: String(args.text),
+        ...(Array.isArray(args.notes)
+          ? { tempNotes: structuredClone(args.notes) }
+          : {}),
         tempTextChanged: true,
         updatedAt: new Date().toISOString(),
       });

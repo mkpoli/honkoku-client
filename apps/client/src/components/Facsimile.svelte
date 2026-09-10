@@ -1,6 +1,9 @@
 <script lang="ts">
   import { untrack } from "svelte";
-  import type { PageLines, LocalPageLines } from "../../../../packages/client-api/ocr";
+  import type {
+    PageLines,
+    LocalPageLines,
+  } from "../../../../packages/client-api/ocr";
   import OpenSeadragon from "openseadragon";
   import type { Canvas } from "@honkoku/client-api/types";
   let {
@@ -9,6 +12,7 @@
     half = $bindable(""),
     lineModel = { engine: null, lines: [], estimated: false },
     highlightedLine = null,
+    showLines = false,
     onlinehover,
     onlineselect,
   }: {
@@ -17,13 +21,13 @@
     half?: string;
     lineModel?: PageLines | LocalPageLines;
     highlightedLine?: number | null;
+    showLines?: boolean;
     onlinehover?: (index: number | null) => void;
     onlineselect?: (index: number) => void;
   } = $props();
   let host: HTMLDivElement;
   let viewer = $state<OpenSeadragon.Viewer>();
   let opened = $state(false);
-  let showLines = $state(false);
   let overlayElements = $state<HTMLButtonElement[]>([]);
   let fallback = $state(false),
     imageFailed = $state(false),
@@ -45,7 +49,6 @@
     const current = canvas;
     fallback = !current?.infoJsonUrl && !current?.imageUrl;
     opened = false;
-    showLines = false;
     imageFailed = false;
     plainScale = 1;
     scale = 100;
@@ -227,14 +230,10 @@
         >{lineModel.engine === "local"
           ? "ローカルOCR"
           : lineModel.engine === "minna"
-          ? "みんなで翻刻"
-          : "国立国会図書館"}{lineModel.estimated ? "・推定" : ""}</span
+            ? "みんなで翻刻"
+            : "国立国会図書館"}{lineModel.estimated ? "・推定" : ""}</span
       >{/if}
     <div class="zoom-controls">
-      {#if lineModel.lines.length}<button
-          aria-pressed={showLines}
-          onclick={() => (showLines = !showLines)}>行枠</button
-        >{/if}
       <button aria-label="縮小" onclick={() => zoom(1 / 1.25)}>−</button><span
         class="numeric">{scale}%</span
       ><button aria-label="拡大" onclick={() => zoom(1.25)}>＋</button><button

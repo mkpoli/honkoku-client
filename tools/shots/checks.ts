@@ -277,7 +277,9 @@ export async function checkInteractions(browser: Browser, origin: string) {
   );
   await page.locator(".markup-reference").waitFor();
   await page.getByRole("button", { name: "注記1", exact: true }).click();
-  assert.equal(await page.locator(".note.highlighted").count(), 1);
+  assert.equal(await page.locator(".note-popover .note").count(), 1);
+  assert.match(await page.locator(".note-popover").innerText(), /欄外の注記/);
+  await page.getByRole("button", { name: "OCR", exact: true }).click();
   assert.ok(
     (await page.locator(".ocr-panel").textContent())?.includes("ローカルOCR"),
   );
@@ -477,6 +479,7 @@ export async function checkEditing(
     await page.waitForURL("**/pages/3");
     await page.getByRole("button", { name: "編集開始", exact: true }).click();
     await page.getByRole("button", { name: "原文表示", exact: true }).click();
+    await page.getByRole("button", { name: "OCR", exact: true }).click();
     const beforeOcr = await raw.inputValue();
     const ocr = (
       await page.locator(".ocr-line .line-text").allTextContents()
@@ -617,6 +620,22 @@ export async function checkEditing(
     console.log(
       `Editing checks passed (${theme}${suffix}): draft, save, completion, discard, wrapping, navigation, resume, shortcut.`,
     );
+  } catch (error) {
+    await page.screenshot({
+      path: resolve(
+        import.meta.dir,
+        `../../.local/shots/12-editing-failure${suffix}.png`,
+      ),
+    });
+    console.error(
+      "Editing failure:",
+      JSON.stringify({
+        errors,
+        status: await page.locator(".edit-status").allTextContents(),
+        notice: await page.locator(".edit-notice").allTextContents(),
+      }),
+    );
+    throw error;
   } finally {
     await context.close();
   }
@@ -818,8 +837,12 @@ export async function checkAlignment(
     await page.getByRole("button", { name: "破棄する", exact: true }).click();
     await page.getByRole("button", { name: "次のコマ", exact: true }).click();
     await page.waitForURL(`**/pages/${fixture.page.index + 1}`);
-    await toggle.waitFor({ state: "hidden" });
-    assert.equal(await toggle.count(), 0);
+    await page.waitForFunction(() =>
+      [...document.querySelectorAll("button")].some(
+        (button) => button.textContent === "行枠" && button.disabled,
+      ),
+    );
+    assert.equal(await toggle.isDisabled(), true);
     assert.equal(await page.locator(".line-overlay").count(), 0);
     assert.deepEqual(errors, []);
     console.log(
@@ -839,8 +862,13 @@ async function checkOcr(browser: Browser, origin: string) {
   const page = await context.newPage();
   try {
     await page.goto(`${origin}/#/entries/${entry}/pages/3`);
+    await page.getByRole("button", { name: "OCR", exact: true }).click();
     await page.getByText("ローカルOCR · v18", { exact: false }).waitFor();
     assert.equal(await page.locator(".ocr-line").count(), fixture.lines.length);
+    await page.waitForFunction(
+      (count) => document.querySelectorAll(".line-overlay").length === count,
+      fixture.lines.length,
+    );
     await page.getByRole("button", { name: "行枠", exact: true }).click();
     assert.equal(
       await page.locator(".line-overlay:visible").count(),
@@ -873,9 +901,18 @@ async function checkOcr(browser: Browser, origin: string) {
     assert.ok(text.split("\n").includes(fixture.lines[0].koji));
     const raw = page.getByRole("textbox", { name: "原文を編集", exact: true });
     await raw.fill("前の行\n後の行");
-    await raw.evaluate((element: HTMLTextAreaElement) => element.setSelectionRange(1, 1));
-    await page.locator(".ocr-line").first().getByRole("button", { name: "挿入", exact: true }).click();
-    assert.equal(await raw.inputValue(), `前の行\n${fixture.lines[0].koji}\n後の行`);
+    await raw.evaluate((element: HTMLTextAreaElement) =>
+      element.setSelectionRange(1, 1),
+    );
+    await page
+      .locator(".ocr-line")
+      .first()
+      .getByRole("button", { name: "挿入", exact: true })
+      .click();
+    assert.equal(
+      await raw.inputValue(),
+      `前の行\n${fixture.lines[0].koji}\n後の行`,
+    );
 
     await page.getByRole("button", { name: "破棄", exact: true }).click();
     await page.getByRole("button", { name: "破棄する", exact: true }).click();
@@ -890,6 +927,303 @@ async function checkOcr(browser: Browser, origin: string) {
     );
     console.log(
       "OCR checks passed: stored fixture, local overlays, confirmation, insertion, page cleanup.",
+    );
+  } finally {
+    await context.close();
+  }
+}
+
+export async function checkQuietWorkbench(
+  browser: Browser,
+  origin: string,
+  theme: "light" | "dark",
+  suffix = "",
+) {
+  const context = await browser.newContext({
+    viewport: { width: 1600, height: 1000 },
+    locale: "ja-JP",
+    colorScheme: theme,
+    reducedMotion: "reduce",
+  });
+  const page = await context.newPage();
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  const button = (name: string) =>
+    page.getByRole("button", { name, exact: true });
+  const shot = async (name: string) => {
+    await page.waitForFunction(async () => {
+      const { default: OpenSeadragon } =
+        await import("/node_modules/.vite/deps/openseadragon.js");
+      const viewer = OpenSeadragon.getViewer(document.querySelector(".osd"));
+      return viewer?.world.getItemCount() > 0 && viewer.getFullyLoaded();
+    });
+    await page.evaluate(
+      () =>
+        new Promise<void>((resolve) =>
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+        ),
+    );
+    await page.mouse.move(0, 0);
+    await page.evaluate(() => document.fonts.ready);
+    await page.screenshot({
+      path: resolve(
+        import.meta.dir,
+        `../../.local/shots/12-${name}-${theme}${suffix}.png`,
+      ),
+      caret: "initial",
+    });
+  };
+  try {
+    await page.goto(`${origin}/#/entries/${entry}/pages/3`);
+    await button("編集開始").waitFor();
+    await page.waitForLoadState("networkidle");
+    assert.equal(
+      await page.locator(".topbar input, .topbar .brand").count(),
+      0,
+    );
+    assert.ok(
+      !(await page.locator(".topbar").innerText()).includes("みんなで翻刻"),
+    );
+    assert.equal(await page.locator(".topbar .breadcrumb a").count(), 4);
+    assert.match(
+      await page.locator(".topbar .page-count").innerText(),
+      /4／18コマ/,
+    );
+    assert.equal(
+      await page.locator(".notes-panel, .workbench-supplement").count(),
+      0,
+    );
+    const drawer = page.locator(".ocr-drawer");
+    assert.equal(await drawer.isVisible(), false);
+    const pane = await page.locator(".transcription-panel").boundingBox();
+    assert.ok(pane && pane.height > 700);
+    await shot("workbench-quiet");
+    await button("OCR").click();
+    assert.equal(await drawer.isVisible(), true);
+    assert.deepEqual(
+      await page.locator(".transcription-panel").boundingBox(),
+      pane,
+    );
+    await page.reload();
+    await button("編集開始").waitFor();
+    assert.equal(await button("OCR").getAttribute("aria-pressed"), "true");
+    await button("OCRを閉じる").click();
+    await button("編集開始").click();
+    await page
+      .locator(".vertical-editor .transcription-column")
+      .first()
+      .click();
+    await page.keyboard.press("Home");
+    await shot("editing-quiet");
+    await button("原文表示").click();
+    const raw = page.getByRole("textbox", { name: "原文を編集", exact: true });
+    await raw.fill("前後\n別列");
+    await raw.evaluate((element: HTMLTextAreaElement) =>
+      element.setSelectionRange(1, 1),
+    );
+    await button("合字").hover();
+    await button("合字ゟ").click();
+    assert.equal(await raw.inputValue(), "前ゟ後\n別列");
+    assert.equal(await page.locator(".palette-glyphs").isVisible(), true);
+    await raw.evaluate((element: HTMLTextAreaElement) =>
+      element.setSelectionRange(2, 3),
+    );
+    await button("振り仮名").click();
+    assert.equal(
+      await page.getByLabel("親文字", { exact: true }).inputValue(),
+      "後",
+    );
+    await page.getByLabel("読み", { exact: true }).fill("あと");
+    await button("挿入").click();
+    assert.equal(await raw.inputValue(), "前ゟ《振り仮名：後｜あと》\n別列");
+    await raw.fill("前後");
+    await raw.evaluate((element: HTMLTextAreaElement) =>
+      element.setSelectionRange(1, 1),
+    );
+    await button("割書").click();
+    await page.getByLabel("1行目", { exact: true }).fill("一");
+    await page.getByLabel("2行目", { exact: true }).fill("二");
+    await button("行を追加").click();
+    await page.getByLabel("3行目", { exact: true }).fill("三");
+    await button("行を追加").click();
+    await page.getByLabel("4行目", { exact: true }).fill("四");
+    assert.equal(await button("行を追加").count(), 0);
+    await button("挿入").click();
+    assert.equal(await raw.inputValue(), "前《割書：一｜二｜三｜四》後");
+    await button("原文表示").click();
+    await page
+      .locator(".editor-warigaki > .editor-segment")
+      .nth(1)
+      .click({ position: { x: 6, y: 1 } });
+    await page.keyboard.press("ArrowDown");
+    await page.keyboard.type("x");
+    await button("原文表示").click();
+    assert.equal(await raw.inputValue(), "前《割書：一｜二x｜三｜四》後");
+    await raw.fill("前後");
+    await raw.evaluate((element: HTMLTextAreaElement) =>
+      element.setSelectionRange(1, 1),
+    );
+    await button("注記").click();
+    await page
+      .getByLabel("注記の内容", { exact: true })
+      .fill("合字は「より」を表す。");
+    await button("追加").click();
+    assert.equal(await raw.inputValue(), "前＃1後");
+    await button("原文表示").click();
+    await button("注記1").hover();
+    await page.locator(".note-popover").waitFor();
+    assert.match(
+      await page.locator(".note-popover").innerText(),
+      /合字は「より」を表す。/,
+    );
+    if (theme === "light" && !suffix)
+      await page.screenshot({
+        path: resolve(
+          import.meta.dir,
+          "../../.local/shots/12-note-popover-light.png",
+        ),
+      });
+    await button("注記1").click();
+    await page
+      .getByLabel("注記の内容", { exact: true })
+      .fill("原本の合字は「より」を表す。");
+    await button("更新").click();
+    await button("原文表示").click();
+    assert.equal(await raw.inputValue(), "前＃1後");
+    await raw.evaluate((element: HTMLTextAreaElement) =>
+      element.setSelectionRange(4, 4),
+    );
+    await button("注記").click();
+    await page.getByLabel("注記の内容", { exact: true }).fill("二つ目の注記");
+    await button("追加").click();
+    assert.equal(await raw.inputValue(), "前＃1後＃2");
+    await button("原文表示").click();
+    await button("注記1").click();
+    await button("削除").click();
+    await button("次のコマ").click();
+    await page.waitForURL("**/pages/4");
+    await button("前のコマ").click();
+    await page.waitForURL("**/pages/3");
+    await button("編集を再開").click();
+    await button("注記2").focus();
+    await page.locator(".note-popover").waitFor();
+    assert.match(
+      await page.locator(".note-popover").innerText(),
+      /二つ目の注記/,
+    );
+    await page.keyboard.press("Escape");
+    await button("保存").click();
+    await button("保存を確定").click();
+    await button("編集開始").waitFor();
+    const saved = await page.evaluate(async (entryId) => {
+      const { fixtureInvoke } = await import("/src/dev/fixtures.ts");
+      const pages = (await fixtureInvoke("list_pages", { entryId })) as {
+        index: number;
+        notes: ({
+          content: string;
+          type: string;
+          markdown: string;
+          createdBy: string;
+          createdAt: string;
+          updatedAt: string;
+        } | null)[];
+      }[];
+      return pages.find((p) => p.index === 3)!.notes;
+    }, entry);
+    assert.equal(saved[0], null);
+    assert.equal(saved[1]?.content, "二つ目の注記");
+    assert.equal(saved[1]?.type, "note");
+    assert.equal(saved[1]?.markdown, saved[1]?.content);
+    assert.ok(
+      saved[1]?.createdBy && saved[1]?.createdAt && saved[1]?.updatedAt,
+    );
+    await button("編集開始").click();
+    await button("原文表示").click();
+    await raw.fill(
+      "原本を読む\n《振り仮名：峰｜みね》\n《割書：一行目｜二行目》\nゟ　ヿ　〆",
+    );
+    await button("注記1件").click();
+    assert.match(
+      await page.locator(".note-popover").innerText(),
+      /二つ目の注記/,
+    );
+    await button("注記を閉じる").click();
+    await button("原文表示").click();
+    const editor = page.locator(".vertical-editor");
+    await editor.locator(".transcription-column").first().click();
+    await page.keyboard.press("Home");
+    await editor.focus();
+    await page.keyboard.press("ArrowDown");
+    assert.equal(
+      await editor.evaluate((element) => getComputedStyle(element).caretColor),
+      "rgb(217, 89, 54)",
+    );
+    assert.equal(
+      await editor.evaluate(() => window.getSelection()?.isCollapsed),
+      true,
+    );
+    await page.screenshot({
+      path: resolve(
+        import.meta.dir,
+        `../../.local/shots/12-native-caret-${theme}${suffix}.png`,
+      ),
+      caret: "initial",
+    });
+
+    await button("踊り字").focus();
+    await page.keyboard.press("Enter");
+    await page.keyboard.press("ArrowRight");
+    assert.equal(
+      await page.evaluate(() =>
+        document.activeElement?.getAttribute("aria-label"),
+      ),
+      "踊り字々",
+    );
+    await page.keyboard.press("ArrowRight");
+    await page.keyboard.press("Enter");
+    await page.keyboard.press("Escape");
+    assert.equal(await page.locator(".palette-glyphs").count(), 0);
+    await button("変体仮名").hover();
+    if (theme === "light" && !suffix)
+      await page.screenshot({
+        path: resolve(
+          import.meta.dir,
+          "../../.local/shots/12-palette-open-light.png",
+        ),
+      });
+    await page.mouse.move(0, 0);
+    await button("原文表示").click();
+    await raw.fill("一二\n三四");
+    await button("原文表示").click();
+    const firstColumn = await editor
+      .locator(".transcription-column")
+      .first()
+      .boundingBox();
+    assert.ok(firstColumn);
+    await page.mouse.click(
+      firstColumn.x + firstColumn.width / 2,
+      (await editor.boundingBox())!.y +
+        (await editor.boundingBox())!.height -
+        20,
+    );
+    await page.keyboard.type("x");
+    await button("原文表示").click();
+    assert.equal(await raw.inputValue(), "一二x\n三四");
+    await button("原文表示").click();
+    const lastColumn = await editor
+      .locator(".transcription-column")
+      .last()
+      .boundingBox();
+    assert.ok(lastColumn);
+    await page.mouse.click(lastColumn.x - 30, lastColumn.y + 30);
+    await page.keyboard.type("y");
+    await button("原文表示").click();
+    assert.equal(await raw.inputValue(), "一二x\n三四\ny");
+    await button("破棄").click();
+    await button("破棄する").click();
+    assert.deepEqual(errors, []);
+    console.log(
+      `Quiet workbench checks passed (${theme}${suffix}): chrome, drawers, raw constructs, palette keyboard, notes add/edit/delete/save/resume, caret.`,
     );
   } finally {
     await context.close();
