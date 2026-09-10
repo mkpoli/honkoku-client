@@ -45,6 +45,12 @@
     "allow-get-entry",
     "allow-list-pages",
     "allow-iiif-prepare-entry",
-    "allow-iiif-local-url"
+    "allow-iiif-local-url",
+    "allow-ocr-status",
+    "allow-ocr-setup",
+    "allow-ocr-run-page",
+    "allow-ocr-cancel",
+    "allow-ocr-result",
+    "allow-ocr-publish-page"
   ]
 }
