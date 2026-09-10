@@ -9,26 +9,24 @@
     value?: string;
   } = $props();
   let choices = $derived([
-    ["platform", "表示順"],
+    ...(extended ? [["updated", "更新順"]] : [["platform", "表示順"]]),
     ["name", "名前順"],
     ["progress", "進捗順"],
-    ...(extended
-      ? [
-          ["size", "資料数順"],
-          ["updated", "更新順"],
-        ]
-      : []),
+    ...(extended ? [["size", "資料数順"]] : []),
   ]);
   $effect(() => {
     const key = storageKey;
     try {
-      const saved = localStorage.getItem(key) ?? "platform";
+      const saved =
+        localStorage.getItem(key) ?? (extended ? "updated" : "platform");
       value =
         choices.some(([id]) => id === saved) || saved === "progress-desc"
           ? saved
-          : "platform";
+          : extended
+            ? "updated"
+            : "platform";
     } catch {
-      value = "platform";
+      value = extended ? "updated" : "platform";
     }
   });
   function choose(id: string) {
@@ -39,7 +37,7 @@
   }
 </script>
 
-<div class="sort-control" role="group" aria-label="表示順の選択">
+<div class="sort-control" role="group" aria-label="並び順の選択">
   {#each choices as [id, text]}
     <button
       aria-pressed={value === id ||

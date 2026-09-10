@@ -1953,3 +1953,98 @@ button.line-overlay.line-hidden {
     flex-wrap: wrap;
   }
 }
+
+.skeleton {
+  width: 100%;
+  overflow: hidden;
+}
+.skeleton-item {
+  padding: 16px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.skeleton-item > span {
+  display: block;
+  height: 14px;
+  width: 90%;
+  border-radius: 4px;
+  background: linear-gradient(
+    100deg,
+    var(--surface-inset) 30%,
+    var(--surface) 50%,
+    var(--surface-inset) 70%
+  );
+  background-size: 220% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+.skeleton-item > span:first-child {
+  height: 20px;
+}
+.skeleton-cards {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 24px;
+}
+.skeleton-cards .skeleton-item > span:first-child {
+  height: 180px;
+  width: 100% !important;
+}
+.skeleton-columns {
+  display: flex;
+  flex-direction: row-reverse;
+  gap: 24px;
+  padding: 24px;
+  height: 100%;
+}
+.skeleton-columns .skeleton-item {
+  width: 26px;
+  flex-shrink: 0;
+  height: 80%;
+}
+.skeleton-columns .skeleton-item > span {
+  height: 100%;
+  width: 100% !important;
+}
+.skeleton-columns .skeleton-item > span:not(:first-child) {
+  display: none;
+}
+.skeleton-columns .skeleton-item:nth-child(3n) {
+  height: 60%;
+}
+.skeleton-frame {
+  position: absolute;
+  inset: 12px;
+  width: auto;
+}
+.skeleton-frame .skeleton-item,
+.skeleton-frame .skeleton-item > span:first-child {
+  height: 100%;
+  width: 100% !important;
+}
+.skeleton-frame .skeleton-item > span:not(:first-child) {
+  display: none;
+}
+.region-notice {
+  padding: 8px 0;
+  color: var(--accent);
+  overflow-wrap: anywhere;
+}
+.region-notice button {
+  margin-left: 8px;
+  padding: 2px 8px;
+}
+@keyframes shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-item > span,
+  .progress-skeleton {
+    animation: none;
+  }
+}

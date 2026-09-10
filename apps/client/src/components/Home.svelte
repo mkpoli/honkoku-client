@@ -1,5 +1,8 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { Region } from "../region.svelte";
+  import Skeleton from "./Skeleton.svelte";
+  import RegionNotice from "./RegionNotice.svelte";
   import type {
     Announcement,
     Project,
@@ -17,11 +20,13 @@
   import ExternalLink from "./ExternalLink.svelte";
   let {
     projects,
+    projectsRegion,
     session,
     profile,
     search = $bindable(""),
   }: {
     projects: Project[];
+    projectsRegion: Region<Project[]>;
     session: SessionInfo | null;
     profile: User | null;
     search?: string;
@@ -32,10 +37,11 @@
     rankTab = $state("total");
   let collapsed = $state<string[]>([]),
     owners = $state<Record<string, string>>({});
-  let ranking = $state<User[]>([]),
-    announcements = $state<Announcement[]>([]),
-    activity = $state<TimelineItem[]>([]),
-    error = $state("");
+  const rankingRegion = new Region<User[]>();
+  const announcementRegion = new Region<Announcement[]>();
+  let ranking = $derived(rankingRegion.value ?? []);
+  let announcements = $derived(announcementRegion.value ?? []);
+  let activity = $state<TimelineItem[]>([]);
   const joined = (p: Project) =>
     !!session &&
     (!!p.members?.includes(session.uid) || !!p.admins?.includes(session.uid));
@@ -116,19 +122,13 @@
       cancelled = true;
     };
   });
-  async function loadSide() {
-    error = "";
-    const result = await Promise.allSettled([
-      homeRanking(),
-      homeAnnouncements(),
-    ]);
-    if (result[0].status === "fulfilled") ranking = result[0].value;
-    else error = errorMessage(result[0].reason);
-    if (result[1].status === "fulfilled") announcements = result[1].value;
-    else error = errorMessage(result[1].reason);
-  }
   onMount(() => {
-    void loadSide();
+    void rankingRegion.load("ranking", homeRanking);
+    void announcementRegion.load("announcements", homeAnnouncements);
+    return () => {
+      rankingRegion.cancel();
+      announcementRegion.cancel();
+    };
   });
 </script>
 
@@ -162,7 +162,12 @@
         ></select
       ></label
     >
+    <RegionNotice region={projectsRegion} />
     <div class="scroll project-groups">
+      {#if !projects.length && projectsRegion.pending}<Skeleton
+          label="プロジェクトを取得中"
+          count={7}
+        />{/if}
       {#each groups as [name, items] (name)}
         <button
           class="group-heading"
@@ -192,7 +197,9 @@
                 ><span>{number(p.charCount)}字</span>
               </div></a
             >{/each}{/if}
-      {:else}<p class="empty">該当するプロジェクトはありません。</p>{/each}
+      {:else}{#if !projectsRegion.pending}<p class="empty">
+            該当するプロジェクトはありません。
+          </p>{/if}{/each}
     </div>
   </section>
   <div class="home-centre">
@@ -210,6 +217,11 @@
       {#if rankTab !== "total"}<p class="caption muted">
           読み込んだ活動から集計
         </p>{/if}
+      <RegionNotice region={rankingRegion} />
+      {#if rankingRegion.value === undefined && rankingRegion.pending}<Skeleton
+          label="ランキングを取得中"
+          count={5}
+        />{/if}
       <ol class="ranking-list">
         {#each ranked as record, i (record.user.uid)}<li>
             <span class="rank" class:leading={i < 3}>{i + 1}</span><Avatar
@@ -226,7 +238,9 @@
                 ><span class="muted">Lv.{number(record.user.level)}</span>
               </div>
             </div>
-          </li>{:else}<li class="empty">この期間の活動はありません。</li>{/each}
+          </li>{:else}{#if !rankingRegion.pending}<li class="empty">
+              この期間の活動はありません。
+            </li>{/if}{/each}
       </ol>
     </section>
     {#if session && profile}<section class="panel own-record">
@@ -247,15 +261,18 @@
       </section>{/if}
     <section class="panel announcements">
       <h2>お知らせ</h2>
+      <RegionNotice region={announcementRegion} />
+      {#if announcementRegion.value === undefined && announcementRegion.pending}<Skeleton
+          count={2}
+        />{/if}
       {#each announcements as item (item.id)}<div class="announcement">
           <time datetime={item.createdAt}>{date(item.createdAt)}</time
           ><ExternalLink href={"https://app.honkoku.org/AdminAnnouncements"}
             >{item.title}</ExternalLink
           >
-        </div>{:else}<p class="empty">お知らせはありません。</p>{/each}
+        </div>{:else}{#if !announcementRegion.pending}<p class="empty">
+            お知らせはありません。
+          </p>{/if}{/each}
     </section>
-    {#if error}<p class="error" role="alert">
-        {error}<button onclick={loadSide}>再試行</button>
-      </p>{/if}
   </aside>
 </div>

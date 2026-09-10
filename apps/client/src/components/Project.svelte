@@ -1,4 +1,7 @@
 <script lang="ts">
+  import { Region } from "../region.svelte";
+  import Skeleton from "./Skeleton.svelte";
+  import RegionNotice from "./RegionNotice.svelte";
   import { untrack } from "svelte";
   import type {
     Collection,
@@ -10,6 +13,7 @@
     TimelineItem,
   } from "@honkoku/client-api/types";
   import {
+    projectPageActivity,
     listCollections,
     listEntrySummaries,
     collectionProgress,
@@ -27,15 +31,24 @@
   import Avatar from "./Avatar.svelte";
   let {
     project,
+    metadataPending = false,
+    projectRegion,
     collectionId,
     session,
     oncollection,
   }: {
     project: Project;
+    metadataPending?: boolean;
+    projectRegion: Region<Project>;
     collectionId?: string;
     session: SessionInfo | null;
     oncollection: (c: Collection | null) => void;
   } = $props();
+  const activityRegion = new Region<Record<string, string>>();
+  const collectionRegion = new Region<Collection[]>();
+  const entriesRegion = new Region<EntrySummary[]>();
+  const figuresRegion = new Region<EntryProgress[]>();
+  let progressRegions = $state<Record<string, Region<CollectionProgress>>>({});
   let collections = $state<Collection[]>([]),
     selected = $state<Collection | null>(null),
     entries = $state<EntrySummary[]>([]),
@@ -44,12 +57,11 @@
     organizer = $state("主催者を確認中"),
     search = $state(""),
     error = $state(""),
-    loading = $state(false),
-    collectionsLoading = $state(true);
+    loading = $derived(entriesRegion.pending),
+    collectionsLoading = $derived(collectionRegion.pending);
   let progress = $state<Record<string, CollectionProgress>>({});
   let entryFigures = $state<Record<string, EntryProgress>>({});
-  let progressErrors = $state<Record<string, string>>({});
-  let collectionSort = $state("platform"),
+  let collectionSort = $state("updated"),
     entrySort = $state("platform");
   const completion = (p?: { completed: number; size: number }) =>
     p && p.size > 0 ? p.completed / p.size : 0;
@@ -60,14 +72,12 @@
         (c.entries ?? []).map((id) => [id, c.id] as const),
       ),
     );
-    for (const { event } of activity) {
-      if (event.projectId !== project.id) continue;
-      const id = parents.get(event.entryId);
+    for (const [entryId, updatedAt] of Object.entries(
+      activityRegion.value ?? {},
+    )) {
+      const id = parents.get(entryId);
       if (id)
-        result[id] = Math.max(
-          result[id] ?? 0,
-          Date.parse(event.createdAt) || 0,
-        );
+        result[id] = Math.max(result[id] ?? 0, Date.parse(updatedAt) || 0);
     }
     return result;
   });
@@ -131,65 +141,77 @@
   let contributors = $derived(aggregate(activity));
   async function loadProgress(c: Collection, g: number, refresh = false) {
     if (g !== projectGeneration) return;
-    try {
-      const result = await collectionProgress(c.id, refresh);
-      if (g !== projectGeneration) return;
-      progress = { ...progress, [c.id]: result };
-      delete progressErrors[c.id];
-    } catch (e) {
-      if (g === projectGeneration) progressErrors[c.id] = errorMessage(e);
-    }
+    const region = (progressRegions[c.id] ??= new Region<CollectionProgress>());
+    await region.load(
+      `progress:${session?.uid}:${c.id}`,
+      () => collectionProgress(c.id, refresh),
+      (value) => {
+        if (g === projectGeneration) progress = { ...progress, [c.id]: value };
+      },
+      { kind: "collectionProgress", id: c.id },
+    );
   }
-  async function loadProject(projectId: string) {
+  function loadProject(projectId: string) {
     const g = ++projectGeneration;
-    collectionsLoading = true;
-    collections = [];
     activity = [];
     progress = {};
-    progressErrors = {};
-    error = "";
-    try {
-      const list = await listCollections(projectId);
-      if (g !== projectGeneration) return;
-      collections = list.filter((c) => c.display !== false);
-      collectionsLoading = false;
-      await concurrentEach(collections, (c) => loadProgress(c, g));
-    } catch (e) {
-      if (g === projectGeneration) {
-        error = errorMessage(e);
-        collectionsLoading = false;
-      }
-    }
+    Object.values(progressRegions).forEach((r) => r.cancel());
+    progressRegions = {};
+    return collectionRegion.load(
+      `collections:${session?.uid}:${projectId}`,
+      () => listCollections(projectId),
+      (list) => {
+        collections = list.filter((c) => c.display !== false);
+        void concurrentEach(collections, (c) => loadProgress(c, g));
+      },
+      { kind: "collections", id: projectId },
+    );
   }
-  async function loadSelection(c: Collection | undefined, explicit: boolean) {
+  function loadSelection(c: Collection | undefined, explicit: boolean) {
     const g = ++selectionGeneration;
     selected = c ?? null;
     entries = [];
     entryFigures = {};
-    loading = !!c;
-    error = "";
+    entriesRegion.cancel();
+    figuresRegion.cancel();
     oncollection(explicit ? (c ?? null) : null);
     if (!c) return;
-    try {
-      const rows = await listEntrySummaries(c.id);
-      if (g !== selectionGeneration) return;
-      entries = rows;
-      const figures = await entryProgress(rows.map((e) => e.id));
-      if (g !== selectionGeneration) return;
-      entryFigures = Object.fromEntries(figures.map((p) => [p.entryId, p]));
-    } catch (e) {
-      if (g === selectionGeneration) error = errorMessage(e);
-    } finally {
-      if (g === selectionGeneration) loading = false;
-    }
+    void entriesRegion.load(
+      `entries:${session?.uid}:${c.id}`,
+      () => listEntrySummaries(c.id),
+      (rows) => {
+        if (g !== selectionGeneration) return;
+        entries = rows;
+        void figuresRegion.load(
+          `figures:${session?.uid}:${c.id}`,
+          () => entryProgress(rows.map((e) => e.id)),
+          (figures) => {
+            if (g === selectionGeneration)
+              entryFigures = Object.fromEntries(
+                figures.map((p) => [p.entryId, p]),
+              );
+          },
+          { kind: "entryProgress", ids: rows.map((e) => e.id) },
+        );
+      },
+      { kind: "entries", id: c.id },
+    );
   }
   $effect(() => {
     const id = project.id;
     tab = "collections";
     search = "";
-    void untrack(() => loadProject(id));
+    void untrack(() => {
+      void activityRegion.load(`page-activity:${session?.uid}:${id}`, () =>
+        projectPageActivity(id),
+      );
+      return loadProject(id);
+    });
     return () => {
       projectGeneration++;
+      collectionRegion.cancel();
+      activityRegion.cancel();
+      Object.values(progressRegions).forEach((r) => r.cancel());
     };
   });
   $effect(() => {
@@ -201,6 +223,8 @@
       error = "このプロジェクトにコレクションがありません。";
     return () => {
       selectionGeneration++;
+      entriesRegion.cancel();
+      figuresRegion.cancel();
     };
   });
   $effect(() => {
@@ -225,30 +249,34 @@
 <div class="project-grid">
   <div class="project-main">
     <section class="panel project-header">
-      <h1 class="serif">{project.title}</h1>
-      <p>主催：{organizer}</p>
-      {#if project.description}<p class="description muted">
-          {project.description}
-        </p>{/if}
-      <div class="project-figures">
-        <span
-          >{number(project.completedImageCount)}／{number(
-            project.totalImageCount,
-          )}コマ</span
-        ><span>{number(project.charCount)}字</span><span
-          >{number(project.collections?.length)}コレクション</span
-        ><span>{number(project.totalEntryCount)}資料</span>
-      </div>
-      <Progress
-        done={project.completedImageCount ?? 0}
-        total={project.totalImageCount ?? 0}
-        caption
-      />
-      {#if discrepancy}<p class="caption muted collection-total">
-          集計：{number(summed.completed)}／{number(summed.size)}コマ・{number(
-            summed.entries,
-          )}資料
-        </p>{/if}
+      <RegionNotice region={projectRegion} />
+      {#if metadataPending}<Skeleton count={2} />{:else}<h1 class="serif">
+          {project.title}
+        </h1>
+        <p>主催：{organizer}</p>
+        {#if project.description}<p class="description muted">
+            {project.description}
+          </p>{/if}
+        <div class="project-figures">
+          <span
+            >{number(project.completedImageCount)}／{number(
+              project.totalImageCount,
+            )}コマ</span
+          ><span>{number(project.charCount)}字</span><span
+            >{number(project.collections?.length)}コレクション</span
+          ><span>{number(project.totalEntryCount)}資料</span>
+        </div>
+        <Progress
+          done={project.completedImageCount ?? 0}
+          total={project.totalImageCount ?? 0}
+          caption
+        />
+        {#if discrepancy}<p class="caption muted collection-total">
+            集計：{number(summed.completed)}／{number(
+              summed.size,
+            )}コマ・{number(summed.entries)}資料
+          </p>{/if}
+      {/if}
       <div class="tabs project-tabs" aria-label="プロジェクトの表示">
         {#each [["overview", "概要"], ["collections", "コレクション"], ["timeline", "タイムライン"], ["announcements", "お知らせ"], ["guidelines", "凡例"]] as [value, text]}<button
             class:active={tab === value}
@@ -277,8 +305,14 @@
             extended
             bind:value={collectionSort}
           />
+          <RegionNotice region={collectionRegion} />
+          <RegionNotice region={activityRegion} />
           <div class="scroll">
-            {#each sortedCollections.filter( (c) => c.title.includes(search) ) as c (c.id)}
+            {#if collectionsLoading && !collections.length}<Skeleton
+                label="コレクションを取得中"
+                count={7}
+              />{/if}
+            {#each sortedCollections.filter( (c) => c.title.includes(search), ) as c (c.id)}
               {@const p = progress[c.id]}
               <a
                 class="collection-row"
@@ -297,22 +331,12 @@
                       ><span>{number(p.entries)}資料</span>
                     </div>
                     {@render progressBar(p)}
-                  {:else if progressErrors[c.id]}<span class="caption error"
-                      >進捗を取得できません</span
-                    >
-                  {:else}<div
-                      class="progress-skeleton"
-                      aria-label="進捗を読み込み中"
-                      aria-busy="true"
-                    ></div>{/if}
+                  {:else}<Skeleton count={1} />{/if}
+                  {#if progressRegions[c.id]}<RegionNotice
+                      region={progressRegions[c.id]}
+                    />{/if}
                 </div>
               </a>
-              {#if progressErrors[c.id]}<button
-                  class="caption"
-                  title={progressErrors[c.id]}
-                  onclick={() => loadProgress(c, projectGeneration, true)}
-                  >進捗を再取得</button
-                >{/if}
             {/each}
           </div>
         </section>
@@ -340,6 +364,7 @@
                 storageKey={`honkoku.sort.collection.${selected.id}`}
                 bind:value={entrySort}
               />
+              <RegionNotice region={figuresRegion} />
               <div class="entry-rows">
                 {#each sortedEntries as e (e.id)}{@const p = entryFigures[e.id]}
                   {@const counts = p
@@ -396,19 +421,12 @@
             {:else if !loading && !collectionsLoading}<p class="empty">
                 コレクションはありません。
               </p>{/if}
-            {#if loading || collectionsLoading}<p class="empty" role="status">
-                資料を読み込み中…
-              </p>{/if}{#if error}<p class="error" role="alert">{error}</p>
-              {#if !isTauri()}<p>
-                  <code>devrun bun run --cwd apps/client tauri dev</code>
-                </p>
-                <a href="#/">ホームへ</a>{/if}
-              <button
-                onclick={() =>
-                  collections.length
-                    ? loadSelection(selected ?? undefined, !!collectionId)
-                    : loadProject(project.id)}>再試行</button
-              >{/if}
+            {#if (loading || collectionsLoading) && !entries.length}<Skeleton
+                label="資料を取得中"
+                count={4}
+              />{/if}
+            <RegionNotice region={entriesRegion} />
+            {#if error}<p class="error" role="alert">{error}</p>{/if}
           </div>
         </section>
       </div>
@@ -440,6 +458,7 @@
     <section class="panel contributors">
       <h2>貢献者</h2>
       <p class="caption muted">読み込んだ活動から集計</p>
+      {#if !activity.length}<Skeleton count={3} />{/if}
       <ol class="scroll">
         {#each contributors as c, i (c.user.uid)}<li>
             <span class="count">{i + 1}</span><Avatar
@@ -490,7 +509,8 @@
   .progress-skeleton {
     height: 7px;
     border-radius: 4px;
-    background: var(--track);
+    background: var(--surface-inset);
+    animation: shimmer 1.5s ease-in-out infinite;
     margin: 8px 0;
     opacity: 0.6;
   }

@@ -3,8 +3,8 @@ import { iiifLocalUrl, iiifPrepareEntry } from "@honkoku/client-api/iiif";
 import type { Canvas, Entry } from "@honkoku/client-api/types";
 const entries = new Map<string, Promise<Entry>>();
 const canvases = new Map<string, Promise<Canvas[]>>();
-export function entryData(id: string): Promise<Entry> {
-  if (!entries.has(id))
+export function entryData(id: string, refresh = false): Promise<Entry> {
+  if (refresh || !entries.has(id))
     entries.set(
       id,
       getEntry(id).catch((error) => {
@@ -14,8 +14,8 @@ export function entryData(id: string): Promise<Entry> {
     );
   return entries.get(id)!;
 }
-export function entryCanvases(id: string): Promise<Canvas[]> {
-  if (!canvases.has(id))
+export function entryCanvases(id: string, refresh = false): Promise<Canvas[]> {
+  if (refresh || !canvases.has(id))
     canvases.set(
       id,
       (async () => {

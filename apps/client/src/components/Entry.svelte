@@ -1,6 +1,14 @@
 <script lang="ts">
+  import Skeleton from "./Skeleton.svelte";
+  import RegionNotice from "./RegionNotice.svelte";
+  import type { Region } from "../region.svelte";
   import { tick } from "svelte";
-  import type { Canvas, Entry, Page } from "@honkoku/client-api/types";
+  import type {
+    Canvas,
+    Entry,
+    Page,
+    SessionInfo,
+  } from "@honkoku/client-api/types";
   import { label, number, status, statusClass, user } from "../lib";
   import { href } from "../routes";
   import Thumbnail from "./Thumbnail.svelte";
@@ -9,7 +17,19 @@
     entry,
     pages,
     canvases,
-  }: { entry: Entry; pages: Page[]; canvases: Canvas[] } = $props();
+    session,
+    pending = false,
+    pagesRegion,
+    canvasesRegion,
+  }: {
+    entry: Entry;
+    pages: Page[];
+    canvases: Canvas[];
+    session: SessionInfo | null;
+    pending?: boolean;
+    pagesRegion: Region<Page[]>;
+    canvasesRegion: Region<Canvas[]>;
+  } = $props();
   let counts = $derived(
     [...new Set(pages.map((p) => p.status))].map((s) => ({
       s,
@@ -94,6 +114,8 @@
   </section>
   <section class="panel page-grid-panel">
     <h2>コマ一覧</h2>
+    <RegionNotice region={pagesRegion} />
+    <RegionNotice region={canvasesRegion} />
     <div class="page-filter-row">
       <div class="chips page-filters" role="group" aria-label="コマの状態">
         {#each filters as [value, text]}<button
@@ -109,34 +131,40 @@
       </div>
       <button disabled={!firstUnfinished} onclick={jump}>次の未着手へ</button>
     </div>
-    <div class="page-grid">
-      {#each visible as p (p.id)}<a
-          id={`page-${p.index}`}
-          data-index={p.index}
-          class="page-card {statusClass(p.status)}"
-          href={href({ entryId: entry.id, pageIndex: p.index })}
-          >{#if p.status === "default" || p.status === "initiated"}<span
-              class="page-tag"
-              >{p.status === "initiated" ? "◐翻刻中" : "未着手"}</span
-            >{:else if p.status === "completed"}<span
-              class="page-check"
-              aria-label="完了">✓</span
-            >{/if}<Thumbnail
-            url={canvases[p.index]?.thumbnailUrl ?? canvases[p.index]?.imageUrl}
-            alt={`コマ${p.index + 1}の原本`}
-          />
-          <div>
-            <strong>{p.index + 1}</strong><span
-              class="status {statusClass(p.status)}"
-              >{status(p.status).symbol}{status(p.status).label}</span
-            >
-          </div>
-          {#if p.status === "editing"}<p class="caption locked-editor">
-              <span aria-label="ロック中">🔒</span>{p.tempEditedBy
-                ? (editors[p.tempEditedBy] ?? "名前を確認中")
-                : "名前不明"}
-            </p>{/if}</a
-        >{:else}<p class="empty">この状態のコマはありません。</p>{/each}
-    </div>
+    {#if pending}<Skeleton shape="cards" count={12} />{:else}<div
+        class="page-grid"
+      >
+        {#each visible as p (p.id)}<a
+            id={`page-${p.index}`}
+            data-index={p.index}
+            class="page-card {statusClass(p.status)}"
+            href={href({ entryId: entry.id, pageIndex: p.index })}
+            >{#if p.status === "default" || p.status === "initiated"}<span
+                class="page-tag"
+                >{p.status === "initiated" ? "◐翻刻中" : "未着手"}</span
+              >{:else if p.status === "completed"}<span
+                class="page-check"
+                aria-label="完了">✓</span
+              >{/if}<Thumbnail
+              url={canvases[p.index]?.thumbnailUrl ??
+                canvases[p.index]?.imageUrl}
+              alt={`コマ${p.index + 1}の原本`}
+            />
+            <div>
+              <strong>{p.index + 1}</strong><span
+                class="status {statusClass(p.status)}"
+                >{status(p.status).symbol}{status(p.status).label}</span
+              >
+            </div>
+            {#if p.status === "editing"}<p class="caption locked-editor">
+                <span aria-label="ロック中">🔒</span>{p.tempEditedBy ===
+                session?.uid
+                  ? "あなたが編集中"
+                  : p.tempEditedBy
+                    ? (editors[p.tempEditedBy] ?? "名前を確認中")
+                    : "名前不明"}
+              </p>{/if}</a
+          >{:else}<p class="empty">この状態のコマはありません。</p>{/each}
+      </div>{/if}
   </section>
 </div>
