@@ -88,8 +88,86 @@ export async function checkInteractions(browser: Browser, origin: string) {
     await page.locator(".ranking .caption").first().textContent(),
     "読み込んだ活動から集計",
   );
+  const uncaptured = (
+    await import("../../fixtures/api/projects.json")
+  ).default.find((p) => p.id !== "ainu")!;
+  await route(`#/projects/${uncaptured.id}`, '.entries-panel [role="alert"]');
+  assert.match(
+    await page.locator('.entries-panel [role="alert"]').innerText(),
+    /サンプルデータ/,
+  );
+  assert.equal(
+    await page.locator(".entries-panel code").textContent(),
+    "devrun bun run --cwd apps/client tauri dev",
+  );
+  await route("#/entries/missing-preview-entry", 'main [role="alert"]');
+  assert.match(
+    await page.locator('main [role="alert"]').innerText(),
+    /サンプルデータ/,
+  );
+  assert.match(
+    await page.locator('main [role="alert"]').innerText(),
+    /すべての資料/,
+  );
+  assert.equal(
+    await page.locator('main [role="alert"] code').textContent(),
+    "devrun bun run --cwd apps/client tauri dev",
+  );
+  assert.equal(
+    await page
+      .locator('main [role="alert"]')
+      .getByRole("link", { name: "ホームへ" })
+      .getAttribute("href"),
+    "#/",
+  );
   await route(`#/projects/ainu/collections/${collection}`, ".entry-row");
   assert.equal(await page.locator(".entry-row").count(), 3);
+  await page.waitForFunction(() => {
+    const rows = [...document.querySelectorAll(".collection-row")];
+    return (
+      rows.length === 67 &&
+      rows.every(
+        (row) =>
+          row.querySelector('[role="progressbar"]') &&
+          /[\d,]+／[\d,]+コマ/.test(row.textContent ?? ""),
+      )
+    );
+  });
+  assert.equal(
+    await page.locator(".collection-row .progress-skeleton").count(),
+    0,
+  );
+  assert.ok(
+    !(await page.locator(".collection-list").textContent())?.includes(
+      "選択して進捗を表示",
+    ),
+  );
+  for (const row of await page.locator(".collection-row").all()) {
+    assert.match(
+      await row.locator(".collection-meta").innerText(),
+      /[\d,]+資料/,
+    );
+    assert.match(
+      (await row
+        .locator('[role="progressbar"]')
+        .getAttribute("aria-valuetext")) ?? "",
+      /翻刻中[\d,]+コマ/,
+    );
+    assert.equal(await row.locator(".completed").count(), 1);
+    assert.equal(await row.locator(".initiated").count(), 1);
+  }
+  await page.waitForFunction(
+    () => document.querySelectorAll(".entry-statuses").length === 3,
+  );
+  assert.equal(
+    await page.locator(".entries-panel .description").textContent(),
+    (await import("../../fixtures/api/collection-3R4VhlBfvOYeqPY13cJm.json"))
+      .description,
+  );
+  assert.ok(
+    (await page.locator(".project-header .description").textContent())?.length,
+  );
+
   await page.waitForFunction(
     () => document.querySelectorAll(".breadcrumb a").length === 3,
   );
@@ -438,16 +516,13 @@ export async function checkEditing(
               tempText: string;
               syncMode: boolean;
             }[];
-            Object.assign(
-              pages.find((p) => p.index === 3)!,
-              {
-                status: "editing",
-                prevStatus: "completed",
-                tempEditedBy: actor.uid,
-                tempText: "共有前の下書き",
-                syncMode,
-              },
-            );
+            Object.assign(pages.find((p) => p.index === 3)!, {
+              status: "editing",
+              prevStatus: "completed",
+              tempEditedBy: actor.uid,
+              tempText: "共有前の下書き",
+              syncMode,
+            });
             location.hash = "#/";
             return actor.displayName;
           },
