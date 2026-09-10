@@ -6,11 +6,20 @@
     textareaSource,
     wrapSelection,
     insertText,
+    insertOkurigana,
     insertSource,
     undo,
     redo,
     type EditorUpdate,
   } from "./index";
+  import {
+    loadPresets,
+    normalizePreset,
+    presets,
+    presetKey,
+    isPresetGroup,
+    type PresetGroup,
+  } from "./presets";
   import { palette } from "./palette";
   import { transcriptionColumns } from "@honkoku/markup";
   import "prosemirror-view/style/prosemirror.css";
@@ -22,8 +31,10 @@
     oncolumnchange,
     highlightedColumn = -1,
     onnote,
+    accountId,
   }: {
     source: string;
+    accountId?: string;
     onnote?: (content: string | null, index?: number) => number;
     oncolumnchange?: (index: number) => void;
     highlightedColumn?: number;
@@ -39,10 +50,100 @@
   type Construct = "振り仮名" | "割書" | "見せ消ち" | "注記";
   const commands: Construct[] = ["振り仮名", "割書", "見せ消ち", "注記"];
   let status = $state("");
-  let note = $state<{index: number; content: string; x: number; y: number}>();
+  let note = $state<{ index: number; content: string; x: number; y: number }>();
   let noteInput = $state<HTMLTextAreaElement>(null!);
   let openCategory = $state<string | null>(null);
   let localNoteCount = 0;
+  let customText = $state("");
+  let customPresets = $state<Record<PresetGroup, string[]>>({
+    送り仮名: [],
+    常用字: [],
+    常用句: [],
+  });
+  $effect(() => {
+    const values = { 送り仮名: [], 常用字: [], 常用句: [] } as Record<
+      PresetGroup,
+      string[]
+    >;
+    for (const group of Object.keys(values) as PresetGroup[]) {
+      try {
+        values[group] = accountId
+          ? loadPresets(localStorage, accountId, group)
+          : [];
+      } catch {
+        values[group] = [];
+      }
+    }
+    customPresets = values;
+  });
+  function rememberPresets(group: PresetGroup, values: string[]) {
+    customPresets = { ...customPresets, [group]: values };
+    if (accountId) {
+      try {
+        localStorage.setItem(
+          presetKey(accountId, group),
+          JSON.stringify(values),
+        );
+      } catch {
+        status = `${group}を保存できませんでした。`;
+      }
+    }
+  }
+  function addPreset(group: PresetGroup, text: string, focus = true) {
+    if (group === "送り仮名") return addOkurigana(text, focus);
+    insertGlyph(text, false, focus);
+    return true;
+  }
+  function customEntry(event: KeyboardEvent, group: PresetGroup) {
+    if (event.key !== "Enter" || event.isComposing || composing) return;
+    event.preventDefault();
+    const text = normalizePreset(group, customText);
+    if (!text) {
+      status =
+        group === "送り仮名"
+          ? "かなを8文字以内で入力してください。"
+          : group === "常用字"
+            ? "漢字を1文字入力してください。"
+            : "漢字を2〜8文字入力してください。";
+      return;
+    }
+    if (addPreset(group, text, false)) {
+      if (
+        !presets[group].some((p) => p.text === text) &&
+        !customPresets[group].includes(text)
+      )
+        rememberPresets(group, [...customPresets[group], text]);
+      customText = "";
+      status = "";
+    }
+  }
+  function measureWorkspace(element: HTMLElement) {
+    const observer = new ResizeObserver(() =>
+      element.style.setProperty(
+        "--palette-height",
+        `${element.clientHeight * 0.4}px`,
+      ),
+    );
+    observer.observe(element);
+    return { destroy: () => observer.disconnect() };
+  }
+  function addOkurigana(value: string, focus = true) {
+    const kana = normalizePreset("送り仮名", value);
+    if (!kana || composing) {
+      status = "かなを8文字以内で入力してください。";
+      return false;
+    }
+    if (raw) {
+      captureRaw();
+      rawRange = { from: rawRange.to, to: rawRange.to };
+      void insertRaw(`￣${kana}`, focus);
+    } else if (!editor?.run(insertOkurigana(kana), focus)) {
+      status = "文字の後に送り仮名を入れてください。";
+      return false;
+    }
+    status = "";
+    return true;
+  }
   function captureRaw() {
     if (rawInput)
       rawRange = { from: rawInput.selectionStart, to: rawInput.selectionEnd };
@@ -97,17 +198,28 @@
       const base = title === "割書" ? "" : selection;
       await insertRaw(`《${title}：${base}｜》`, true, title.length + 2);
     } else {
-      const kind = ({振り仮名: "ruby", 割書: "warigaki", 見せ消ち: "misekechi"} as const)[title];
+      const kind = (
+        { 振り仮名: "ruby", 割書: "warigaki", 見せ消ち: "misekechi" } as const
+      )[title];
       if (!editor?.run(wrapSelection(kind)))
         status = "ここにはこの記号を入れられません。";
     }
   }
   export function editNote(index: number, content: string) {
     if (composing) return;
-    const anchor = host.closest(".editor-workspace")?.querySelector<HTMLElement>(`[data-note="${index + 1}"]`) ?? rawInput ?? host;
+    const anchor =
+      host
+        .closest(".editor-workspace")
+        ?.querySelector<HTMLElement>(`[data-note="${index + 1}"]`) ??
+      rawInput ??
+      host;
     const rect = anchor.getBoundingClientRect();
-    note = {index, content, x: Math.max(8, Math.min(rect.left, innerWidth - 336)),
-      y: Math.max(8, Math.min(rect.bottom + 4, innerHeight - 250))};
+    note = {
+      index,
+      content,
+      x: Math.max(8, Math.min(rect.left, innerWidth - 336)),
+      y: Math.max(8, Math.min(rect.bottom + 4, innerHeight - 250)),
+    };
     void tick().then(() => noteInput?.focus());
   }
   function closeNote() {
@@ -116,8 +228,16 @@
     else editor?.view.focus();
   }
   function constructKey(event: KeyboardEvent) {
-    if (event.isComposing || composing || event.altKey || !(event.ctrlKey || event.metaKey)) return;
-    const title = ({r: "振り仮名", w: "割書", m: "見せ消ち", n: "注記"} as const)[event.key.toLowerCase() as "r"];
+    if (
+      event.isComposing ||
+      composing ||
+      event.altKey ||
+      !(event.ctrlKey || event.metaKey)
+    )
+      return;
+    const title = (
+      { r: "振り仮名", w: "割書", m: "見せ消ち", n: "注記" } as const
+    )[event.key.toLowerCase() as "r"];
     if (title) {
       event.preventDefault();
       event.stopPropagation();
@@ -126,7 +246,9 @@
   }
   function shortcuts(element: HTMLElement) {
     element.addEventListener("keydown", constructKey, true);
-    return {destroy: () => element.removeEventListener("keydown", constructKey, true)};
+    return {
+      destroy: () => element.removeEventListener("keydown", constructKey, true),
+    };
   }
   function rawComposition(value: boolean) {
     composing = value;
@@ -139,6 +261,8 @@
     });
   }
   function paletteKey(event: KeyboardEvent, label: string) {
+    if (event.target instanceof HTMLInputElement && event.key !== "Escape")
+      return;
     const group = event.currentTarget as HTMLElement;
     if (event.key === "Escape") {
       event.preventDefault();
@@ -226,7 +350,7 @@
   });
 </script>
 
-<div class="editor-workspace" use:shortcuts>
+<div class="editor-workspace" use:shortcuts use:measureWorkspace>
   <div class="editor-toolbar" role="toolbar" aria-label="翻刻の編集">
     {#each commands as title}
       <button
@@ -277,23 +401,68 @@
         >
         {#if openCategory === group.label}<div
             class="palette-glyphs"
+            class:palette-kanji={group.label === "常用字"}
+            class:palette-expressions={group.label === "常用句"}
             role="group"
             aria-label={`${group.label}の文字`}
           >
             {#each group.characters as character}<button
                 disabled={composing}
-                aria-label={`${group.label}${character}`}
+                aria-label={group.label === "常用句"
+                  ? character
+                  : `${group.label}${character}`}
+                title={isPresetGroup(group.label)
+                  ? `${presets[group.label].find((p) => p.text === character)?.count.toLocaleString("ja-JP")}件`
+                  : undefined}
                 onmousedown={(event) => event.preventDefault()}
                 onclick={(event) => {
-                  insertGlyph(
-                    character,
-                    group.label === "欠字" || group.label === "返り点",
-                    event.detail !== 0,
-                  );
+                  if (group.label === "送り仮名")
+                    addOkurigana(character, event.detail !== 0);
+                  else
+                    insertGlyph(
+                      character,
+                      group.label === "欠字" || group.label === "返り点",
+                      event.detail !== 0,
+                    );
                   openCategory = group.label;
                   if (event.detail === 0) event.currentTarget.focus();
                 }}>{character}</button
               >{/each}
+            {#if isPresetGroup(group.label)}
+              {@const label = group.label}
+              {#each customPresets[label] as text}
+                <span class="palette-custom"
+                  ><button
+                    disabled={composing}
+                    aria-label={`${label}${text}`}
+                    onmousedown={(event) => event.preventDefault()}
+                    onclick={() => addPreset(label, text)}>{text}</button
+                  ><button
+                    disabled={composing}
+                    aria-label={`${label}${text}を忘れる`}
+                    onmousedown={(event) => event.preventDefault()}
+                    onclick={() =>
+                      rememberPresets(
+                        label,
+                        customPresets[label].filter((value) => value !== text),
+                      )}>×</button
+                  ></span
+                >
+              {/each}
+              <input
+                class="palette-custom-input"
+                aria-label={`その他の${label}`}
+                placeholder="その他"
+                maxlength={label === "送り仮名"
+                  ? 8
+                  : label === "常用字"
+                    ? 2
+                    : 16}
+                bind:value={customText}
+                disabled={composing}
+                onkeydown={(event) => customEntry(event, label)}
+              />
+            {/if}
           </div>{/if}
       </div>
     {/each}
@@ -320,15 +489,42 @@
   </div>
 </div>
 {#if note}
-  <div class="note-popover editor-note-popover" role="dialog" aria-label="注記" tabindex="-1"
-    style:left={`${note.x}px`} style:top={`${note.y}px`}
-    onkeydown={(event) => { if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); closeNote(); } }}>
+  <div
+    class="note-popover editor-note-popover"
+    role="dialog"
+    aria-label="注記"
+    tabindex="-1"
+    style:left={`${note.x}px`}
+    style:top={`${note.y}px`}
+    onkeydown={(event) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        event.stopPropagation();
+        closeNote();
+      }
+    }}
+  >
     <strong>＃{note.index + 1}</strong>
-    <label>注記の内容<textarea bind:this={noteInput} aria-label="注記の内容" value={note.content}
-      oninput={(event) => { if (note) { note.content = event.currentTarget.value; onnote?.(note.content, note.index); } }}></textarea></label>
+    <label
+      >注記の内容<textarea
+        bind:this={noteInput}
+        aria-label="注記の内容"
+        value={note.content}
+        oninput={(event) => {
+          if (note) {
+            note.content = event.currentTarget.value;
+            onnote?.(note.content, note.index);
+          }
+        }}></textarea></label
+    >
     <div class="dialog-actions">
       <button onclick={closeNote}>更新</button>
-      <button onclick={() => { if (note) onnote?.(null, note.index); closeNote(); }}>削除</button>
+      <button
+        onclick={() => {
+          if (note) onnote?.(null, note.index);
+          closeNote();
+        }}>削除</button
+      >
       <button onclick={closeNote} aria-label="注記を閉じる">閉じる</button>
     </div>
   </div>

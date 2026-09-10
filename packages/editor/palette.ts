@@ -1,3 +1,4 @@
+import { presets } from "./presets";
 export const palette = [
   {
     label: "踊り字",
@@ -30,11 +31,15 @@ export const palette = [
       "＿下",
       "＿甲",
       "＿乙",
+      "＿丙",
       "＿天",
       "＿地",
       "＿人",
     ],
   },
+  { label: "送り仮名", characters: presets.送り仮名.map((p) => p.text) },
+  { label: "常用字", characters: presets.常用字.map((p) => p.text) },
+  { label: "常用句", characters: presets.常用句.map((p) => p.text) },
   {
     label: "記号",
     characters: ["・", "○", "●", "△", "※", "／", "「", "」", "〔", "〕"],
