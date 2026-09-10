@@ -5,6 +5,7 @@ use crate::{
     model::{Announcement, DailyProgress, Entry, Project, TimelineEvent, TimelineItem, User},
 };
 use futures_util::{StreamExt, TryStreamExt, stream};
+use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -33,6 +34,11 @@ impl RankingSort {
             Self::LikeCount => "likeCount",
         }
     }
+}
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct RankingSelf {
+    pub rank: Option<u64>,
+    pub value: Option<u64>,
 }
 fn ordered(collection: &str, field: &str, limit: u32) -> Value {
     json!({"from":[{"collectionId":collection}],"orderBy":[{"field":{"fieldPath":field},"direction":"DESCENDING"}],"limit":limit})
@@ -80,6 +86,50 @@ fn timeline_queries(filter: TimelineFilter, limit: u32) -> Vec<Value> {
         .collect()
 }
 impl HonkokuClient {
+    pub async fn ranking_self(&self, sort: RankingSort) -> Result<RankingSelf> {
+        let uid = self.signed_in_uid().await?;
+        if uid.contains('/') {
+            return Err(Error::Invalid("invalid uid".into()));
+        }
+        self.cached(
+            &self.home_storage,
+            format!("ranking-self/{uid}/{}", sort.field()),
+            false,
+            async {
+                let user: Value = self.document(&format!("users/{uid}")).await?;
+                let Some(field) = user.get(sort.field()) else {
+                    return Ok(RankingSelf {
+                        rank: None,
+                        value: None,
+                    });
+                };
+                let value = field
+                    .as_u64()
+                    .ok_or_else(|| Error::Invalid("invalid ranking value".into()))?;
+                let count = self
+                    .run_aggregation_count(
+                        "users",
+                        vec![json!({
+                            "fieldFilter": {
+                                "field": {"fieldPath": sort.field()},
+                                "op": "GREATER_THAN",
+                                "value": {"integerValue": value.to_string()}
+                            }
+                        })],
+                    )
+                    .await?;
+                let rank = count
+                    .checked_add(1)
+                    .ok_or_else(|| Error::Invalid("ranking count overflow".into()))?;
+                Ok(RankingSelf {
+                    rank: Some(rank),
+                    value: Some(value),
+                })
+            },
+            |_, _| Ok(()),
+        )
+        .await
+    }
     pub async fn announcements(&self, limit: Option<u32>) -> Result<Vec<Announcement>> {
         let limit = limit.unwrap_or(5);
         if limit == 0 {

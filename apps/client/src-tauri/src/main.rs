@@ -274,6 +274,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             commands::session_clear,
             commands::home_timeline,
             commands::home_ranking,
+            commands::home_ranking_self,
             commands::home_announcements,
             commands::home_daily_progress,
             commands::me,

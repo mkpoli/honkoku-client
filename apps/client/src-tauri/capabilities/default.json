@@ -25,6 +25,7 @@
     "allow-session-clear",
     "allow-home-timeline",
     "allow-home-ranking",
+    "allow-home-ranking-self",
     "allow-home-announcements",
     "allow-home-daily-progress",
     "allow-me",

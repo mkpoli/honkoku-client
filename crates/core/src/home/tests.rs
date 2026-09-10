@@ -321,3 +321,154 @@ async fn live_public_home_contract() -> Result<()> {
     println!("joined timeline: {} rows from 31 project IDs", items.len());
     Ok(())
 }
+
+fn signed_in(client: HonkokuClient, uid: &str, dir: &std::path::Path) -> Result<HonkokuClient> {
+    let mut session: Session =
+        serde_json::from_str(include_str!("../auth/dev-session.fixture.json"))?;
+    session.uid = uid.into();
+    session.expires_at.0 = time::OffsetDateTime::now_utc() + time::Duration::hours(1);
+    Ok(client.with_session(TokenManager::new(
+        session,
+        Arc::new(FileStore::new(dir.join("session.json"))),
+    )?))
+}
+
+#[tokio::test]
+async fn self_ranking_counts_strictly_greater_and_caches_per_account_and_sort() -> Result<()> {
+    let server = MockServer::start().await;
+    let dir = tempfile::tempdir()?;
+    let db: SharedStorage = Arc::new(Mutex::new(Storage::in_memory()?));
+    for (uid, value, count) in [("first", 30, 186), ("second", 0, 0)] {
+        let client = signed_in(client(&server)?.with_storage(db.clone()), uid, dir.path())?;
+        Mock::given(method("GET"))
+            .and(path(format!("/documents/users/{uid}")))
+            .and(header("authorization", "Bearer fixture-id-token"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(doc(
+                &format!("users/{uid}"),
+                json!({"exp":value,"charCount":value,"likeCount":value}),
+            )))
+            .expect(3)
+            .mount(&server)
+            .await;
+        for sort in [
+            RankingSort::Exp,
+            RankingSort::CharCount,
+            RankingSort::LikeCount,
+        ] {
+            Mock::given(method("POST"))
+                .and(path("/documents:runAggregationQuery"))
+                .and(header("authorization", "Bearer fixture-id-token"))
+                .and(body_json(json!({
+                    "structuredAggregationQuery": {
+                        "structuredQuery": {
+                            "from": [{"collectionId":"users"}],
+                            "where": {"compositeFilter": {"op":"AND","filters":[{"fieldFilter": {
+                                "field": {"fieldPath":sort.field()},
+                                "op":"GREATER_THAN",
+                                "value":{"integerValue":value.to_string()}
+                            }}]}}
+                        },
+                        "aggregations":[{"alias":"count","count":{}}]
+                    }
+                })))
+                .respond_with(ResponseTemplate::new(200).set_body_json(json!([
+                    {"result":{"aggregateFields":{"count":{"integerValue":count.to_string()}}}}
+                ])))
+                .expect(1)
+                .mount(&server)
+                .await;
+            let expected = RankingSelf {
+                rank: Some(count + 1),
+                value: Some(value),
+            };
+            assert_eq!(client.ranking_self(sort).await?, expected);
+            assert_eq!(client.ranking_self(sort).await?, expected);
+            let key = format!("ranking-self/{uid}/{}", sort.field());
+            crate::cache::blocking(&db, move |db| {
+                assert_eq!(
+                    db.fresh_response::<RankingSelf>(&key, std::time::Duration::from_secs(600))?,
+                    Some(expected)
+                );
+                Ok(())
+            })
+            .await?;
+        }
+    }
+    assert!(matches!(
+        client(&server)?
+            .with_storage(db)
+            .ranking_self(RankingSort::Exp)
+            .await,
+        Err(Error::SignedOut)
+    ));
+    Ok(())
+}
+
+#[tokio::test]
+async fn self_ranking_missing_field_is_cached_without_aggregation() -> Result<()> {
+    let server = MockServer::start().await;
+    let dir = tempfile::tempdir()?;
+    let client = signed_in(client(&server)?, "new", dir.path())?;
+    Mock::given(method("GET"))
+        .and(path("/documents/users/new"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(doc("users/new", json!({}))))
+        .expect(3)
+        .mount(&server)
+        .await;
+    Mock::given(method("POST"))
+        .respond_with(ResponseTemplate::new(500))
+        .expect(0)
+        .mount(&server)
+        .await;
+    for sort in [
+        RankingSort::Exp,
+        RankingSort::CharCount,
+        RankingSort::LikeCount,
+    ] {
+        for _ in 0..2 {
+            let result = client.ranking_self(sort).await?;
+            assert_eq!(
+                serde_json::to_value(result)?,
+                json!({"rank":null,"value":null})
+            );
+        }
+    }
+    Ok(())
+}
+
+#[tokio::test]
+async fn self_ranking_retries_after_aggregation_failure() -> Result<()> {
+    let server = MockServer::start().await;
+    let dir = tempfile::tempdir()?;
+    let client = signed_in(client(&server)?, "u", dir.path())?;
+    Mock::given(method("GET"))
+        .and(path("/documents/users/u"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(doc("users/u", json!({"exp":5}))))
+        .expect(2)
+        .mount(&server)
+        .await;
+    let failure = Mock::given(method("POST"))
+        .and(path("/documents:runAggregationQuery"))
+        .respond_with(ResponseTemplate::new(403))
+        .expect(1)
+        .mount_as_scoped(&server)
+        .await;
+    assert!(client.ranking_self(RankingSort::Exp).await.is_err());
+    drop(failure);
+    Mock::given(method("POST"))
+        .and(path("/documents:runAggregationQuery"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!([
+            {"result":{"aggregateFields":{"count":{"integerValue":"100"}}}}
+        ])))
+        .expect(1)
+        .mount(&server)
+        .await;
+    assert_eq!(
+        client.ranking_self(RankingSort::Exp).await?,
+        RankingSelf {
+            rank: Some(101),
+            value: Some(5)
+        }
+    );
+    Ok(())
+}

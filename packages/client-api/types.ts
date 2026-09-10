@@ -164,6 +164,10 @@ export interface TimelineFilter {
   before_id?: string;
 }
 export type RankingSort = "exp" | "charCount" | "likeCount";
+export interface RankingSelf {
+  rank: number | null;
+  value: number | null;
+}
 export interface TimelineEvent {
   [key: string]: unknown;
   id: string;
