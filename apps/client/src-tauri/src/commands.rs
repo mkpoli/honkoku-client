@@ -2,7 +2,7 @@ use crate::{AppError, AppState};
 use futures_util::{StreamExt, TryStreamExt, stream};
 use honkoku_core::{
     auth::{Session, SessionStore, TokenManager, import_dev_session},
-    home::RankingSort,
+    home::{RankingSort, TimelineFilter as CoreTimelineFilter},
     model::{Announcement, DailyProgress, Label, TimelineEvent, TimelineItem, User},
 };
 use serde::{Deserialize, Serialize};
@@ -135,6 +135,19 @@ pub async fn home_timeline(
     } else {
         filter.project_id.clone().map(|id| vec![id])
     };
+    if filter.before.is_none() {
+        let core_filter = match (&ids, filter.joined.unwrap_or(false)) {
+            (Some(ids), true) => CoreTimelineFilter::Joined(ids.clone()),
+            (Some(ids), false) => CoreTimelineFilter::Project(ids[0].clone()),
+            (None, _) => CoreTimelineFilter::All,
+        };
+        match client.timeline(core_filter, Some(limit)).await {
+            Ok(items) => return Ok(items),
+            // Older canvases use @id; the fallback only reads enrichment labels.
+            Err(honkoku_core::Error::Json(_)) => {}
+            Err(error) => return Err(error.into()),
+        }
+    }
     let chunks: Vec<_> = match &ids {
         Some(ids) => ids.chunks(30).map(Some).collect(),
         None => vec![None],
