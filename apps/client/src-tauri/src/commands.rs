@@ -615,3 +615,44 @@ mod saved_count_tests {
         server.join().unwrap();
     }
 }
+
+#[tauri::command]
+pub async fn list_entry_summaries(
+    collection_id: String,
+    state: State<'_, AppState>,
+) -> Result<Vec<honkoku_core::model::EntrySummary>, AppError> {
+    Ok(state
+        .connection
+        .read()
+        .await
+        .client
+        .list_entries(&collection_id)
+        .await?)
+}
+#[tauri::command]
+pub async fn collection_progress(
+    collection_id: String,
+    refresh: Option<bool>,
+    state: State<'_, AppState>,
+) -> Result<honkoku_core::model::CollectionProgress, AppError> {
+    Ok(state
+        .connection
+        .read()
+        .await
+        .client
+        .collection_progress(&collection_id, refresh.unwrap_or(false))
+        .await?)
+}
+#[tauri::command]
+pub async fn entry_progress(
+    entry_ids: Vec<String>,
+    state: State<'_, AppState>,
+) -> Result<Vec<honkoku_core::model::EntryProgress>, AppError> {
+    Ok(state
+        .connection
+        .read()
+        .await
+        .client
+        .entry_progress(&entry_ids)
+        .await?)
+}

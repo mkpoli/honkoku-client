@@ -115,3 +115,10 @@ export async function onSignInClosed(handler: () => void) {
   const { listen } = await import("@tauri-apps/api/event");
   return listen("signin-closed", handler);
 }
+
+export const listEntrySummaries = (collectionId: string) =>
+  invoke<import("./types").EntrySummary[]>("list_entry_summaries", { collectionId });
+export const collectionProgress = (collectionId: string, refresh = false) =>
+  invoke<import("./types").CollectionProgress>("collection_progress", { collectionId, refresh });
+export const entryProgress = (entryIds: string[]) =>
+  invoke<import("./types").EntryProgress[]>("entry_progress", { entryIds });
