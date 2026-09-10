@@ -78,6 +78,13 @@ export async function checkInteractions(browser: Browser, origin: string) {
   );
   await route(`#/projects/ainu/collections/${collection}`, ".entry-row");
   assert.equal(await page.locator(".entry-row").count(), 3);
+  await page.waitForFunction(
+    () => document.querySelectorAll(".breadcrumb a").length === 3,
+  );
+  assert.equal(
+    await page.locator(".breadcrumb a").nth(2).textContent(),
+    "蝦夷方言藻汐草",
+  );
   assert.equal(
     await page
       .getByRole("textbox", { name: "全プロジェクトを検索", exact: true })

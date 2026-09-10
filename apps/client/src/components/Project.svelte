@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { untrack } from "svelte";
   import type {
     Collection,
     Entry,
@@ -91,9 +92,9 @@
   }
   $effect(() => {
     project.id;
-    collectionId;
+    const id = collectionId;
     tab = "collections";
-    void load(collectionId);
+    void untrack(() => load(id));
     return () => {
       generation++;
     };
