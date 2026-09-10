@@ -34,8 +34,9 @@ Unread notifications are counted with `runAggregationQuery` (count) on `notifica
 - `translations` on a page: `{translationJa, translationEn, annotationsJa, annotationsEn}`, markdown strings produced by the site's modern-translation feature.
 - `annotations[]` was empty in every harvested page of the ainu project; its element shape remains unknown.
 
-## Still open
+## Editing
 
-- Bodies of the editing transaction (lock, draft writes, save, discard) on the `Write/channel` transport; a capture of one editing cycle is needed.
-- Whether `default` appears as a literal status on never-touched pages or the document is simply absent.
+The SDK does not use the `Write/channel` transport for edits. Each step is a `documents:batchGet` followed by a `documents:commit` with `updateTime` preconditions; the full protocol is in `api-write-protocol.md`. A page that was never edited exists with `status: "default"` (the lock write recorded `prevStatus: "default"`).
+
+## Still open
 - Accrual of `stoneCount`.

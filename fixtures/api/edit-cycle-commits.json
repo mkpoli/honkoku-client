@@ -1,0 +1,1110 @@
+[
+  {
+    "t": "2026-09-10T07:40:56.111Z",
+    "kind": "request",
+    "method": "POST",
+    "url": "https://firestore.googleapis.com/v1/projects/honkoku3-c466c/databases/(default)/documents:batchGet",
+    "status": null,
+    "body": {
+      "documents": [
+        "projects/honkoku3-c466c/databases/(default)/documents/transcriptions/90aaa0afa9cf2f14fc579f138ed2fca9_20"
+      ]
+    }
+  },
+  {
+    "t": "2026-09-10T07:40:56.227Z",
+    "kind": "request",
+    "method": "POST",
+    "url": "https://firestore.googleapis.com/v1/projects/honkoku3-c466c/databases/(default)/documents:batchGet",
+    "status": null,
+    "body": {
+      "documents": [
+        "projects/honkoku3-c466c/databases/(default)/documents/projects/ainu"
+      ]
+    }
+  },
+  {
+    "t": "2026-09-10T07:40:56.227Z",
+    "kind": "response",
+    "method": "POST",
+    "url": "https://firestore.googleapis.com/v1/projects/honkoku3-c466c/databases/(default)/documents:batchGet",
+    "status": 200,
+    "body": [
+      {
+        "found": {
+          "name": "projects/honkoku3-c466c/databases/(default)/documents/transcriptions/90aaa0afa9cf2f14fc579f138ed2fca9_20",
+          "fields": {
+            "projectId": {
+              "stringValue": "ainu"
+            },
+            "entryId": {
+              "stringValue": "90aaa0afa9cf2f14fc579f138ed2fca9"
+            },
+            "index": {
+              "integerValue": "20"
+            },
+            "text": {
+              "stringValue": ""
+            },
+            "tempText": {
+              "stringValue": ""
+            },
+            "editedBy": {
+              "nullValue": null
+            },
+            "tempEditedBy": {
+              "nullValue": null
+            },
+            "status": {
+              "stringValue": "default"
+            },
+            "prevStatus": {
+              "stringValue": "default"
+            },
+            "tempTextChanged": {
+              "booleanValue": false
+            },
+            "syncMode": {
+              "booleanValue": false
+            },
+            "notes": {
+              "arrayValue": {}
+            },
+            "tempNotes": {
+              "arrayValue": {}
+            },
+            "canvasId": {
+              "stringValue": "https://dglb01.ninjal.ac.jp/ninjaldl/ezogosen/001/canvas/ezgs001-021.json"
+            },
+            "annotations": {
+              "arrayValue": {}
+            },
+            "tempAnnotations": {
+              "arrayValue": {}
+            },
+            "share": {
+              "booleanValue": false
+            },
+            "createdAt": {
+              "timestampValue": "2026-09-07T17:35:17.558Z"
+            },
+            "id": {
+              "stringValue": "90aaa0afa9cf2f14fc579f138ed2fca9_20"
+            },
+            "updatedAt": {
+              "timestampValue": "2026-09-07T17:35:18.516Z"
+            }
+          },
+          "createTime": "2026-09-07T17:35:18.891802Z",
+          "updateTime": "2026-09-07T17:35:18.891802Z"
+        },
+        "readTime": "2026-09-10T07:40:55.364450Z"
+      }
+    ]
+  },
+  {
+    "t": "2026-09-10T07:40:56.287Z",
+    "kind": "request",
+    "method": "POST",
+    "url": "https://firestore.googleapis.com/v1/projects/honkoku3-c466c/databases/(default)/documents:commit",
+    "status": null,
+    "body": {
+      "writes": [
+        {
+          "update": {
+            "name": "projects/honkoku3-c466c/databases/(default)/documents/transcriptions/90aaa0afa9cf2f14fc579f138ed2fca9_20",
+            "fields": {
+              "status": {
+                "stringValue": "editing"
+              },
+              "prevStatus": {
+                "stringValue": "default"
+              },
+              "tempText": {
+                "stringValue": ""
+              },
+              "tempTextChanged": {
+                "booleanValue": false
+              },
+              "tempNotes": {
+                "arrayValue": {
+                  "values": []
+                }
+              },
+              "tempEditedBy": {
+                "stringValue": "B5KzM2KmjxXlvUVHiQdEO6Xth9J2"
+              },
+              "syncMode": {
+                "booleanValue": false
+              }
+            }
+          },
+          "updateMask": {
+            "fieldPaths": [
+              "prevStatus",
+              "status",
+              "syncMode",
+              "tempEditedBy",
+              "tempNotes",
+              "tempText",
+              "tempTextChanged"
+            ]
+          },
+          "updateTransforms": [
+            {
+              "fieldPath": "updatedAt",
+              "setToServerValue": "REQUEST_TIME"
+            }
+          ],
+          "currentDocument": {
+            "updateTime": "2026-09-07T17:35:18.891802000Z"
+          }
+        },
+        {
+          "verify": "projects/honkoku3-c466c/databases/(default)/documents/projects/ainu",
+          "currentDocument": {
+            "updateTime": "2026-09-09T14:02:37.828873000Z"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "t": "2026-09-10T07:40:56.290Z",
+    "kind": "response",
+    "method": "POST",
+    "url": "https://firestore.googleapis.com/v1/projects/honkoku3-c466c/databases/(default)/documents:batchGet",
+    "status": 200,
+    "body": [
+      {
+        "found": {
+          "name": "projects/honkoku3-c466c/databases/(default)/documents/projects/ainu",
+          "fields": {
+            "id": {
+              "stringValue": "ainu"
+            },
+            "title": {
+              "stringValue": "アイヌ関連資料"
+            },
+            "description": {
+              "stringValue": "アイヌ語やアイヌの歴史に関する資料のコレクション"
+            },
+            "keywords": {
+              "arrayValue": {
+                "values": [
+                  {
+                    "stringValue": "アイヌ"
+                  },
+                  {
+                    "stringValue": "アイヌ語"
+                  },
+                  {
+                    "stringValue": "北海道"
+                  }
+                ]
+              }
+            },
+            "markdown": {
+              "stringValue": "アイヌ語やアイヌの歴史に関する資料のコレクション"
+            },
+            "photo": {
+              "stringValue": "https://firebasestorage.googleapis.com/v0/b/honkoku3-c466c.firebasestorage.app/o/project_images%2Ftemp_1776257014464%2F1776257041309_vnef64006m.png?alt=media&token=99746c6e-76d2-48fe-92ef-c095b91f54c0"
+            },
+            "isPrivate": {
+              "booleanValue": false
+            },
+            "ownerId": {
+              "stringValue": "B5KzM2KmjxXlvUVHiQdEO6Xth9J2"
+            },
+            "display": {
+              "booleanValue": true
+            },
+            "projectType": {
+              "stringValue": "user"
+            },
+            "useOwnGuidelines": {
+              "booleanValue": true
+            },
+            "functions": {
+              "mapValue": {
+                "fields": {
+                  "enableOCR": {
+                    "booleanValue": true
+                  },
+                  "enableTranslations": {
+                    "booleanValue": true
+                  }
+                }
+              }
+            },
+            "createdAt": {
+              "timestampValue": "2026-04-15T12:44:28.841Z"
+            },
+            "members": {
+              "arrayValue": {
+                "values": [
+                  {
+                    "stringValue": "o5ligrhqTyRnPj0G9vtNgz5hClT2"
+                  },
+                  {
+                    "stringValue": "okwfVJfstgRyqLNrzgQ6PZ2RKbi1"
+                  },
+                  {
+                    "stringValue": "4mpjZPju9kTekptaZs9WgNnExnI3"
+                  },
+                  {
+                    "stringValue": "DVBtN6lmfuVbrO6TQqWzIB9DH5w2"
+                  },
+                  {
+                    "stringValue": "fdixFwL0nRPQRxgn3A9IdzY0Mof1"
+                  },
+                  {
+                    "stringValue": "ag9gWIVK0GYjIduT5yAe7wWbnt63"
+                  }
+                ]
+              }
+            },
+            "admins": {
+              "arrayValue": {
+                "values": [
+                  {
+                    "stringValue": "o5ligrhqTyRnPj0G9vtNgz5hClT2"
+                  },
+                  {
+                    "stringValue": "4mpjZPju9kTekptaZs9WgNnExnI3"
+                  },
+                  {
+                    "stringValue": "fdixFwL0nRPQRxgn3A9IdzY0Mof1"
+                  },
+                  {
+                    "stringValue": "ag9gWIVK0GYjIduT5yAe7wWbnt63"
+                  }
+                ]
+              }
+            },
+            "completedEntryCount": {
+              "integerValue": "5"
+            },
+            "totalEntryCount": {
+              "integerValue": "79"
+            },
+            "charCount": {
+              "integerValue": "161892"
+            },
+            "completedImageCount": {
+              "integerValue": "549"
+            },
+            "totalImageCount": {
+              "integerValue": "5573"
+            }
+          },
+          "createTime": "2026-04-15T12:44:28.863219Z",
+          "updateTime": "2026-09-09T14:02:37.828873Z"
+        },
+        "readTime": "2026-09-10T07:40:55.364450Z"
+      }
+    ]
+  },
+  {
+    "t": "2026-09-10T07:40:57.023Z",
+    "kind": "response",
+    "method": "POST",
+    "url": "https://firestore.googleapis.com/v1/projects/honkoku3-c466c/databases/(default)/documents:commit",
+    "status": 200,
+    "body": {
+      "writeResults": [
+        {
+          "updateTime": "2026-09-10T07:40:55.669759Z",
+          "transformResults": [
+            {
+              "timestampValue": "2026-09-10T07:40:55.632Z"
+            }
+          ]
+        },
+        {
+          "updateTime": "2026-09-09T14:02:37.828873Z"
+        }
+      ],
+      "commitTime": "2026-09-10T07:40:55.669759Z"
+    }
+  },
+  {
+    "t": "2026-09-10T07:41:15.048Z",
+    "kind": "request",
+    "method": "POST",
+    "url": "https://firestore.googleapis.com/v1/projects/honkoku3-c466c/databases/(default)/documents:batchGet",
+    "status": null,
+    "body": {
+      "documents": [
+        "projects/honkoku3-c466c/databases/(default)/documents/transcriptions/90aaa0afa9cf2f14fc579f138ed2fca9_20"
+      ]
+    }
+  },
+  {
+    "t": "2026-09-10T07:41:15.131Z",
+    "kind": "request",
+    "method": "POST",
+    "url": "https://firestore.googleapis.com/v1/projects/honkoku3-c466c/databases/(default)/documents:commit",
+    "status": null,
+    "body": {
+      "writes": [
+        {
+          "update": {
+            "name": "projects/honkoku3-c466c/databases/(default)/documents/transcriptions/90aaa0afa9cf2f14fc579f138ed2fca9_20",
+            "fields": {
+              "tempText": {
+                "stringValue": "汐干（しほひ）　《割書：シラリシヤツ｜しらりしやつ》　　汐満（しほみち）　《割書：シラリハア｜しらりはあ　しらりは》　　谷地（たにち）　《割書：ヤヂシ｜やぢし》\n岩山（いはやま）　《割書：グヅン子｜ぐづんね》　　津浪（つなみ）山ぐみ　《割書：ヲハコベ｜をはこべ》　　曇（くも）る　《割書：二シクリ｜にしくり》\n砂（すな）　《割書：ヲタシ｜をたし》　　瀧（たき）の　《割書：シヨー｜しよう》　　屋敷（やしき）　《割書：チセコツ｜ちせこつ》\n平地（ひらち）　《割書：キロシテ｜きろして》　　森（もり）　《割書：トキヤ｜ときや》　　林（はやし）　《割書：テイグル｜ていぐる》\n樹（き）の生茂（おひしげる）　《割書：黄（ハイ）　二タイ｜にたい》　　所（ところ）の繁昌（はんじやう）　《割書：コタンシビ｜こたんしび》　　強（けむり）　《割書：シフヤ｜しぶや》\n暑（あつき）　《割書：シリポプケ｜しりほふけ》　　洲（す）　《割書：ラツカ｜ちつる》　　江（え）　河（か）　《割書：十（い）　い｜ないの》\n陰（かげ）　《割書：イセンヒル｜いせんびる》　　蔭（かげ）　《割書：をしまけ｜十一月》　　雨（あま）き地（ち）　《割書：ヲハチセ｜をはちせ》\n明（あき）き屋（や）　《割書：ふりをは｜十一月十一日》　　鴨（かも）　鱸（すゝみ）　《割書：いぬべし｜十一月十一日》　　大坂（おほさか）　《割書：はしな｜第十一　京都》"
+              },
+              "tempTextChanged": {
+                "booleanValue": true
+              }
+            }
+          },
+          "updateMask": {
+            "fieldPaths": [
+              "tempText",
+              "tempTextChanged"
+            ]
+          },
+          "updateTransforms": [
+            {
+              "fieldPath": "updatedAt",
+              "setToServerValue": "REQUEST_TIME"
+            }
+          ],
+          "currentDocument": {
+            "updateTime": "2026-09-10T07:40:55.669759000Z"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "t": "2026-09-10T07:41:15.131Z",
+    "kind": "response",
+    "method": "POST",
+    "url": "https://firestore.googleapis.com/v1/projects/honkoku3-c466c/databases/(default)/documents:batchGet",
+    "status": 200,
+    "body": [
+      {
+        "found": {
+          "name": "projects/honkoku3-c466c/databases/(default)/documents/transcriptions/90aaa0afa9cf2f14fc579f138ed2fca9_20",
+          "fields": {
+            "projectId": {
+              "stringValue": "ainu"
+            },
+            "entryId": {
+              "stringValue": "90aaa0afa9cf2f14fc579f138ed2fca9"
+            },
+            "index": {
+              "integerValue": "20"
+            },
+            "text": {
+              "stringValue": ""
+            },
+            "tempText": {
+              "stringValue": ""
+            },
+            "editedBy": {
+              "nullValue": null
+            },
+            "prevStatus": {
+              "stringValue": "default"
+            },
+            "tempTextChanged": {
+              "booleanValue": false
+            },
+            "syncMode": {
+              "booleanValue": false
+            },
+            "notes": {
+              "arrayValue": {}
+            },
+            "tempNotes": {
+              "arrayValue": {}
+            },
+            "canvasId": {
+              "stringValue": "https://dglb01.ninjal.ac.jp/ninjaldl/ezogosen/001/canvas/ezgs001-021.json"
+            },
+            "annotations": {
+              "arrayValue": {}
+            },
+            "tempAnnotations": {
+              "arrayValue": {}
+            },
+            "share": {
+              "booleanValue": false
+            },
+            "createdAt": {
+              "timestampValue": "2026-09-07T17:35:17.558Z"
+            },
+            "id": {
+              "stringValue": "90aaa0afa9cf2f14fc579f138ed2fca9_20"
+            },
+            "tempEditedBy": {
+              "stringValue": "B5KzM2KmjxXlvUVHiQdEO6Xth9J2"
+            },
+            "status": {
+              "stringValue": "editing"
+            },
+            "updatedAt": {
+              "timestampValue": "2026-09-10T07:40:55.632Z"
+            }
+          },
+          "createTime": "2026-09-07T17:35:18.891802Z",
+          "updateTime": "2026-09-10T07:40:55.669759Z"
+        },
+        "readTime": "2026-09-10T07:41:12.647425Z"
+      }
+    ]
+  },
+  {
+    "t": "2026-09-10T07:41:15.225Z",
+    "kind": "response",
+    "method": "POST",
+    "url": "https://firestore.googleapis.com/v1/projects/honkoku3-c466c/databases/(default)/documents:commit",
+    "status": 200,
+    "body": {
+      "writeResults": [
+        {
+          "updateTime": "2026-09-10T07:41:14.454719Z",
+          "transformResults": [
+            {
+              "timestampValue": "2026-09-10T07:41:14.431Z"
+            }
+          ]
+        }
+      ],
+      "commitTime": "2026-09-10T07:41:14.454719Z"
+    }
+  },
+  {
+    "t": "2026-09-10T07:41:42.274Z",
+    "kind": "request",
+    "method": "POST",
+    "url": "https://firestore.googleapis.com/v1/projects/honkoku3-c466c/databases/(default)/documents:batchGet",
+    "status": null,
+    "body": {
+      "documents": [
+        "projects/honkoku3-c466c/databases/(default)/documents/transcriptions/90aaa0afa9cf2f14fc579f138ed2fca9_20"
+      ]
+    }
+  },
+  {
+    "t": "2026-09-10T07:41:42.355Z",
+    "kind": "request",
+    "method": "POST",
+    "url": "https://firestore.googleapis.com/v1/projects/honkoku3-c466c/databases/(default)/documents:commit",
+    "status": null,
+    "body": {
+      "writes": [
+        {
+          "update": {
+            "name": "projects/honkoku3-c466c/databases/(default)/documents/transcriptions/90aaa0afa9cf2f14fc579f138ed2fca9_20",
+            "fields": {
+              "tempText": {
+                "stringValue": "汐干（しほひ）　"
+              },
+              "tempTextChanged": {
+                "booleanValue": true
+              }
+            }
+          },
+          "updateMask": {
+            "fieldPaths": [
+              "tempText",
+              "tempTextChanged"
+            ]
+          },
+          "updateTransforms": [
+            {
+              "fieldPath": "updatedAt",
+              "setToServerValue": "REQUEST_TIME"
+            }
+          ],
+          "currentDocument": {
+            "updateTime": "2026-09-10T07:41:14.454719000Z"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "t": "2026-09-10T07:41:42.357Z",
+    "kind": "response",
+    "method": "POST",
+    "url": "https://firestore.googleapis.com/v1/projects/honkoku3-c466c/databases/(default)/documents:batchGet",
+    "status": 200,
+    "body": [
+      {
+        "found": {
+          "name": "projects/honkoku3-c466c/databases/(default)/documents/transcriptions/90aaa0afa9cf2f14fc579f138ed2fca9_20",
+          "fields": {
+            "projectId": {
+              "stringValue": "ainu"
+            },
+            "entryId": {
+              "stringValue": "90aaa0afa9cf2f14fc579f138ed2fca9"
+            },
+            "index": {
+              "integerValue": "20"
+            },
+            "text": {
+              "stringValue": ""
+            },
+            "editedBy": {
+              "nullValue": null
+            },
+            "prevStatus": {
+              "stringValue": "default"
+            },
+            "syncMode": {
+              "booleanValue": false
+            },
+            "notes": {
+              "arrayValue": {}
+            },
+            "tempNotes": {
+              "arrayValue": {}
+            },
+            "canvasId": {
+              "stringValue": "https://dglb01.ninjal.ac.jp/ninjaldl/ezogosen/001/canvas/ezgs001-021.json"
+            },
+            "annotations": {
+              "arrayValue": {}
+            },
+            "tempAnnotations": {
+              "arrayValue": {}
+            },
+            "share": {
+              "booleanValue": false
+            },
+            "createdAt": {
+              "timestampValue": "2026-09-07T17:35:17.558Z"
+            },
+            "id": {
+              "stringValue": "90aaa0afa9cf2f14fc579f138ed2fca9_20"
+            },
+            "tempEditedBy": {
+              "stringValue": "B5KzM2KmjxXlvUVHiQdEO6Xth9J2"
+            },
+            "status": {
+              "stringValue": "editing"
+            },
+            "tempTextChanged": {
+              "booleanValue": true
+            },
+            "tempText": {
+              "stringValue": "汐干（しほひ）　《割書：シラリシヤツ｜しらりしやつ》　　汐満（しほみち）　《割書：シラリハア｜しらりはあ　しらりは》　　谷地（たにち）　《割書：ヤヂシ｜やぢし》\n岩山（いはやま）　《割書：グヅン子｜ぐづんね》　　津浪（つなみ）山ぐみ　《割書：ヲハコベ｜をはこべ》　　曇（くも）る　《割書：二シクリ｜にしくり》\n砂（すな）　《割書：ヲタシ｜をたし》　　瀧（たき）の　《割書：シヨー｜しよう》　　屋敷（やしき）　《割書：チセコツ｜ちせこつ》\n平地（ひらち）　《割書：キロシテ｜きろして》　　森（もり）　《割書：トキヤ｜ときや》　　林（はやし）　《割書：テイグル｜ていぐる》\n樹（き）の生茂（おひしげる）　《割書：黄（ハイ）　二タイ｜にたい》　　所（ところ）の繁昌（はんじやう）　《割書：コタンシビ｜こたんしび》　　強（けむり）　《割書：シフヤ｜しぶや》\n暑（あつき）　《割書：シリポプケ｜しりほふけ》　　洲（す）　《割書：ラツカ｜ちつる》　　江（え）　河（か）　《割書：十（い）　い｜ないの》\n陰（かげ）　《割書：イセンヒル｜いせんびる》　　蔭（かげ）　《割書：をしまけ｜十一月》　　雨（あま）き地（ち）　《割書：ヲハチセ｜をはちせ》\n明（あき）き屋（や）　《割書：ふりをは｜十一月十一日》　　鴨（かも）　鱸（すゝみ）　《割書：いぬべし｜十一月十一日》　　大坂（おほさか）　《割書：はしな｜第十一　京都》"
+            },
+            "updatedAt": {
+              "timestampValue": "2026-09-10T07:41:14.431Z"
+            }
+          },
+          "createTime": "2026-09-07T17:35:18.891802Z",
+          "updateTime": "2026-09-10T07:41:14.454719Z"
+        },
+        "readTime": "2026-09-10T07:41:40.110177Z"
+      }
+    ]
+  },
+  {
+    "t": "2026-09-10T07:41:42.454Z",
+    "kind": "response",
+    "method": "POST",
+    "url": "https://firestore.googleapis.com/v1/projects/honkoku3-c466c/databases/(default)/documents:commit",
+    "status": 200,
+    "body": {
+      "writeResults": [
+        {
+          "updateTime": "2026-09-10T07:41:41.693887Z",
+          "transformResults": [
+            {
+              "timestampValue": "2026-09-10T07:41:41.672Z"
+            }
+          ]
+        }
+      ],
+      "commitTime": "2026-09-10T07:41:41.693887Z"
+    }
+  },
+  {
+    "t": "2026-09-10T07:41:47.844Z",
+    "kind": "request",
+    "method": "POST",
+    "url": "https://firestore.googleapis.com/v1/projects/honkoku3-c466c/databases/(default)/documents:batchGet",
+    "status": null,
+    "body": {
+      "documents": [
+        "projects/honkoku3-c466c/databases/(default)/documents/transcriptions/90aaa0afa9cf2f14fc579f138ed2fca9_20"
+      ]
+    }
+  },
+  {
+    "t": "2026-09-10T07:41:47.917Z",
+    "kind": "request",
+    "method": "POST",
+    "url": "https://firestore.googleapis.com/v1/projects/honkoku3-c466c/databases/(default)/documents:batchGet",
+    "status": null,
+    "body": {
+      "documents": [
+        "projects/honkoku3-c466c/databases/(default)/documents/projects/ainu"
+      ]
+    }
+  },
+  {
+    "t": "2026-09-10T07:41:47.918Z",
+    "kind": "response",
+    "method": "POST",
+    "url": "https://firestore.googleapis.com/v1/projects/honkoku3-c466c/databases/(default)/documents:batchGet",
+    "status": 200,
+    "body": [
+      {
+        "found": {
+          "name": "projects/honkoku3-c466c/databases/(default)/documents/transcriptions/90aaa0afa9cf2f14fc579f138ed2fca9_20",
+          "fields": {
+            "projectId": {
+              "stringValue": "ainu"
+            },
+            "entryId": {
+              "stringValue": "90aaa0afa9cf2f14fc579f138ed2fca9"
+            },
+            "index": {
+              "integerValue": "20"
+            },
+            "text": {
+              "stringValue": ""
+            },
+            "editedBy": {
+              "nullValue": null
+            },
+            "prevStatus": {
+              "stringValue": "default"
+            },
+            "syncMode": {
+              "booleanValue": false
+            },
+            "notes": {
+              "arrayValue": {}
+            },
+            "tempNotes": {
+              "arrayValue": {}
+            },
+            "canvasId": {
+              "stringValue": "https://dglb01.ninjal.ac.jp/ninjaldl/ezogosen/001/canvas/ezgs001-021.json"
+            },
+            "annotations": {
+              "arrayValue": {}
+            },
+            "tempAnnotations": {
+              "arrayValue": {}
+            },
+            "share": {
+              "booleanValue": false
+            },
+            "createdAt": {
+              "timestampValue": "2026-09-07T17:35:17.558Z"
+            },
+            "id": {
+              "stringValue": "90aaa0afa9cf2f14fc579f138ed2fca9_20"
+            },
+            "tempEditedBy": {
+              "stringValue": "B5KzM2KmjxXlvUVHiQdEO6Xth9J2"
+            },
+            "status": {
+              "stringValue": "editing"
+            },
+            "tempTextChanged": {
+              "booleanValue": true
+            },
+            "tempText": {
+              "stringValue": "汐干（しほひ）　"
+            },
+            "updatedAt": {
+              "timestampValue": "2026-09-10T07:41:41.672Z"
+            }
+          },
+          "createTime": "2026-09-07T17:35:18.891802Z",
+          "updateTime": "2026-09-10T07:41:41.693887Z"
+        },
+        "readTime": "2026-09-10T07:41:46.632854Z"
+      }
+    ]
+  },
+  {
+    "t": "2026-09-10T07:41:47.996Z",
+    "kind": "request",
+    "method": "POST",
+    "url": "https://firestore.googleapis.com/v1/projects/honkoku3-c466c/databases/(default)/documents:commit",
+    "status": null,
+    "body": {
+      "writes": [
+        {
+          "update": {
+            "name": "projects/honkoku3-c466c/databases/(default)/documents/transcriptions/90aaa0afa9cf2f14fc579f138ed2fca9_20",
+            "fields": {
+              "status": {
+                "stringValue": "initiated"
+              },
+              "text": {
+                "stringValue": "汐干（しほひ）　"
+              },
+              "notes": {
+                "arrayValue": {
+                  "values": []
+                }
+              },
+              "editedBy": {
+                "stringValue": "B5KzM2KmjxXlvUVHiQdEO6Xth9J2"
+              },
+              "share": {
+                "booleanValue": false
+              },
+              "requestReview": {
+                "booleanValue": false
+              },
+              "syncMode": {
+                "booleanValue": false
+              }
+            }
+          },
+          "updateMask": {
+            "fieldPaths": [
+              "editedBy",
+              "notes",
+              "requestReview",
+              "share",
+              "status",
+              "syncMode",
+              "text"
+            ]
+          },
+          "currentDocument": {
+            "updateTime": "2026-09-10T07:41:41.693887000Z"
+          }
+        },
+        {
+          "update": {
+            "name": "projects/honkoku3-c466c/databases/(default)/documents/timelineEvents/1KoABKFnOaKV3db4jGku",
+            "fields": {
+              "uid": {
+                "stringValue": "B5KzM2KmjxXlvUVHiQdEO6Xth9J2"
+              },
+              "projectId": {
+                "stringValue": "ainu"
+              },
+              "entryId": {
+                "stringValue": "90aaa0afa9cf2f14fc579f138ed2fca9"
+              },
+              "transcriptionId": {
+                "stringValue": "90aaa0afa9cf2f14fc579f138ed2fca9_20"
+              },
+              "index": {
+                "integerValue": "20"
+              },
+              "eventType": {
+                "stringValue": "transcription"
+              },
+              "data": {
+                "mapValue": {
+                  "fields": {
+                    "projectId": {
+                      "stringValue": "ainu"
+                    },
+                    "entryId": {
+                      "stringValue": "90aaa0afa9cf2f14fc579f138ed2fca9"
+                    },
+                    "index": {
+                      "integerValue": "20"
+                    },
+                    "text": {
+                      "stringValue": "汐干（しほひ）　"
+                    },
+                    "editedBy": {
+                      "stringValue": "B5KzM2KmjxXlvUVHiQdEO6Xth9J2"
+                    },
+                    "prevStatus": {
+                      "stringValue": "default"
+                    },
+                    "syncMode": {
+                      "booleanValue": false
+                    },
+                    "notes": {
+                      "arrayValue": {
+                        "values": []
+                      }
+                    },
+                    "tempNotes": {
+                      "arrayValue": {
+                        "values": []
+                      }
+                    },
+                    "canvasId": {
+                      "stringValue": "https://dglb01.ninjal.ac.jp/ninjaldl/ezogosen/001/canvas/ezgs001-021.json"
+                    },
+                    "annotations": {
+                      "arrayValue": {
+                        "values": []
+                      }
+                    },
+                    "tempAnnotations": {
+                      "arrayValue": {
+                        "values": []
+                      }
+                    },
+                    "share": {
+                      "booleanValue": false
+                    },
+                    "createdAt": {
+                      "timestampValue": "2026-09-07T17:35:17.558000000Z"
+                    },
+                    "id": {
+                      "stringValue": "90aaa0afa9cf2f14fc579f138ed2fca9_20"
+                    },
+                    "tempEditedBy": {
+                      "stringValue": "B5KzM2KmjxXlvUVHiQdEO6Xth9J2"
+                    },
+                    "status": {
+                      "stringValue": "initiated"
+                    },
+                    "tempTextChanged": {
+                      "booleanValue": true
+                    },
+                    "tempText": {
+                      "stringValue": "汐干（しほひ）　"
+                    },
+                    "updatedAt": {
+                      "timestampValue": "2026-09-10T07:41:41.672000000Z"
+                    }
+                  }
+                }
+              },
+              "members": {
+                "arrayValue": {
+                  "values": [
+                    {
+                      "stringValue": "o5ligrhqTyRnPj0G9vtNgz5hClT2"
+                    },
+                    {
+                      "stringValue": "okwfVJfstgRyqLNrzgQ6PZ2RKbi1"
+                    },
+                    {
+                      "stringValue": "4mpjZPju9kTekptaZs9WgNnExnI3"
+                    },
+                    {
+                      "stringValue": "DVBtN6lmfuVbrO6TQqWzIB9DH5w2"
+                    },
+                    {
+                      "stringValue": "fdixFwL0nRPQRxgn3A9IdzY0Mof1"
+                    },
+                    {
+                      "stringValue": "ag9gWIVK0GYjIduT5yAe7wWbnt63"
+                    }
+                  ]
+                }
+              },
+              "projectType": {
+                "stringValue": "user"
+              },
+              "count": {
+                "integerValue": "7"
+              },
+              "isReview": {
+                "booleanValue": false
+              },
+              "status": {
+                "stringValue": "initiated"
+              },
+              "share": {
+                "booleanValue": false
+              },
+              "requestReview": {
+                "booleanValue": false
+              },
+              "comment": {
+                "stringValue": ""
+              },
+              "isApproval": {
+                "booleanValue": false
+              }
+            }
+          },
+          "updateTransforms": [
+            {
+              "fieldPath": "createdAt",
+              "setToServerValue": "REQUEST_TIME"
+            }
+          ]
+        },
+        {
+          "verify": "projects/honkoku3-c466c/databases/(default)/documents/projects/ainu",
+          "currentDocument": {
+            "updateTime": "2026-09-09T14:02:37.828873000Z"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "t": "2026-09-10T07:41:47.997Z",
+    "kind": "response",
+    "method": "POST",
+    "url": "https://firestore.googleapis.com/v1/projects/honkoku3-c466c/databases/(default)/documents:batchGet",
+    "status": 200,
+    "body": [
+      {
+        "found": {
+          "name": "projects/honkoku3-c466c/databases/(default)/documents/projects/ainu",
+          "fields": {
+            "id": {
+              "stringValue": "ainu"
+            },
+            "title": {
+              "stringValue": "アイヌ関連資料"
+            },
+            "description": {
+              "stringValue": "アイヌ語やアイヌの歴史に関する資料のコレクション"
+            },
+            "keywords": {
+              "arrayValue": {
+                "values": [
+                  {
+                    "stringValue": "アイヌ"
+                  },
+                  {
+                    "stringValue": "アイヌ語"
+                  },
+                  {
+                    "stringValue": "北海道"
+                  }
+                ]
+              }
+            },
+            "markdown": {
+              "stringValue": "アイヌ語やアイヌの歴史に関する資料のコレクション"
+            },
+            "photo": {
+              "stringValue": "https://firebasestorage.googleapis.com/v0/b/honkoku3-c466c.firebasestorage.app/o/project_images%2Ftemp_1776257014464%2F1776257041309_vnef64006m.png?alt=media&token=99746c6e-76d2-48fe-92ef-c095b91f54c0"
+            },
+            "isPrivate": {
+              "booleanValue": false
+            },
+            "ownerId": {
+              "stringValue": "B5KzM2KmjxXlvUVHiQdEO6Xth9J2"
+            },
+            "display": {
+              "booleanValue": true
+            },
+            "projectType": {
+              "stringValue": "user"
+            },
+            "useOwnGuidelines": {
+              "booleanValue": true
+            },
+            "functions": {
+              "mapValue": {
+                "fields": {
+                  "enableOCR": {
+                    "booleanValue": true
+                  },
+                  "enableTranslations": {
+                    "booleanValue": true
+                  }
+                }
+              }
+            },
+            "createdAt": {
+              "timestampValue": "2026-04-15T12:44:28.841Z"
+            },
+            "members": {
+              "arrayValue": {
+                "values": [
+                  {
+                    "stringValue": "o5ligrhqTyRnPj0G9vtNgz5hClT2"
+                  },
+                  {
+                    "stringValue": "okwfVJfstgRyqLNrzgQ6PZ2RKbi1"
+                  },
+                  {
+                    "stringValue": "4mpjZPju9kTekptaZs9WgNnExnI3"
+                  },
+                  {
+                    "stringValue": "DVBtN6lmfuVbrO6TQqWzIB9DH5w2"
+                  },
+                  {
+                    "stringValue": "fdixFwL0nRPQRxgn3A9IdzY0Mof1"
+                  },
+                  {
+                    "stringValue": "ag9gWIVK0GYjIduT5yAe7wWbnt63"
+                  }
+                ]
+              }
+            },
+            "admins": {
+              "arrayValue": {
+                "values": [
+                  {
+                    "stringValue": "o5ligrhqTyRnPj0G9vtNgz5hClT2"
+                  },
+                  {
+                    "stringValue": "4mpjZPju9kTekptaZs9WgNnExnI3"
+                  },
+                  {
+                    "stringValue": "fdixFwL0nRPQRxgn3A9IdzY0Mof1"
+                  },
+                  {
+                    "stringValue": "ag9gWIVK0GYjIduT5yAe7wWbnt63"
+                  }
+                ]
+              }
+            },
+            "completedEntryCount": {
+              "integerValue": "5"
+            },
+            "totalEntryCount": {
+              "integerValue": "79"
+            },
+            "charCount": {
+              "integerValue": "161892"
+            },
+            "completedImageCount": {
+              "integerValue": "549"
+            },
+            "totalImageCount": {
+              "integerValue": "5573"
+            }
+          },
+          "createTime": "2026-04-15T12:44:28.863219Z",
+          "updateTime": "2026-09-09T14:02:37.828873Z"
+        },
+        "readTime": "2026-09-10T07:41:46.632854Z"
+      }
+    ]
+  },
+  {
+    "t": "2026-09-10T07:41:48.143Z",
+    "kind": "response",
+    "method": "POST",
+    "url": "https://firestore.googleapis.com/v1/projects/honkoku3-c466c/databases/(default)/documents:commit",
+    "status": 200,
+    "body": {
+      "writeResults": [
+        {
+          "updateTime": "2026-09-10T07:41:47.340047Z"
+        },
+        {
+          "updateTime": "2026-09-10T07:41:47.340047Z",
+          "transformResults": [
+            {
+              "timestampValue": "2026-09-10T07:41:47.310Z"
+            }
+          ]
+        },
+        {
+          "updateTime": "2026-09-09T14:02:37.828873Z"
+        }
+      ],
+      "commitTime": "2026-09-10T07:41:47.340047Z"
+    }
+  }
+]
