@@ -3,6 +3,7 @@ use crate::{
 };
 use serde_json::{Value, json};
 use std::{
+    io::Write,
     path::{Path, PathBuf},
     process::Stdio,
     sync::{
@@ -28,10 +29,14 @@ pub struct OcrSidecar {
     sequence: AtomicU64,
     active: AtomicU64,
     script: Option<PathBuf>,
+    log_path: PathBuf,
+    last_error: Mutex<Option<String>>,
 }
 impl OcrSidecar {
     pub fn new(environment: OcrEnvironment) -> Self {
         Self {
+            log_path: environment.directory.join("ocr.log"),
+            last_error: Mutex::new(None),
             environment,
             gate: Mutex::new(()),
             process: Mutex::new(None),
@@ -46,6 +51,90 @@ impl OcrSidecar {
             script: Some(script),
             ..Self::new(environment)
         }
+    }
+    pub fn with_log_path(mut self, path: PathBuf) -> Self {
+        self.log_path = path;
+        self
+    }
+    fn log_file(&self) -> Result<std::fs::File> {
+        if let Some(parent) = self.log_path.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+        Ok(std::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(&self.log_path)?)
+    }
+    async fn diagnostic_command(&self, action: &str) -> Result<String> {
+        let output = Command::new(self.environment.python())
+            .args(["-c", include_str!("diagnostics.py"), action])
+            .env(
+                "HONKOKU_OCR_MODELS",
+                self.environment.directory.join("models"),
+            )
+            .env(
+                "HONKOKU_OCR_DEVICE",
+                if self.environment.use_gpu() {
+                    "cuda"
+                } else {
+                    "cpu"
+                },
+            )
+            .kill_on_drop(true)
+            .output()
+            .await?;
+        let stderr = crate::redact(&String::from_utf8_lossy(&output.stderr));
+        self.log_file()?.write_all(stderr.as_bytes())?;
+        let text = crate::redact(&String::from_utf8_lossy(&output.stdout));
+        if !output.status.success() {
+            let message = if text.trim().is_empty() { stderr } else { text };
+            *self.last_error.lock().await = Some(message.clone());
+            return Err(Error::Setup(message));
+        }
+        Ok(text)
+    }
+    pub async fn doctor(&self) -> Result<String> {
+        self.diagnostic_command("doctor").await
+    }
+    pub async fn repair_models(&self, progress: ProgressHandler) -> Result<OcrStatus> {
+        let _gate = self.gate.lock().await;
+        self.stop().await?;
+        self.diagnostic_command("repair").await?;
+        let mut status: OcrStatus =
+            serde_json::from_value(self.request_locked("status", json!({}), progress).await?)?;
+        status.environment_ready = true;
+        Ok(status)
+    }
+    pub async fn diagnostics(&self) -> Result<crate::OcrDiagnostics> {
+        let status = match self.status().await {
+            Ok(status) => Some(status),
+            Err(error) => {
+                *self.last_error.lock().await = Some(crate::redact(&error.to_string()));
+                None
+            }
+        };
+        if self.environment.ready() && status.as_ref().is_some_and(|s| !s.models_ready) {
+            let _ = self.diagnostic_command("verify").await;
+        }
+        let models = self.environment.directory.join("models");
+        let mut bytes = 0;
+        if models.is_dir() {
+            for entry in std::fs::read_dir(&models)? {
+                let entry = entry?;
+                if entry.file_type()?.is_file() {
+                    bytes += entry.metadata()?.len();
+                }
+            }
+        }
+        Ok(crate::OcrDiagnostics {
+            status,
+            environment_ready: self.environment.ready(),
+            models_present: bytes > 0,
+            models_directory_exists: models.is_dir(),
+            models_bytes: bytes,
+            last_error: self.last_error.lock().await.clone(),
+            log_path: crate::redact(&self.log_path.to_string_lossy()),
+        })
     }
     async fn spawn(&self) -> Result<Process> {
         let script = match &self.script {
@@ -69,9 +158,22 @@ impl OcrSidecar {
             )
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
-            .stderr(Stdio::null())
+            .stderr(Stdio::piped())
             .kill_on_drop(true)
             .spawn()?;
+        let stderr = child
+            .stderr
+            .take()
+            .ok_or_else(|| Error::Setup("sidecar stderr unavailable".into()))?;
+        let mut log = self.log_file()?;
+        tokio::spawn(async move {
+            let mut lines = BufReader::new(stderr).lines();
+            while let Ok(Some(line)) = lines.next_line().await {
+                if writeln!(log, "{}", crate::redact(&line)).is_err() {
+                    break;
+                }
+            }
+        });
         let input = child
             .stdin
             .take()
@@ -147,6 +249,9 @@ impl OcrSidecar {
                     continue;
                 }
                 if let Some(error) = value.get("error") {
+                    *self.last_error.lock().await = Some(crate::redact(
+                        error["message"].as_str().unwrap_or("OCR failed"),
+                    ));
                     return Err(Error::Worker {
                         kind: error["kind"].as_str().unwrap_or("ocr").into(),
                         message: crate::redact(error["message"].as_str().unwrap_or("OCR failed")),

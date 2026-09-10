@@ -67,3 +67,14 @@ pub fn redact(message: &str) -> String {
     }
     output
 }
+
+#[derive(Debug, Clone, Serialize)]
+pub struct OcrDiagnostics {
+    pub status: Option<OcrStatus>,
+    pub environment_ready: bool,
+    pub models_present: bool,
+    pub models_directory_exists: bool,
+    pub models_bytes: u64,
+    pub last_error: Option<String>,
+    pub log_path: String,
+}
