@@ -1,6 +1,7 @@
 pub mod api;
 pub mod auth;
 pub mod cache;
+pub mod clips;
 pub mod editing;
 pub mod firestore;
 pub mod glyphs;
