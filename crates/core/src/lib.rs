@@ -37,6 +37,11 @@ pub enum Error {
     Keyring(#[from] keyring::Error),
     #[error("signed out; import a new session to sign in")]
     SignedOut,
+    #[error("document changed concurrently: {path}")]
+    Conflict {
+        path: String,
+        current: Option<firestore::ReadDocument>,
+    },
 }
 pub type Result<T> = std::result::Result<T, Error>;
 #[derive(Clone)]
@@ -90,6 +95,20 @@ impl HonkokuClient {
         body: Option<&impl Serialize>,
         token: Option<&str>,
     ) -> Result<T> {
+        Ok(self
+            .request_response(method, url, body, token)
+            .await?
+            .error_for_status()?
+            .json()
+            .await?)
+    }
+    pub(crate) async fn request_response(
+        &self,
+        method: Method,
+        url: Url,
+        body: Option<&impl Serialize>,
+        token: Option<&str>,
+    ) -> Result<reqwest::Response> {
         let host = url
             .host_str()
             .ok_or_else(|| Error::Invalid("URL has no host".into()))?
@@ -117,7 +136,7 @@ impl HonkokuClient {
             if let Some(token) = token.or(managed_token.as_deref()) {
                 request = request.bearer_auth(token);
             }
-            Ok(request.send().await?.error_for_status()?.json().await?)
+            Ok(request.send().await?)
         })
         .await
         .map_err(|_| Error::Timeout)?

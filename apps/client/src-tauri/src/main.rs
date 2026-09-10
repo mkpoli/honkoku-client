@@ -41,6 +41,7 @@ impl From<honkoku_core::Error> for AppError {
             Error::Io(_) => "io",
             Error::Keyring(_) => "credentials",
             Error::SignedOut => "signed_out",
+            Error::Conflict { .. } => "conflict",
         };
         Self {
             kind: kind.into(),

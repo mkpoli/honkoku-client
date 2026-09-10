@@ -15,6 +15,8 @@ keyring = "=4.2.0"
 tempfile = "=3.27.0"
 reqwest = { version = "=0.13.5", default-features = false, features = ["rustls", "json"] }
 futures-util = "0.3"
+rand = "=0.9.5"
+similar = "=2.7.0"
 
 [dev-dependencies]
 wiremock = "=0.6.5"
