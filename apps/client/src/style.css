@@ -456,7 +456,7 @@ main {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 13px;
+  font-size: 15px;
   line-height: 22px;
   white-space: nowrap;
 }
@@ -623,7 +623,7 @@ main {
   display: flex;
   flex-wrap: wrap;
   gap: 4px 12px;
-  font-size: 13px;
+  font-size: 15px;
   line-height: 18px;
 }
 .own-record h2,
@@ -753,7 +753,7 @@ main {
   align-self: center;
 }
 .collection-row h3 {
-  font-size: 17px;
+  font-size: 18px;
   line-height: 26px;
 }
 .collection-meta {
@@ -761,7 +761,7 @@ main {
   justify-content: space-between;
   gap: 8px;
   margin: 4px 0;
-  font-size: 13px;
+  font-size: 15px;
 }
 .entries-panel {
   display: flex;
