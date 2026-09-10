@@ -557,14 +557,13 @@ main {
   font-family: var(--font-serif);
   font-size: 18px;
   line-height: 26px;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  overflow: hidden;
   white-space: normal;
-  max-height: 68px;
   overflow-wrap: anywhere;
-  height: 68px;
+}
+.activity blockquote .excerpt-text {
+  display: block;
+  max-height: 52px;
+  overflow: hidden;
 }
 .load-more {
   border: 0;
@@ -900,8 +899,10 @@ main {
 .compact .activity blockquote {
   font-size: 13px;
   line-height: 18px;
-  max-height: 52px;
   margin-top: 8px;
+}
+.compact .activity blockquote .excerpt-text {
+  max-height: 36px;
 }
 .contributors p {
   margin: -4px 0 8px;
@@ -1090,18 +1091,20 @@ main {
   line-height: 44px;
   flex: 1;
   min-height: 0;
-  overflow: auto;
+  overflow-x: auto;
+  overflow-y: hidden;
   display: flex;
   flex-direction: row-reverse;
   padding: 24px 16px;
   gap: 16px;
-  align-items: flex-start;
+  align-items: stretch;
 }
 .column-group {
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
   min-width: 44px;
+  min-height: 0;
   max-height: none;
   padding: 0 8px;
   border-left: 1px solid var(--border);
@@ -1125,20 +1128,21 @@ main {
 .columns {
   display: flex;
   flex-direction: row-reverse;
-  flex: none;
+  flex: 1 1 auto;
   min-height: 0;
   gap: 0;
+  align-items: stretch;
 }
 .transcription-column {
   writing-mode: vertical-rl;
   text-orientation: mixed;
-  white-space: pre;
+  white-space: pre-wrap;
   min-width: 44px;
   max-height: none;
   padding: 0 4px;
   overflow-wrap: anywhere;
-  height: max-content;
-  flex: 0 0 44px;
+  height: 100%;
+  flex: 0 0 auto;
 }
 .transcription.horizontal {
   display: block;

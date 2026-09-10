@@ -125,7 +125,7 @@
             /></a
           >
         </div>
-        {#if item.excerpt}<blockquote>{item.excerpt}</blockquote>{/if}
+        {#if item.excerpt}<blockquote><span class="excerpt-text">{item.excerpt}</span></blockquote>{/if}
       </article>
     {:else}{#if !loading && !error}<p class="empty">
           活動はまだありません。

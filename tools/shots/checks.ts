@@ -137,9 +137,16 @@ export async function checkInteractions(browser: Browser, origin: string) {
       height: e.getBoundingClientRect().height,
     }));
   assert.equal(metrics.mode, "vertical-rl");
-  assert.equal(metrics.whiteSpace, "pre");
-  assert.equal(Math.round(metrics.width), 44);
+  assert.equal(metrics.whiteSpace, "pre-wrap");
+  assert.ok(Math.round(metrics.width) >= 44);
   assert.ok(metrics.height > 0);
+  const panel = await page
+    .locator(".transcription")
+    .evaluate((e) => ({
+      scrollHeight: e.scrollHeight,
+      clientHeight: e.clientHeight,
+    }));
+  assert.ok(panel.scrollHeight <= panel.clientHeight + 1, "columns wrap instead of overflowing downward");
   await page.getByRole("combobox", { name: "表示テーマ" }).selectOption("dark");
   assert.equal(await page.locator("html").getAttribute("data-theme"), "dark");
   assert.equal(
