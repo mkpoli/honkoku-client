@@ -688,3 +688,43 @@ async fn each_operation_rechecks_server_lock() -> Result<()> {
     }
     Ok(())
 }
+
+#[tokio::test]
+async fn ocr_write_preserves_other_fields_and_uses_server_timestamps() -> Result<()> {
+    let server = MockServer::start().await;
+    let page = page_reads()[0].clone();
+    read(&server, page.clone(), 1).await;
+    commit_response(&server, commits("response")[0].clone()).await;
+    client(&server)?
+        .write_ocr(
+            ENTRY,
+            20,
+            "minna",
+            json!({"engine":"minna","text":"字","lines":[],"createdAt":"client time"}),
+        )
+        .await?;
+    let requests = server.received_requests().await.unwrap();
+    let request = requests
+        .iter()
+        .find(|r| r.url.path().ends_with(":commit"))
+        .unwrap();
+    let payload: Value = serde_json::from_slice(&request.body)?;
+    let write = &payload["writes"][0];
+    assert_eq!(payload["writes"].as_array().unwrap().len(), 1);
+    assert_eq!(write["updateMask"]["fieldPaths"], json!(["ocr.minna"]));
+    assert_eq!(write["currentDocument"]["updateTime"], page["updateTime"]);
+    assert_eq!(
+        write["updateTransforms"],
+        json!([
+            {"fieldPath":"updatedAt","setToServerValue":"REQUEST_TIME"},
+            {"fieldPath":"ocr.minna.createdAt","setToServerValue":"REQUEST_TIME"}
+        ])
+    );
+    assert!(
+        write["update"]["fields"]["ocr"]["mapValue"]["fields"]["minna"]["mapValue"]["fields"]
+            .get("createdAt")
+            .is_none()
+    );
+    assert!(write["update"]["fields"].get("text").is_none());
+    Ok(())
+}

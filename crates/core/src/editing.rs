@@ -129,6 +129,37 @@ fn page_path(entry_id: &str, index: u32) -> Result<String> {
     Ok(format!("transcriptions/{entry_id}_{index}"))
 }
 impl HonkokuClient {
+    pub async fn write_ocr(
+        &self,
+        entry_id: &str,
+        index: u32,
+        engine: &str,
+        mut result: Value,
+    ) -> Result<()> {
+        self.signed_in_uid().await?;
+        if !matches!(engine, "minna" | "ndl") || !result.is_object() {
+            return Err(Error::Invalid("invalid OCR engine or result".into()));
+        }
+        if let Some(object) = result.as_object_mut() {
+            object.remove("createdAt");
+        }
+        let document = self.read_edit_page(entry_id, index).await?;
+        self.commit(vec![Write::Update {
+            name: document.name,
+            fields: json!({"ocr":{engine:result}}),
+            update_mask: vec![format!("ocr.{engine}")],
+            update_transforms: vec![
+                ("updatedAt".into(), ServerValue::RequestTime),
+                (format!("ocr.{engine}.createdAt"), ServerValue::RequestTime),
+            ],
+            precondition: Some(Precondition {
+                update_time: document.update_time,
+            }),
+        }])
+        .await?;
+        Ok(())
+    }
+
     async fn read_edit_page(&self, entry_id: &str, index: u32) -> Result<ReadDocument> {
         self.batch_get([page_path(entry_id, index)?])
             .await?
