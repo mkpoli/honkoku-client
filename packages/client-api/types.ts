@@ -266,3 +266,8 @@ export interface SavedPage {
 }
 
 export type SignInProvider = "google.com" | "twitter.com";
+
+/** Native saves include the count read from the committed timeline event. */
+export interface SavedPageWithCount extends SavedPage {
+  count: number;
+}
