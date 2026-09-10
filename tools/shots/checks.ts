@@ -1963,3 +1963,201 @@ export async function checkGlyphs(
     await context.close();
   }
 }
+
+export async function checkRankingSelf(
+  browser: Browser,
+  origin: string,
+  theme: "light" | "dark",
+) {
+  const whoami = (await import("../../fixtures/home/whoami.json")).default;
+  const self = (await import("../../fixtures/home/ranking-self.json")).default;
+  for (const scenario of [
+    "inside",
+    "outside",
+    "uncounted",
+    "signed-out",
+  ] as const) {
+    const context = await browser.newContext({
+      viewport: { width: 1600, height: 1000 },
+      locale: "ja-JP",
+      colorScheme: theme,
+      reducedMotion: theme === "light" ? "no-preference" : "reduce",
+    });
+    await context.addInitScript(
+      ({ theme, scenario }) => {
+        localStorage.setItem("honkoku.theme", theme);
+        if (scenario === "outside" || scenario === "uncounted")
+          sessionStorage.setItem("honkoku.fixture.rankingSelf", "outside");
+        if (scenario === "uncounted")
+          sessionStorage.setItem("honkoku.fixture.rankingUncounted", "true");
+        if (scenario === "signed-out")
+          sessionStorage.setItem("honkoku.fixture.signedOut", "true");
+      },
+      { theme, scenario },
+    );
+    const page = await context.newPage();
+    const errors: string[] = [];
+    page.on("pageerror", (error) => errors.push(error.message));
+    try {
+      await page.goto(`${origin}/#/`, { waitUntil: "domcontentloaded" });
+      await page.locator(".ranking-list li").first().waitFor();
+      if (scenario === "signed-out")
+        await page.getByRole("button", { name: "ログイン", exact: true }).waitFor();
+      else await page.locator(".own-record").waitFor();
+      const panel = page.locator(".ranking");
+      const button = panel.getByRole("button", {
+        name: "自分の順位",
+        exact: true,
+      });
+      const sort = panel.getByRole("combobox", {
+        name: "ランキングの集計項目",
+      });
+      if (scenario === "signed-out") {
+        assert.equal(await button.count(), 0);
+        assert.equal(await panel.locator("[data-ranking-self]").count(), 0);
+        assert.equal(await panel.locator(".ranking-self-tag").count(), 0);
+        assert.deepEqual(errors, []);
+        continue;
+      }
+      for (const [field, unit] of [
+        ["exp", "pt"],
+        ["charCount", "字"],
+        ["likeCount", "いいね"],
+      ] as const) {
+        await sort.selectOption(field);
+        const row = panel.locator("[data-ranking-self]");
+        await row.waitFor();
+        if (scenario === "inside") {
+          assert.match(
+            await row.innerText(),
+            new RegExp(
+              whoami.displayName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+            ),
+          );
+          assert.equal(
+            await row.locator(".ranking-self-tag").innerText(),
+            "自分",
+          );
+          assert.equal(
+            await row.locator(".numeric").innerText(),
+            `${whoami[field].toLocaleString("ja-JP")}${unit}`,
+          );
+          assert.equal(await panel.locator(".ranking-self-footer").count(), 0);
+          await panel.locator(".ranking-list").evaluate((list) => {
+            list.scrollTop = 0;
+          });
+          assert.ok(
+            await row.evaluate((row) => {
+              const list = row.closest(".ranking-list")!;
+              return (
+                row.getBoundingClientRect().bottom >
+                list.getBoundingClientRect().bottom
+              );
+            }),
+            "self starts below the visible list",
+          );
+        } else {
+          const expected =
+            scenario === "uncounted"
+              ? "未集計 あなた · —"
+              : `${self[field].rank}位 あなた · ${self[field].value.toLocaleString("ja-JP")}${unit}`;
+          await page.waitForFunction((expected) => {
+            const text = document.querySelector(
+              ".ranking-self-footer",
+            )?.textContent;
+            return text?.replace(/\s+/g, "") === expected.replace(/\s+/g, "");
+          }, expected);
+          assert.equal(
+            await panel.locator(".ranking-list [data-ranking-self]").count(),
+            0,
+          );
+          assert.ok(
+            await row.evaluate((row) => !row.closest(".ranking-list")),
+            "footer stays outside the scrollable list",
+          );
+        }
+        await row.evaluate((row) => {
+          row.dataset.pulseStarts = "0";
+          row.addEventListener("animationstart", () => {
+            row.dataset.pulseStarts = String(
+              Number(row.dataset.pulseStarts) + 1,
+            );
+          }, { once: true });
+        });
+        await button.click();
+        await page.waitForFunction(
+          () =>
+            document.querySelector<HTMLElement>("[data-ranking-self]")?.dataset
+              .pulseStarts === "1",
+        );
+        await page.waitForFunction(
+          () => !document.querySelector(".ranking-pulse"),
+        );
+        assert.equal(await row.getAttribute("data-pulse-starts"), "1");
+        if (scenario === "inside") {
+          await page.waitForFunction(() => {
+            const row = document.querySelector(
+              ".ranking-list [data-ranking-self]",
+            )!;
+            const list = row.closest(".ranking-list")!;
+            const a = row.getBoundingClientRect(),
+              b = list.getBoundingClientRect();
+            return list.scrollTop > 0 && a.top >= b.top && a.bottom <= b.bottom;
+          });
+          const styles = await row.evaluate((row) => {
+            const style = getComputedStyle(row);
+            const name = getComputedStyle(row.querySelector("strong")!);
+            const sample = document.createElement("span");
+            sample.style.color = "var(--text-strong)";
+            row.append(sample);
+            const strongColor = getComputedStyle(sample).color;
+            sample.remove();
+            return {
+              bar: style.borderInlineStartWidth,
+              color: name.color,
+              strongColor,
+            };
+          });
+          assert.equal(styles.bar, "3px");
+          assert.equal(styles.color, styles.strongColor);
+        }
+        if (field === "exp" && scenario === "inside") {
+          await page.evaluate(() => document.fonts.ready);
+          await page.screenshot({
+            path: resolve(
+              import.meta.dir,
+              `../../.local/shots/17-ranking-self-${theme}.png`,
+            ),
+          });
+        }
+        if (field === "exp" && scenario === "outside") {
+          await page.screenshot({
+            path: resolve(
+              import.meta.dir,
+              `../../.local/shots/17-ranking-self-outside-${theme}.png`,
+            ),
+          });
+        }
+      }
+      await panel.getByRole("button", { name: "今日", exact: true }).click();
+      assert.equal(await panel.locator(".ranking-self-footer").count(), 0);
+      await panel.getByRole("button", { name: "累計", exact: true }).click();
+      await panel.locator("[data-ranking-self]").waitFor();
+      await page
+        .getByRole("button", { name: "ログアウト", exact: true })
+        .click();
+      await page
+        .getByRole("dialog")
+        .getByRole("button", { name: "ログアウト", exact: true })
+        .click();
+      await button.waitFor({ state: "detached" });
+      assert.equal(await panel.locator("[data-ranking-self]").count(), 0);
+      assert.deepEqual(errors, []);
+    } finally {
+      await context.close();
+    }
+  }
+  console.log(
+    `Ranking checks passed (${theme}): self row, scroll, pulse, sorts, pinned rank, missing field, sign-out.`,
+  );
+}
