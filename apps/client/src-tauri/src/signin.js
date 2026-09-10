@@ -17,7 +17,7 @@
     if (!document.body) return;
     document.title = "ログイン";
     if (!box) {
-      document.body.innerHTML = "";
+      for (const child of Array.from(document.body.children)) child.style.display = "none";
       box = document.createElement("div");
       box.setAttribute(
         "style",
