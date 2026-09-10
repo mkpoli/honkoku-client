@@ -221,7 +221,7 @@
         公開翻刻データから検索索引を作成します。一度作成すると、通信せずに本文を検索できます。
       </p>
       <p class="muted">
-        公開データ約833MB・約28万コマ。検索索引用の空き容量も必要です。
+        公開データ約833MB。検索索引用の空き容量も必要です。
       </p>
       <div class="setup-actions">
         <button disabled={building} onclick={() => build(true)}
