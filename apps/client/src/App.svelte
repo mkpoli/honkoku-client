@@ -531,6 +531,10 @@
                 {pages}
                 {canvases}
                 {session}
+                {pagesRegion}
+                pagesPending={pagesRegion.value === undefined &&
+                  pagesRegion.pending}
+                {canvasesRegion}
                 onpage={(updated) => {
                   pageRevisions.set(updated.id, ++pageWriteEpoch);
                   pages = pages.map((p) => (p.id === updated.id ? updated : p));
