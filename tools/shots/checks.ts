@@ -1,10 +1,13 @@
 import { checkEditor } from "./editor-checks";
 import assert from "node:assert/strict";
 import type { Browser, Page } from "playwright";
+import { resolve } from "node:path";
 const entry = "0916dafb80cdc48ca7687afcad4a4f35";
 const collection = "3R4VhlBfvOYeqPY13cJm";
 export async function checkInteractions(browser: Browser, origin: string) {
   await checkEditor(browser, origin);
+  for (const theme of ["light", "dark"] as const)
+    await checkEditing(browser, origin, theme);
   const context = await browser.newContext({
     viewport: { width: 1600, height: 1000 },
     locale: "ja-JP",
@@ -150,6 +153,7 @@ export async function checkInteractions(browser: Browser, origin: string) {
     panel.scrollHeight <= panel.clientHeight + 1,
     "columns wrap instead of overflowing downward",
   );
+  await page.locator(".theme-menu summary").click();
   await page.getByRole("combobox", { name: "表示テーマ" }).selectOption("dark");
   assert.equal(await page.locator("html").getAttribute("data-theme"), "dark");
   assert.equal(
@@ -168,6 +172,7 @@ export async function checkInteractions(browser: Browser, origin: string) {
       .evaluate((e) => getComputedStyle(e).backgroundColor),
     "rgb(244, 242, 238)",
   );
+  await page.locator(".theme-menu summary").click();
   await page.evaluate(async (id) => {
     const { fixtureInvoke } = await import("/src/dev/fixtures.ts");
     const pages = (await fixtureInvoke("list_pages", { entryId: id })) as {
@@ -213,4 +218,324 @@ export async function checkInteractions(browser: Browser, origin: string) {
   console.log(
     "Interaction checks passed: filters, grouping, session, pagination, ranking, routes, page keys, layout, themes, notes, OCR, image fallback.",
   );
+}
+
+export async function checkEditing(
+  browser: Browser,
+  origin: string,
+  theme: "light" | "dark",
+  suffix = "",
+) {
+  const context = await browser.newContext({
+    viewport: { width: 1600, height: 1000 },
+    locale: "ja-JP",
+    colorScheme: theme,
+    reducedMotion: "reduce",
+  });
+  const page = await context.newPage();
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  try {
+    await page.goto(`${origin}/#/entries/${entry}/pages/3`);
+    await page.getByRole("button", { name: "編集開始", exact: true }).click();
+    const editor = page.getByRole("textbox", { name: "翻刻本文", exact: true });
+    await editor.waitFor();
+    await editor.locator(".transcription-column").first().click();
+    await page.keyboard.press("Home");
+    await page.keyboard.insertText("追記");
+    await page
+      .locator(".edit-status")
+      .filter({ hasText: "下書き保存" })
+      .waitFor();
+    await page.evaluate(() => document.fonts.ready);
+    await page.waitForLoadState("networkidle", { timeout: 20000 });
+    await page.screenshot({
+      path: resolve(
+        import.meta.dir,
+        `../../.local/shots/07-editing-${theme}${suffix}.png`,
+      ),
+    });
+    const geometry = await page
+      .locator(".editor-scroll")
+      .evaluate((element) => {
+        const pane = element.getBoundingClientRect();
+        const first = element
+          .querySelector(".transcription-column")!
+          .getBoundingClientRect();
+        return {
+          right: first.right,
+          paneRight: pane.right,
+          height: element.clientHeight,
+          scrollHeight: element.scrollHeight,
+          scrollLeft: element.scrollLeft,
+        };
+      });
+    assert.ok(
+      geometry.right <= geometry.paneRight && geometry.height > 80,
+      JSON.stringify(geometry),
+    );
+    assert.ok(
+      geometry.scrollHeight <= geometry.height + 1,
+      "editor columns fit vertically",
+    );
+    await page.getByRole("button", { name: "保存", exact: true }).click();
+    await page
+      .getByRole("checkbox", { name: "このコマを完了", exact: true })
+      .check();
+    await page
+      .getByRole("textbox", { name: "コメント", exact: true })
+      .fill("本文を確認");
+    await page.getByRole("button", { name: "保存を確定", exact: true }).click();
+    await page
+      .locator(".completion-toast")
+      .filter({ hasText: "2文字" })
+      .waitFor();
+    assert.ok(
+      (
+        await page.locator(".status-strip a").nth(3).getAttribute("class")
+      )?.includes("completed"),
+    );
+    assert.equal(await editor.count(), 0);
+    if (theme === "light")
+      await page.screenshot({
+        path: resolve(
+          import.meta.dir,
+          `../../.local/shots/07-completed-light${suffix}.png`,
+        ),
+      });
+    await page.getByRole("button", { name: "次のコマ", exact: true }).click();
+    await page.waitForURL("**/pages/4");
+    const previous = await page
+      .locator(".status-strip a")
+      .nth(4)
+      .getAttribute("aria-label");
+    await page.getByRole("button", { name: "編集開始", exact: true }).click();
+    await page.getByRole("button", { name: "原文表示", exact: true }).click();
+    const raw = page.getByRole("textbox", { name: "原文を編集", exact: true });
+    await raw.fill("長い行".repeat(150));
+    assert.ok(
+      await raw.evaluate((e) => e.scrollWidth <= e.clientWidth + 1),
+      "raw source wraps long lines",
+    );
+    await page.keyboard.press("Escape");
+    assert.equal(await raw.count(), 1);
+    await page.getByRole("button", { name: "破棄", exact: true }).click();
+    await page.getByText("変更を破棄しますか", { exact: true }).waitFor();
+    await page.getByRole("button", { name: "破棄する", exact: true }).click();
+    await page.getByRole("button", { name: "編集開始", exact: true }).waitFor();
+    assert.equal(
+      await page.locator(".status-strip a").nth(4).getAttribute("aria-label"),
+      previous,
+    );
+    // Navigate before the draft timer fires, then resume the same retained lock.
+    await page.getByRole("button", { name: "編集開始", exact: true }).click();
+    await page.getByRole("button", { name: "原文表示", exact: true }).click();
+    await raw.fill("再開する本文");
+    await page.getByRole("button", { name: "次のコマ", exact: true }).click();
+    await page.waitForURL("**/pages/5");
+    await page.getByRole("button", { name: "前のコマ", exact: true }).click();
+    await page.waitForURL("**/pages/4");
+    await page.getByRole("button", { name: "編集を再開", exact: true }).click();
+    await page.getByRole("button", { name: "原文表示", exact: true }).click();
+    assert.equal(await raw.inputValue(), "再開する本文");
+    await page.keyboard.press("Control+s");
+    await page.getByRole("button", { name: "編集開始", exact: true }).waitFor();
+    assert.ok(
+      (
+        await page.locator(".status-strip a").nth(4).getAttribute("class")
+      )?.includes("completed"),
+      "shortcut reuses last save options",
+    );
+    await page.getByRole("button", { name: "編集開始", exact: true }).click();
+    await page.getByRole("button", { name: "原文表示", exact: true }).click();
+    await raw.fill(
+      Array.from({ length: 30 }, (_, i) => `列${i + 1}本文`).join("\n"),
+    );
+    await page.getByRole("button", { name: "原文表示", exact: true }).click();
+    const scroll = page.locator(".editor-scroll");
+    const wide = await scroll.evaluate((e) => {
+      const pane = e.getBoundingClientRect();
+      e.scrollLeft = -e.scrollWidth;
+      const last = e
+        .querySelector(".transcription-column:last-child")!
+        .getBoundingClientRect();
+      return {
+        scrollWidth: e.scrollWidth,
+        width: e.clientWidth,
+        left: last.left,
+        paneLeft: pane.left,
+        right: last.right,
+        paneRight: pane.right,
+      };
+    });
+    assert.ok(
+      wide.scrollWidth > wide.width,
+      "wide document scrolls horizontally",
+    );
+    assert.ok(
+      wide.left >= wide.paneLeft && wide.right <= wide.paneRight,
+      JSON.stringify(wide),
+    );
+    await scroll.evaluate((e) => {
+      e.scrollLeft = 0;
+    });
+    if (suffix) {
+      await page.waitForLoadState("networkidle", { timeout: 20000 });
+      await page.screenshot({
+        path: resolve(
+          import.meta.dir,
+          `../../.local/shots/07-editing-wide-${theme}${suffix}.png`,
+        ),
+      });
+    }
+    await page.getByRole("button", { name: "破棄", exact: true }).click();
+    await page.getByRole("button", { name: "破棄する", exact: true }).click();
+    await page.getByRole("button", { name: "編集開始", exact: true }).waitFor();
+    await page.getByRole("button", { name: "前のコマ", exact: true }).click();
+    await page.waitForURL("**/pages/3");
+    await page.getByRole("button", { name: "編集開始", exact: true }).click();
+    await page.getByRole("button", { name: "原文表示", exact: true }).click();
+    const beforeOcr = await raw.inputValue();
+    const ocr = await page.locator(".ocr-columns pre").first().textContent();
+    await page
+      .getByRole("button", { name: "本文に挿入", exact: true })
+      .first()
+      .click();
+    assert.equal(await raw.inputValue(), `${beforeOcr}\n${ocr}`);
+    await page.locator(".theme-menu summary").click();
+    await page.getByRole("checkbox", { name: "効果音", exact: true }).uncheck();
+    assert.equal(
+      await page.evaluate(() => localStorage.getItem("honkoku.sound")),
+      "off",
+    );
+    await page.locator(".theme-menu summary").click();
+    await page.getByRole("button", { name: "破棄", exact: true }).click();
+    await page.getByRole("button", { name: "破棄する", exact: true }).click();
+    await page.getByRole("button", { name: "編集開始", exact: true }).waitFor();
+    if (theme === "light" && !suffix) {
+      const changeLock = async (owner: "other" | "me", syncMode: boolean) => {
+        const name = await page.evaluate(
+          async ({ entry, owner, syncMode }) => {
+            const { fixtureInvoke } = await import("/src/dev/fixtures.ts");
+            const me = (await fixtureInvoke("me", {})) as {
+              uid: string;
+              displayName: string;
+            };
+            const users = (await fixtureInvoke("home_ranking", {})) as {
+              uid: string;
+              displayName: string;
+            }[];
+            const actor =
+              owner === "me" ? me : users.find((u) => u.uid !== me.uid)!;
+            const pages = (await fixtureInvoke("list_pages", {
+              entryId: entry,
+            })) as {
+              index: number;
+              status: string;
+              prevStatus: string;
+              tempEditedBy: string;
+              tempText: string;
+              syncMode: boolean;
+            }[];
+            Object.assign(
+              pages.find((p) => p.index === 3)!,
+              {
+                status: "editing",
+                prevStatus: "completed",
+                tempEditedBy: actor.uid,
+                tempText: "共有前の下書き",
+                syncMode,
+              },
+            );
+            location.hash = "#/";
+            return actor.displayName;
+          },
+          { entry, owner, syncMode },
+        );
+        await page.locator(".home-grid").waitFor();
+        await page.evaluate((entry) => {
+          location.hash = `#/entries/${entry}/pages/3`;
+        }, entry);
+        await page.locator(".workbench").waitFor();
+        return name;
+      };
+      const editorName = await changeLock("other", false);
+      await page
+        .getByText(`他のユーザーが編集中・${editorName}`, { exact: true })
+        .waitFor();
+      assert.equal(
+        await page
+          .getByRole("button", { name: "編集開始", exact: true })
+          .count(),
+        0,
+      );
+      assert.ok(
+        !(await page.locator(".transcription").textContent())?.includes(
+          "共有前の下書き",
+        ),
+      );
+      await changeLock("other", true);
+      assert.ok(
+        (await page.locator(".transcription").textContent())?.includes(
+          "共有前の下書き",
+        ),
+      );
+      await changeLock("me", false);
+      await page.getByText("この端末以外で編集中", { exact: true }).waitFor();
+      await page
+        .getByRole("button", { name: "破棄して引き継ぐ", exact: true })
+        .click();
+      await page.getByRole("button", { name: "原文表示", exact: true }).click();
+      await page.evaluate(async () => {
+        const { fixtureInvoke } = await import("/src/dev/fixtures.ts");
+        await fixtureInvoke("session_clear", {});
+      });
+      await raw.fill("接続失敗でも残る本文");
+      await page
+        .locator(".edit-notice")
+        .filter({ hasText: "ログインしてください" })
+        .waitFor();
+      assert.equal(await raw.inputValue(), "接続失敗でも残る本文");
+      await page.evaluate(async () => {
+        const { fixtureInvoke } = await import("/src/dev/fixtures.ts");
+        await fixtureInvoke("session_import", {});
+      });
+      await page.keyboard.press("Control+s");
+      await page
+        .getByRole("button", { name: "編集開始", exact: true })
+        .waitFor();
+      await page.getByRole("button", { name: "編集開始", exact: true }).click();
+      await page.getByRole("button", { name: "原文表示", exact: true }).click();
+      await page.evaluate(async (entry) => {
+        const { fixtureInvoke } = await import("/src/dev/fixtures.ts");
+        const pages = (await fixtureInvoke("list_pages", {
+          entryId: entry,
+        })) as { index: number; status: string }[];
+        pages.find((p) => p.index === 3)!.status = "initiated";
+      }, entry);
+      await raw.fill("競合後も残る本文");
+      await page
+        .locator(".edit-notice")
+        .filter({ hasText: "編集状態が変わりました" })
+        .waitFor();
+      await page.getByText("端末に残っている本文", { exact: true }).click();
+      assert.equal(
+        await page
+          .getByRole("textbox", { name: "端末に残っている本文", exact: true })
+          .inputValue(),
+        "競合後も残る本文",
+      );
+      assert.ok(
+        (
+          await page.locator(".status-strip a").nth(3).getAttribute("class")
+        )?.includes("initiated"),
+      );
+    }
+    assert.deepEqual(errors, []);
+    console.log(
+      `Editing checks passed (${theme}${suffix}): draft, save, completion, discard, wrapping, navigation, resume, shortcut.`,
+    );
+  } finally {
+    await context.close();
+  }
 }

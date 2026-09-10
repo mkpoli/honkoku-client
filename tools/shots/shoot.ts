@@ -1,5 +1,5 @@
-import { checkInteractions } from "./checks";
-import { chromium, type Page } from "playwright";
+import { checkInteractions, checkEditing } from "./checks";
+import { chromium, webkit, type Page } from "playwright";
 import { mkdir } from "node:fs/promises";
 import { resolve } from "node:path";
 const root = resolve(import.meta.dir, "../..");
@@ -93,6 +93,12 @@ try {
   }
   browser = await chromium.launch({ headless: true });
   await checkInteractions(browser, origin);
+  const webkitBrowser = await webkit.launch({ headless: true });
+  try {
+    await checkEditing(webkitBrowser, origin, "light", "-webkit");
+  } finally {
+    await webkitBrowser.close();
+  }
   for (const theme of ["light", "dark"] as const) {
     const context = await browser.newContext({
       viewport: { width: 1600, height: 1000 },
