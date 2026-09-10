@@ -41,6 +41,7 @@ impl Storage {
             (2, include_str!("../migrations/002_home.sql")),
             (3, include_str!("../migrations/003_progress.sql")),
             (4, include_str!("../migrations/004_ocr.sql")),
+            (5, include_str!("../migrations/005_history.sql")),
         ];
         if version > migrations.len() as u32 {
             return Err(Error::Invalid(
@@ -191,6 +192,11 @@ impl Storage {
         }
         Ok(None)
     }
+    pub fn remove_response(&self, key: &str) -> Result<()> {
+        self.connection
+            .execute("DELETE FROM responses WHERE key=?", [key])?;
+        Ok(())
+    }
     pub fn put_response<T: Serialize>(&self, key: &str, value: &T) -> Result<()> {
         if key.starts_with("collection-progress/") {
             return self.put_collection_progress(value);
@@ -280,6 +286,27 @@ impl Storage {
 mod tests {
     use super::*;
     use serde_json::{Value, json};
+    #[test]
+    fn history_keeps_last_opened_page_and_orders_entries_by_activity() -> Result<()> {
+        let db = Storage::in_memory()?;
+        db.history_record("first", 0, "project", "completed", false)?;
+        db.history_record("first", 1, "project", "default", false)?;
+        db.history_record("second", 0, "project", "initiated", false)?;
+        db.connection.execute_batch("UPDATE history SET opened_at='2026-09-10T00:00:00Z';
+            UPDATE history SET opened_at='2026-09-10T01:00:00Z' WHERE entry_id='first' AND \"index\"=1;
+            UPDATE history SET opened_at='2026-09-10T02:00:00Z' WHERE entry_id='second';")?;
+        assert_eq!(db.history_recent(1)?[0].entry_id, "second");
+        db.history_record("first", 0, "project", "completed", true)?;
+        let rows = db.history_recent(8)?;
+        assert_eq!(rows.len(), 2);
+        assert_eq!(rows[0].entry_id, "first");
+        assert_eq!(rows[0].index, 1);
+        assert_eq!(rows[0].status_after, "default");
+        db.history_clear()?;
+        assert!(db.history_recent(8)?.is_empty());
+        Ok(())
+    }
+
     #[test]
     fn progress_snapshots_expire_at_ten_minutes_and_reject_future_dates() -> Result<()> {
         let db = Storage::in_memory()?;
@@ -384,7 +411,7 @@ mod tests {
         let versions: i64 =
             db.connection
                 .query_row("SELECT COUNT(*) FROM schema_version", [], |row| row.get(0))?;
-        assert_eq!(versions, 4);
+        assert_eq!(versions, 5);
         Ok(())
     }
     #[test]
@@ -416,6 +443,55 @@ mod tests {
             2
         );
         assert!(db.ocr_result::<serde_json::Value>("page_4")?.is_none());
+        Ok(())
+    }
+}
+
+#[derive(Debug, Clone, serde::Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HistoryRecord {
+    pub entry_id: String,
+    pub index: u32,
+    pub project_id: String,
+    pub opened_at: String,
+    pub saved_at: Option<String>,
+    pub status_after: String,
+}
+impl Storage {
+    pub fn history_record(
+        &self,
+        entry_id: &str,
+        index: u32,
+        project_id: &str,
+        status: &str,
+        saved: bool,
+    ) -> Result<()> {
+        let timestamp = now()?;
+        self.connection.execute(
+            "INSERT INTO history(entry_id, \"index\", project_id, opened_at, saved_at, status_after) VALUES (?1,?2,?3,?4,?5,?6) ON CONFLICT(entry_id, \"index\") DO UPDATE SET project_id=excluded.project_id, opened_at=CASE WHEN ?5 IS NULL THEN excluded.opened_at ELSE history.opened_at END, saved_at=COALESCE(excluded.saved_at,history.saved_at), status_after=excluded.status_after",
+            params![entry_id, index, project_id, timestamp, saved.then_some(&timestamp), status],
+        )?;
+        Ok(())
+    }
+    pub fn history_recent(&self, limit: u32) -> Result<Vec<HistoryRecord>> {
+        let mut query = self.connection.prepare(
+            "SELECT entry_id, \"index\", project_id, opened_at, saved_at, status_after FROM (SELECT *, ROW_NUMBER() OVER (PARTITION BY entry_id ORDER BY opened_at DESC, \"index\") AS position, MAX(MAX(opened_at,COALESCE(saved_at,opened_at))) OVER (PARTITION BY entry_id) AS activity_at FROM history) WHERE position=1 ORDER BY activity_at DESC,entry_id LIMIT ?"
+        )?;
+        Ok(query
+            .query_map([limit], |row| {
+                Ok(HistoryRecord {
+                    entry_id: row.get(0)?,
+                    index: row.get(1)?,
+                    project_id: row.get(2)?,
+                    opened_at: row.get(3)?,
+                    saved_at: row.get(4)?,
+                    status_after: row.get(5)?,
+                })
+            })?
+            .collect::<std::result::Result<_, _>>()?)
+    }
+    pub fn history_clear(&self) -> Result<()> {
+        self.connection.execute("DELETE FROM history", [])?;
         Ok(())
     }
 }

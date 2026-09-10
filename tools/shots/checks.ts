@@ -69,16 +69,16 @@ export async function checkInteractions(browser: Browser, origin: string) {
   await page
     .getByRole("textbox", { name: "全プロジェクトを検索", exact: true })
     .fill("");
-  const feed = page.locator(".home-grid>.timeline-panel");
+  const feed = page.locator(".home-centre>.timeline-panel");
   await page.waitForFunction(
     () =>
-      document.querySelectorAll(".home-grid>.timeline-panel .activity")
+      document.querySelectorAll(".home-centre>.timeline-panel .activity")
         .length === 20,
   );
   await feed.getByRole("button", { name: "さらに表示", exact: false }).click();
   await page.waitForFunction(
     () =>
-      document.querySelectorAll(".home-grid>.timeline-panel .activity")
+      document.querySelectorAll(".home-centre>.timeline-panel .activity")
         .length === 40,
   );
   await page

@@ -12,6 +12,7 @@
   import { href } from "../routes";
   import Avatar from "./Avatar.svelte";
   import Progress from "./Progress.svelte";
+  import RecentWork from "./RecentWork.svelte";
   import Timeline from "./Timeline.svelte";
   import ExternalLink from "./ExternalLink.svelte";
   let {
@@ -194,7 +195,9 @@
       {:else}<p class="empty">該当するプロジェクトはありません。</p>{/each}
     </div>
   </section>
-  <Timeline {session} onitems={(items) => (activity = items)} />
+  <div class="home-centre">
+    <RecentWork /><Timeline {session} onitems={(items) => (activity = items)} />
+  </div>
   <aside class="home-side scroll">
     <section class="panel ranking">
       <h2>ランキング</h2>

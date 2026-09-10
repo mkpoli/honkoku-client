@@ -158,3 +158,6 @@ export async function pageDraftTextAndNotes(entryId: string, index: number, text
   await pageDraft(entryId, index, text);
   return pageDraftNotes(entryId, index, notes);
 }
+export const historyOpen = (entryId: string, index: number) => invoke<void>("history_open", { entryId, index });
+export const historyRecent = (limit = 8) => invoke<import("./types").RecentWork[]>("history_recent", { limit });
+export const historyClear = () => invoke<void>("history_clear");

@@ -515,6 +515,13 @@ impl LiveEditingSession {
         }
         // Keep the committed receipt until its event can be read. Retrying must not write again.
         let saved = receipt.as_ref().ok_or_else(no_editing_session)?;
+        let project_id = saved
+            .page
+            .extra
+            .get("projectId")
+            .and_then(Value::as_str)
+            .ok_or_else(|| honkoku_core::Error::Invalid("saved page has no projectId".into()))?;
+        client.history_saved(&saved.page, project_id).await?;
         saved_with_count(client, saved).await
     }
 }
@@ -604,7 +611,7 @@ mod saved_count_tests {
         });
         let client = honkoku_core::HonkokuClient::with_endpoints(&base, &base).unwrap();
         let saved = CoreSavedPage {
-            page: serde_json::from_value(json!({"id":"entry_0", "entryId":"entry", "index":0, "status":"completed", "text":"字", "notes":[]})).unwrap(),
+            page: serde_json::from_value(json!({"id":"entry_0", "entryId":"entry", "projectId":"project", "index":0, "status":"completed", "text":"字", "notes":[]})).unwrap(),
             timeline_event_id: "event".into(),
         };
         let live = LiveEditingSession {
@@ -622,6 +629,9 @@ mod saved_count_tests {
             "saved_count"
         );
         assert!(live.saved.lock().await.is_some());
+        let history = client.history_recent(8).await.unwrap();
+        assert_eq!(history[0].record.status_after, "completed");
+        assert!(history[0].record.saved_at.is_some());
         let result = live.save(&client, SaveOptions::default()).await.unwrap();
         assert_eq!(result.count, 123);
         let value = serde_json::to_value(result).unwrap();
@@ -689,4 +699,35 @@ pub async fn page_draft_notes(
     let session = guard.as_mut().ok_or_else(no_editing_session)?;
     session.draft_notes(&notes).await?;
     Ok(session.page().clone())
+}
+#[tauri::command]
+pub async fn history_open(
+    entry_id: String,
+    index: u32,
+    state: State<'_, AppState>,
+) -> Result<(), AppError> {
+    Ok(state
+        .connection
+        .read()
+        .await
+        .client
+        .history_open(&entry_id, index)
+        .await?)
+}
+#[tauri::command]
+pub async fn history_recent(
+    limit: u32,
+    state: State<'_, AppState>,
+) -> Result<Vec<honkoku_core::history::RecentWork>, AppError> {
+    Ok(state
+        .connection
+        .read()
+        .await
+        .client
+        .history_recent(limit)
+        .await?)
+}
+#[tauri::command]
+pub async fn history_clear(state: State<'_, AppState>) -> Result<(), AppError> {
+    Ok(state.connection.read().await.client.history_clear().await?)
 }

@@ -1,3 +1,5 @@
+import historyFixture from "../../../../fixtures/home/history.json";
+import type { RecentWork } from "@honkoku/client-api/types";
 import localOcr from "../../../../fixtures/api/ocr-local-0916dafb-3.json";
 import collectionFigures from "../../../../fixtures/home/collection-progress-ainu.json";
 import entrySummaries from "../../../../fixtures/api/entry-summaries-ainu.json";
@@ -105,6 +107,39 @@ const ranking = normalize(rankingJson) as User[];
 const users = new Map(
   [...catalog.users, ...ranking, whoami].map((u) => [u.uid, u]),
 );
+let recentHistory: RecentWork[] = JSON.parse(
+  sessionStorage.getItem("honkoku.fixture.history") ??
+    JSON.stringify(historyFixture),
+);
+function recordHistory(
+  e: Entry,
+  p: Pick<Page, "index" | "status">,
+  saved: boolean,
+) {
+  const now = new Date().toISOString();
+  const previous = recentHistory.find(
+    (row) => row.entryId === e.id && row.index === p.index,
+  );
+  recentHistory = [
+    {
+      entryId: e.id,
+      index: p.index,
+      projectId: e.projectId,
+      openedAt: saved ? (previous?.openedAt ?? now) : now,
+      savedAt: saved ? now : (previous?.savedAt ?? null),
+      statusAfter: p.status,
+      entryLabel: e.label,
+      projectTitle: projects.find((p) => p.id === e.projectId)?.title ?? null,
+      thumbnail: e.thumbnail ?? null,
+      nextUnfinishedIndex: null,
+    },
+    ...recentHistory.filter((row) => row.entryId !== e.id),
+  ];
+  sessionStorage.setItem(
+    "honkoku.fixture.history",
+    JSON.stringify(recentHistory),
+  );
+}
 let signedIn = sessionStorage.getItem("honkoku.fixture.signedOut") !== "true";
 function required<T>(value: T | undefined): T {
   if (!value)
@@ -149,7 +184,7 @@ export async function fixtureInvoke(
       if (e.id === entry.id) pages.set(index, p);
       else (extraPages[e.id] ??= []).push(p);
     }
-    return fixtureEdit(
+    const result = fixtureEdit(
       command,
       args,
       required(p),
@@ -157,8 +192,40 @@ export async function fixtureInvoke(
       e,
       editingEvents,
     );
+    if (command === "page_save") recordHistory(e, required(p), true);
+    return result;
   }
   switch (command) {
+    case "history_recent":
+      return recentHistory.slice(0, Math.max(0, limit)).map((row) => {
+        const e = entries.find((e) => e.id === row.entryId);
+        const ps =
+          row.entryId === entry.id
+            ? [...pages.values()]
+            : (extraPages[row.entryId] ?? []);
+        const next = Array.from(
+          { length: e?.size ?? 0 },
+          (_, index) => index,
+        ).find((index) => {
+          const p = ps.find((p) => p.index === index);
+          return !p || p.status === "default" || p.status === "initiated";
+        });
+        return { ...row, nextUnfinishedIndex: next ?? null };
+      });
+    case "history_clear":
+      recentHistory = [];
+      sessionStorage.setItem("honkoku.fixture.history", "[]");
+      return;
+    case "history_open": {
+      const e = required(entries.find((e) => e.id === args.entryId));
+      const index = Number(args.index);
+      const p =
+        e.id === entry.id
+          ? pages.get(index)
+          : extraPages[e.id]?.find((p) => p.index === index);
+      recordHistory(e, p ?? { index, status: "default" }, false);
+      return;
+    }
     case "ocr_status":
     case "ocr_setup":
       return {

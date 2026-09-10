@@ -1832,3 +1832,69 @@ button.line-overlay.line-hidden {
 .note-popover .note:last-child {
   border-bottom: 0;
 }
+
+.home-centre {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 0;
+}
+.home-centre > .timeline-panel {
+  flex: 1;
+}
+.recent-work {
+  display: flex;
+  flex-direction: column;
+  flex: 0 1 auto;
+  max-height: 44%;
+}
+.recent-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+.recent-row:first-child {
+  padding-top: 0;
+}
+.recent-row:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+.recent-thumbnail {
+  width: 72px;
+  height: 92px;
+  flex-shrink: 0;
+}
+.recent-copy {
+  flex: 1;
+  min-width: 0;
+}
+.recent-copy h3 {
+  font-size: 16px;
+  line-height: 24px;
+  overflow-wrap: anywhere;
+}
+.recent-copy h3 a {
+  color: var(--text);
+}
+.recent-copy .status {
+  margin-left: 8px;
+}
+.recent-resume {
+  flex-shrink: 0;
+  padding: 4px 8px;
+  font-size: 13px;
+}
+@media (max-width: 700px) {
+  .home-centre {
+    flex-shrink: 0;
+  }
+  .recent-work {
+    max-height: 360px;
+  }
+  .recent-row {
+    flex-wrap: wrap;
+  }
+}
