@@ -1,4 +1,7 @@
 <script lang="ts">
+  import { Region } from "./region.svelte";
+  import RegionNotice from "./components/RegionNotice.svelte";
+  import ScreenSkeleton from "./components/ScreenSkeleton.svelte";
   import { onMount } from "svelte";
   import type {
     Canvas,
@@ -54,17 +57,34 @@
   let session = $state<SessionInfo | null>(null),
     profile = $state<User | null>(null),
     unread = $state(0),
-    connected = $state(false),
-    syncedAt = $state<number>(),
+    connected = $state(true),
     error = $state(""),
     fixtureMissing = $state(false),
     loginError = $state(""),
-    loading = $state(true),
     signingIn = $state(false),
     direction = $state("forward");
   let signInDialog = $state<"signin" | "signout" | null>(null);
   let sessionListeners: Promise<unknown> = Promise.resolve();
   let generation = 0;
+  let accountGeneration = 0;
+  let pageWriteEpoch = 0;
+  const pageRevisions = new Map<string, number>();
+  const projectsRegion = new Region<Project[]>();
+  const projectRegion = new Region<Project>();
+  const collectionRegion = new Region<Collection>();
+  const entryRegion = new Region<Entry>();
+  const pagesRegion = new Region<Page[]>();
+  const canvasesRegion = new Region<Canvas[]>();
+  const regions = [
+    projectsRegion,
+    projectRegion,
+    collectionRegion,
+    entryRegion,
+    pagesRegion,
+    canvasesRegion,
+  ];
+  let loading = $derived(regions.some((r) => r.pending));
+
   let sound = $state(soundEnabled());
   const themeOptions: { value: Theme; label: string; glyph: string }[] = [
     { value: "system", label: "システム", glyph: "◐" },
@@ -109,6 +129,9 @@
       await leaveWorkbench?.();
       session = await sessionImport();
       await identity();
+      accountGeneration++;
+      projects = [];
+      void load(route);
       signInDialog = null;
     } catch {
       loginError =
@@ -126,6 +149,9 @@
       session = null;
       profile = null;
       unread = 0;
+      accountGeneration++;
+      projects = [];
+      void load(route);
       signInDialog = null;
     } catch (e) {
       loginError = errorMessage(e);
@@ -146,7 +172,14 @@
   }
   async function load(next: Route) {
     const g = ++generation;
-    loading = true;
+    const revision = pageWriteEpoch;
+    const mergePages = (e: Entry, incoming: Page[]) =>
+      allPages(e, incoming).map((p) =>
+        (pageRevisions.get(p.id) ?? 0) > revision
+          ? (pages.find((current) => current.id === p.id) ?? p)
+          : p,
+      );
+    regions.forEach((r) => r.cancel());
     error = "";
     fixtureMissing = false;
     project = null;
@@ -154,56 +187,82 @@
     entry = null;
     pages = [];
     canvases = [];
-    try {
-      if (next.editorSpike && import.meta.env.DEV) {
-        EditorSpike = (await import("./dev/EditorSpike.svelte")).default;
-        return;
+    if (next.editorSpike && import.meta.env.DEV) {
+      EditorSpike = (await import("./dev/EditorSpike.svelte")).default;
+      return;
+    }
+    if (next.invalid) {
+      error = "ページが見つかりません。ホームから選び直してください。";
+      return;
+    }
+    const scope = String(accountGeneration);
+    if (!next.projectId && !next.entryId) {
+      await projectsRegion.load(
+        `projects:${scope}`,
+        listProjects,
+        (value) => {
+          projects = value;
+        },
+        { kind: "projects" },
+      );
+    } else if (next.entryId) {
+      const id = next.entryId;
+      void pagesRegion.load(
+        `pages:${scope}:${id}`,
+        () => listPages(id),
+        (value) => {
+          if (g === generation && entry) pages = mergePages(entry, value);
+        },
+        { kind: "pages", id },
+      );
+      void canvasesRegion.load(
+        `canvases:${id}`,
+        () => entryCanvases(id, true),
+        (value) => {
+          if (g === generation) canvases = value;
+        },
+      );
+      await entryRegion.load(
+        `entry:${scope}:${id}`,
+        () => entryData(id, true),
+        (value) => {
+          if (g !== generation) return;
+          entry = value;
+          pages = mergePages(value, pagesRegion.value ?? []);
+          void projectRegion.load(
+            `project:${scope}:${value.projectId}`,
+            () => getProject(value.projectId),
+            (p) => {
+              project = p;
+            },
+            { kind: "project", id: value.projectId },
+          );
+          void collectionRegion.load(
+            `collection:${scope}:${value.collectionId}`,
+            () => getCollection(value.collectionId),
+            (c) => {
+              collection = c;
+            },
+            { kind: "collection", id: value.collectionId },
+          );
+          if (next.pageIndex !== undefined) void recordOpen(id, next.pageIndex);
+        },
+        { kind: "entry", id },
+      );
+      if (entryRegion.error && !entry) {
+        error = entryRegion.error;
+        fixtureMissing = error.includes("サンプルデータ");
       }
-      if (next.invalid)
-        throw Error("ページが見つかりません。ホームから選び直してください。");
-      if (!next.projectId && !next.entryId) {
-        const ps = await listProjects();
-        if (g !== generation) return;
-        projects = ps;
-      }
-      if (next.entryId) {
-        const e = await entryData(next.entryId);
-        const [p, c, ps, cs] = await Promise.all([
-          getProject(e.projectId),
-          getCollection(e.collectionId),
-          listPages(e.id),
-          entryCanvases(e.id),
-        ]);
-        if (g !== generation) return;
-        const all = allPages(e, ps);
-        if (
-          next.pageIndex !== undefined &&
-          !all.some((p) => p.index === next.pageIndex)
-        )
-          throw Error("指定されたコマがありません。");
-        entry = e;
-        project = p;
-        collection = c;
-        pages = all;
-        canvases = cs;
-        if (next.pageIndex !== undefined)
-          await recordOpen(e.id, next.pageIndex);
-      } else if (next.projectId) {
-        const p = await getProject(next.projectId);
-        if (g !== generation) return;
-        project = p;
-      }
-    } catch (e) {
-      if (g === generation) {
-        error = errorMessage(e);
-        fixtureMissing =
-          typeof e === "object" &&
-          e !== null &&
-          "kind" in e &&
-          e.kind === "fixture";
-      }
-    } finally {
-      if (g === generation) loading = false;
+    } else if (next.projectId) {
+      const id = next.projectId;
+      await projectRegion.load(
+        `project:${scope}:${id}`,
+        () => getProject(id),
+        (value) => {
+          project = value;
+        },
+        { kind: "project", id },
+      );
     }
   }
   onMount(() => {
@@ -238,7 +297,6 @@
     const connection = (e: Event) => {
       const outcome = (e as CustomEvent<ConnectionOutcome>).detail;
       connected = outcome.connected;
-      if (outcome.syncedAt) syncedAt = outcome.syncedAt;
     };
     window.addEventListener("honkoku:connection", connection);
     void (async () => {
@@ -247,9 +305,10 @@
       } catch (e) {
         loginError = errorMessage(e);
       }
-      await load(route);
+      void homeDailyProgress().catch(() => {});
       void homeDailyProgress().catch(() => {});
     })();
+    void load(route);
     const navigate = async () => {
       const hash = location.hash;
       if (hash === acceptedHash) return;
@@ -290,6 +349,7 @@
       disposed = true;
       unlisteners.forEach((stop) => stop());
       generation++;
+      regions.forEach((r) => r.cancel());
       window.removeEventListener("hashchange", navigate);
       window.removeEventListener("honkoku:connection", connection);
     };
@@ -337,9 +397,6 @@
         >{collection.title}</a
       >{/if}{#if entry}<span>›</span><a href={href({ entryId: entry.id })}
         >{label(entry.label)}</a
-      >{/if}
-    {#if workbench && entry}<span class="page-count"
-        >{route.pageIndex! + 1}／{entry.size}コマ</span
       >{/if}
   </nav>
 {/snippet}
@@ -442,6 +499,14 @@
         >×</button
       >
     </div>{/if}
+  {#if !connected}<div class="message connection-notice" role="status">
+      オフライン・接続を確認してください。
+    </div>{/if}
+  {#if route.entryId}<div class="metadata-notice">
+      <RegionNotice region={projectRegion} /><RegionNotice
+        region={collectionRegion}
+      />
+    </div>{/if}
   <main class:back={direction === "back"} aria-busy={loading}>
     {#if error}<div class="panel error" role="alert">
         {error}
@@ -451,56 +516,63 @@
         <button onclick={() => load(route)}>再試行</button><a href="#/"
           >ホームへ</a
         >
-      </div>{:else if loading}<div class="panel empty" role="status">
-        読み込み中…
       </div>{:else}{#key route.editorSpike ? "editor" : (route.entryId ?? route.projectId ?? "home")}<div
           class="route-screen"
         >
           {#if route.editorSpike && EditorSpike}<EditorSpike
             />{:else if isHome}<Home
               {projects}
+              {projectsRegion}
               {session}
               {profile}
               bind:search
-            />{:else if entry}{#if workbench}<Workbench
+            />{:else if entry}{#if workbench && pages.some((p) => p.index === route.pageIndex)}<Workbench
                 {entry}
                 {pages}
                 {canvases}
                 {session}
+                {pagesRegion}
+                pagesPending={pagesRegion.value === undefined &&
+                  pagesRegion.pending}
+                {canvasesRegion}
                 onpage={(updated) => {
+                  pageRevisions.set(updated.id, ++pageWriteEpoch);
                   pages = pages.map((p) => (p.id === updated.id ? updated : p));
+                  if (pagesRegion.value)
+                    pagesRegion.value = pagesRegion.value.map((p) =>
+                      p.id === updated.id ? updated : p,
+                    );
                 }}
                 registerLeave={(guard) => {
                   leaveWorkbench = guard;
                 }}
                 index={route.pageIndex!}
-              />{:else}<EntryScreen
+              />{:else if workbench}<p class="error" role="alert">
+                指定されたコマがありません。
+              </p>{:else}<EntryScreen
                 {entry}
                 {pages}
                 {canvases}
-              />{/if}{:else if project}<ProjectScreen
-              {project}
+                {session}
+                {pagesRegion}
+                {canvasesRegion}
+                pending={pagesRegion.value === undefined && pagesRegion.pending}
+              />{/if}
+            <RegionNotice region={collectionRegion} />
+          {:else if route.entryId}<RegionNotice
+              region={entryRegion}
+            /><ScreenSkeleton
+              {workbench}
+            />{:else if route.projectId}<ProjectScreen
+              project={project ?? { id: route.projectId, title: "" }}
+              metadataPending={!project}
+              {projectRegion}
               collectionId={route.collectionId}
               {session}
               oncollection={(c) => (collection = c)}
             />{/if}
         </div>{/key}{/if}
   </main>
-  <footer class="statusbar">
-    {#if !isTauri()}<span>閲覧データ</span>{/if}
-    <span
-      ><i class:online={connected}></i>{connected
-        ? "接続済み"
-        : "オフライン"}</span
-    ><span
-      >{#if syncedAt}<i class="online"></i>同期済み{new Date(
-          syncedAt,
-        ).toLocaleTimeString("ja-JP", {
-          hour: "2-digit",
-          minute: "2-digit",
-        })}{:else}未同期{/if}</span
-    >
-  </footer>
 </div>
 
 {#if signInDialog}

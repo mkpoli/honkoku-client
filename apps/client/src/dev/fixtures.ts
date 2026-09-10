@@ -160,6 +160,8 @@ export async function fixtureInvoke(
   args: Record<string, unknown>,
 ): Promise<unknown> {
   if (!import.meta.env.DEV) throw new Error("閲覧データを利用できません。");
+  const delay = window.honkokuFixtureDelays?.[command];
+  if (delay) await new Promise((resolve) => setTimeout(resolve, delay));
   const limit = Number(args.limit ?? 20);
   if (
     [
@@ -231,6 +233,46 @@ export async function fixtureInvoke(
       recordHistory(e, p ?? { index, status: "default" }, false);
       return;
     }
+    case "project_page_activity": {
+      const latest: Record<string, string> = {};
+      for (const p of [
+        ...pages.values(),
+        ...Object.values(extraPages).flat(),
+      ]) {
+        if (
+          entries.find((e) => e.id === p.entryId)?.projectId !==
+            args.projectId ||
+          !p.updatedAt
+        )
+          continue;
+        if (
+          !latest[p.entryId] ||
+          Date.parse(p.updatedAt) > Date.parse(latest[p.entryId])
+        )
+          latest[p.entryId] = p.updatedAt;
+      }
+      return latest;
+    }
+    case "editing_pages":
+      return [...pages.values(), ...Object.values(extraPages).flat()]
+        .filter(
+          (p) =>
+            signedIn && p.status === "editing" && p.tempEditedBy === whoami.uid,
+        )
+        .map((p) => structuredClone(p));
+    case "ocr_diagnostics":
+      return {
+        status: await fixtureInvoke("ocr_status", {}),
+        environment_ready: true,
+        models_present: true,
+        models_directory_exists: true,
+        models_bytes: 303038464,
+        last_error: null,
+        log_path: "~/.local/share/org.honkoku.client/logs/ocr.log",
+      };
+    case "ocr_doctor":
+      return "honkoku-ocr-py 0.3.0\nonnxruntime: CUDAExecutionProvider\nmodel v18: verified";
+    case "ocr_repair_models":
     case "ocr_status":
     case "ocr_setup":
       return {
@@ -354,5 +396,11 @@ export async function fixtureInvoke(
     }
     default:
       throw { kind: "command", message: "この操作には対応していません。" };
+  }
+}
+
+declare global {
+  interface Window {
+    honkokuFixtureDelays?: Record<string, number>;
   }
 }

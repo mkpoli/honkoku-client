@@ -2,6 +2,13 @@ import { checkEditor } from "./editor-checks";
 import assert from "node:assert/strict";
 import type { Browser, Page } from "playwright";
 import { resolve } from "node:path";
+async function viewerReady(page: Page) {
+  await page.evaluate(() => import("/src/dev/viewer-harness.ts"));
+  await page.waitForFunction(() => {
+    const viewer = window.honkokuViewer();
+    return viewer && viewer.world.getItemCount() > 0 && viewer.getFullyLoaded();
+  });
+}
 const entry = "0916dafb80cdc48ca7687afcad4a4f35";
 const collection = "3R4VhlBfvOYeqPY13cJm";
 export async function checkInteractions(browser: Browser, origin: string) {
@@ -92,14 +99,10 @@ export async function checkInteractions(browser: Browser, origin: string) {
   const uncaptured = (
     await import("../../fixtures/api/projects.json")
   ).default.find((p) => p.id !== "ainu")!;
-  await route(`#/projects/${uncaptured.id}`, '.entries-panel [role="alert"]');
+  await route(`#/projects/${uncaptured.id}`, ".collection-list .region-notice");
   assert.match(
-    await page.locator('.entries-panel [role="alert"]').innerText(),
+    await page.locator(".collection-list .region-notice").innerText(),
     /サンプルデータ/,
-  );
-  assert.equal(
-    await page.locator(".entries-panel code").textContent(),
-    "devrun bun run --cwd apps/client tauri dev",
   );
   await route("#/entries/missing-preview-entry", 'main [role="alert"]');
   assert.match(
@@ -207,16 +210,19 @@ export async function checkInteractions(browser: Browser, origin: string) {
   assert.ok(page.url().endsWith("/pages/17"));
   await page.keyboard.press("ArrowRight");
   assert.ok(page.url().endsWith("/pages/17"));
+  await page.getByRole("button", { name: "表示設定", exact: true }).click();
   await page
     .getByRole("button", { name: "左右を入れ替え", exact: false })
     .click();
   assert.equal(await page.locator(".workbench-panes.swapped").count(), 1);
+  await page.getByRole("button", { name: "表示設定", exact: true }).click();
   await page.getByRole("button", { name: "縦書き", exact: false }).click();
   assert.equal(await page.locator(".transcription.horizontal").count(), 1);
   await page.locator(".status-strip a").nth(3).focus();
   await page.locator(".filmstrip.expanded").waitFor();
   await page.locator(".filmstrip-thumbnails a").nth(3).click();
   await page.waitForURL("**/pages/3");
+  await page.getByRole("button", { name: "表示設定", exact: true }).click();
   await page.getByRole("button", { name: "横書き", exact: false }).click();
   const metrics = await page
     .locator(".transcription-column")
@@ -419,7 +425,9 @@ export async function checkEditing(
     await page.waitForURL("**/pages/5");
     await page.getByRole("button", { name: "前のコマ", exact: true }).click();
     await page.waitForURL("**/pages/4");
-    await page.getByRole("button", { name: "編集を再開", exact: true }).click();
+    await page
+      .getByRole("textbox", { name: "翻刻本文", exact: true })
+      .waitFor();
     await page.getByRole("button", { name: "原文表示", exact: true }).click();
     assert.equal(await raw.inputValue(), "再開する本文");
     await page.keyboard.press("Control+s");
@@ -543,7 +551,7 @@ export async function checkEditing(
       };
       const editorName = await changeLock("other", false);
       await page
-        .getByText(`他のユーザーが編集中・${editorName}`, { exact: true })
+        .getByText("他のユーザーが編集中です。", { exact: true })
         .waitFor();
       assert.equal(
         await page
@@ -563,10 +571,9 @@ export async function checkEditing(
         ),
       );
       await changeLock("me", false);
-      await page.getByText("この端末以外で編集中", { exact: true }).waitFor();
       await page
-        .getByRole("button", { name: "破棄して引き継ぐ", exact: true })
-        .click();
+        .getByRole("textbox", { name: "翻刻本文", exact: true })
+        .waitFor();
       await page.getByRole("button", { name: "原文表示", exact: true }).click();
       await page.evaluate(async () => {
         const { fixtureInvoke } = await import("/src/dev/fixtures.ts");
@@ -790,6 +797,7 @@ export async function checkAlignment(
     await page.getByRole("button", { name: "全体", exact: true }).click();
     await third.click();
     await page.mouse.move(0, 0);
+    await page.getByRole("button", { name: "表示設定", exact: true }).click();
     await page
       .getByRole("button", { name: "左右を入れ替え", exact: false })
       .click();
@@ -799,6 +807,7 @@ export async function checkAlignment(
       swapped && before && swapped.x < before.x,
       "overlay follows the swapped viewer",
     );
+    await page.getByRole("button", { name: "表示設定", exact: true }).click();
     await page
       .getByRole("button", { name: "左右を入れ替え", exact: false })
       .click();
@@ -860,7 +869,7 @@ async function checkOcr(browser: Browser, origin: string) {
   try {
     await page.goto(`${origin}/#/entries/${entry}/pages/3`);
     await page.getByRole("button", { name: "OCR", exact: true }).click();
-    await page.getByText("ローカルOCR · v18", { exact: false }).waitFor();
+    await page.getByText("ローカルOCR・v18", { exact: false }).waitFor();
     assert.equal(await page.locator(".ocr-line").count(), fixture.lines.length);
     await page.waitForFunction(
       (count) => document.querySelectorAll(".line-overlay").length === count,
@@ -948,12 +957,7 @@ export async function checkQuietWorkbench(
   const button = (name: string) =>
     page.getByRole("button", { name, exact: true });
   const shot = async (name: string) => {
-    await page.waitForFunction(async () => {
-      const { default: OpenSeadragon } =
-        await import("/node_modules/.vite/deps/openseadragon.js");
-      const viewer = OpenSeadragon.getViewer(document.querySelector(".osd"));
-      return viewer?.world.getItemCount() > 0 && viewer.getFullyLoaded();
-    });
+    await viewerReady(page);
     await page.evaluate(
       () =>
         new Promise<void>((resolve) =>
@@ -983,8 +987,8 @@ export async function checkQuietWorkbench(
     );
     assert.equal(await page.locator(".topbar .breadcrumb a").count(), 4);
     assert.match(
-      await page.locator(".topbar .page-count").innerText(),
-      /4／18コマ/,
+      await page.locator(".workbench-toolbar .page-count").innerText(),
+      /4／18/,
     );
     assert.equal(
       await page.locator(".notes-panel, .workbench-supplement").count(),
@@ -1082,7 +1086,7 @@ export async function checkQuietWorkbench(
     await page.waitForURL("**/pages/4");
     await button("前のコマ").click();
     await page.waitForURL("**/pages/3");
-    await button("編集を再開").click();
+    await button("保存").waitFor();
     await button("注記2").focus();
     await page.locator(".note-popover").waitFor();
     assert.match(
@@ -1270,8 +1274,13 @@ export async function checkBrowsePolish(
       descending,
       [...descending].sort((a, b) => b - a),
     );
-    await sorting.getByRole("button", { name: "表示順", exact: true }).click();
-    assert.deepEqual(await rows.allTextContents(), platform);
+    await sorting.getByRole("button", { name: "更新順", exact: true }).click();
+    assert.equal(
+      await sorting
+        .getByRole("button", { name: "表示順", exact: true })
+        .count(),
+      0,
+    );
     await page.goto(`${origin}/#/entries/${entry}`);
     await page.locator(".page-card").first().waitFor();
     assert.equal(await page.locator(".page-card").count(), 18);
@@ -1360,6 +1369,304 @@ export async function checkBrowsePolish(
     assert.deepEqual(errors, []);
     console.log(
       `Browse checks passed (${theme}): sorting, persistence, filters, unfinished navigation, recent history.`,
+    );
+  } finally {
+    await context.close();
+  }
+}
+
+export async function checkWorkbenchParity(
+  browser: Browser,
+  origin: string,
+  theme: "light" | "dark",
+) {
+  const context = await browser.newContext({
+    viewport: { width: 1600, height: 1000 },
+    locale: "ja-JP",
+    colorScheme: theme,
+    reducedMotion: "reduce",
+  });
+  const page = await context.newPage();
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  const button = (name: string) =>
+    page.getByRole("button", { name, exact: true });
+  try {
+    await context.addInitScript(() => {
+      window.honkokuFixtureDelays = {
+        list_projects: 2000,
+        home_timeline: 1200,
+        home_ranking: 800,
+        home_announcements: 1400,
+        list_collections: 1800,
+        list_entry_summaries: 1200,
+      };
+    });
+    await page.goto(`${origin}/#/`);
+    await page.locator(".project-groups .skeleton").waitFor();
+    await page.locator(".timeline-items .skeleton").waitFor();
+    await page.locator(".ranking .skeleton").waitFor();
+    if (theme === "light")
+      await page.screenshot({
+        path: resolve(
+          import.meta.dir,
+          "../../.local/shots/15-home-skeleton-light.png",
+        ),
+      });
+    await page.locator(".ranking-list li:not(.empty)").first().waitFor();
+    assert.equal(
+      await page.locator(".project-groups .skeleton").count(),
+      1,
+      "ranking fills before projects",
+    );
+    await page.locator(".project-row").first().waitFor();
+    await page.evaluate(() => (location.hash = "#/projects/ainu"));
+    await page.locator(".collection-list .skeleton").first().waitFor();
+    await page.locator(".entries-panel .skeleton").first().waitFor();
+    await page.locator(".collection-row").first().waitFor();
+    assert.equal(
+      await page
+        .locator(".collection-list")
+        .getByRole("button", { name: "表示順", exact: true })
+        .count(),
+      0,
+    );
+    assert.equal(
+      await page
+        .locator(".collection-list")
+        .getByRole("button", { name: "更新順", exact: true })
+        .getAttribute("aria-pressed"),
+      "true",
+    );
+    await page.evaluate(() => (location.hash = "#/"));
+    await page.locator(".project-row").first().waitFor({ timeout: 500 });
+    assert.equal(
+      await page.locator(".project-groups .skeleton").count(),
+      0,
+      "cached projects remain visible while refreshing",
+    );
+    await page.evaluate(
+      (id) => (location.hash = `#/entries/${id}/pages/3`),
+      entry,
+    );
+    await button("編集開始").waitFor();
+    await viewerReady(page);
+    assert.equal(
+      (await page.locator(".page-position .page-count").innerText()).trim(),
+      "4／18",
+    );
+    assert.equal(
+      await page
+        .locator(
+          ".transcription-panel h2, .facsimile-panel h2, .filmstrip-heading, .statusbar",
+        )
+        .count(),
+      1,
+      "only the hidden OCR heading remains",
+    );
+    assert.equal(
+      await page
+        .locator(
+          ".transcription-panel > .pane-toolbar, .facsimile-panel .pane-toolbar h2, .filmstrip-heading, .statusbar",
+        )
+        .count(),
+      0,
+    );
+    await page.waitForLoadState("networkidle");
+    await page.screenshot({
+      path: resolve(
+        import.meta.dir,
+        `../../.local/shots/15-workbench-parity-${theme}.png`,
+      ),
+    });
+    const settings = await page.evaluate(() => {
+      const v = window.honkokuViewer()!;
+      return {
+        constrain: v.constrainDuringPan,
+        visibility: v.viewport.visibilityRatio,
+        stiffness: v.viewport.centerSpringX.springStiffness,
+        max: v.viewport.maxZoomPixelRatio,
+        min: v.viewport.getMinZoom(),
+        home: v.viewport.getHomeZoom(),
+        pointer: v.gestureSettingsMouse.zoomToRefPoint,
+        double: v.gestureSettingsMouse.dblClickToZoom,
+      };
+    });
+    assert.equal(settings.constrain, false);
+    assert.equal(settings.visibility, 0.2);
+    assert.equal(settings.stiffness, 6);
+    assert.equal(settings.max, 4);
+    assert.equal(settings.min, settings.home);
+    assert.equal(settings.pointer, true);
+    assert.equal(settings.double, true);
+    const frame = (await page.locator(".osd").boundingBox())!;
+    await page.mouse.move(
+      frame.x + frame.width * 0.6,
+      frame.y + frame.height * 0.4,
+    );
+    await page.mouse.wheel(0, -400);
+    await page.waitForFunction(
+      () =>
+        Number(
+          document
+            .querySelector(".zoom-controls .numeric")
+            ?.textContent?.replace("%", ""),
+        ) > 100,
+    );
+    await button("全体").click();
+    await page.mouse.dblclick(
+      frame.x + frame.width / 2,
+      frame.y + frame.height / 2,
+    );
+    await page.waitForFunction(
+      () =>
+        Number(
+          document
+            .querySelector(".zoom-controls .numeric")
+            ?.textContent?.replace("%", ""),
+        ) > 100,
+    );
+    await button("全体").click();
+    await button("OCR").click();
+    await page.getByRole("region", { name: "OCR診断", exact: true }).waitFor();
+    assert.match(
+      await page.locator(".ocr-diagnostics").innerText(),
+      /環境.*あり/s,
+    );
+    assert.match(await page.locator(".ocr-diagnostics").innerText(), /CUDA/);
+    assert.match(
+      await page.locator(".ocr-diagnostics").innerText(),
+      /ocr\.log/,
+    );
+    await button("診断を実行").click();
+    await page
+      .getByRole("textbox", { name: "診断結果", exact: true })
+      .waitFor();
+    await button("OCRを閉じる").click();
+    await button("編集開始").click();
+    await button("原文表示").click();
+    const raw = page.getByRole("textbox", { name: "原文を編集", exact: true });
+    await raw.fill("移動しても残る本文");
+    await button("次のコマ").focus();
+    await page.keyboard.press("ArrowRight");
+    await page.waitForURL("**/pages/4");
+    await button("編集開始").click();
+    await button("原文表示").click();
+    await raw.fill("もう一つの下書き");
+    await button("前のコマ").focus();
+    await page.keyboard.press("ArrowLeft");
+    await page.waitForURL("**/pages/3");
+    await button("原文表示").click();
+    assert.equal(await raw.inputValue(), "移動しても残る本文");
+    assert.equal(await button("編集を再開").count(), 0);
+    assert.equal(
+      await page.getByText("編集状態が変わりました。", { exact: true }).count(),
+      0,
+    );
+    assert.match(
+      await page.locator(".editing-pages").innerText(),
+      /編集中のコマ/,
+    );
+    assert.match(
+      (await page
+        .locator(".status-strip a")
+        .nth(4)
+        .getAttribute("aria-label")) ?? "",
+      /あなたが編集中/,
+    );
+    await button("次のコマ").click();
+    await page.waitForURL("**/pages/4");
+    await page.waitForFunction(
+      () =>
+        document.querySelector(".page-count")?.textContent === "5／18" &&
+        !!document.querySelector(".vertical-editor"),
+    );
+    await page.evaluate(async (id) => {
+      const { fixtureInvoke } = await import("/src/dev/fixtures.ts");
+      const pages = (await fixtureInvoke("list_pages", { entryId: id })) as {
+        index: number;
+        tempText: string;
+        updatedAt: string;
+      }[];
+      Object.assign(pages.find((p) => p.index === 3)!, {
+        tempText: "サーバーの新しい下書き",
+        updatedAt: new Date(Date.now() + 60_000).toISOString(),
+      });
+    }, entry);
+    await button("前のコマ").click();
+    await page.waitForURL("**/pages/3");
+    await button("原文表示").click();
+    assert.equal(await raw.inputValue(), "サーバーの新しい下書き");
+    await button("保存").click();
+    await button("保存を確定").click();
+    await button("編集開始").waitFor();
+    assert.match(
+      (await page
+        .locator(".status-strip a")
+        .nth(4)
+        .getAttribute("aria-label")) ?? "",
+      /あなたが編集中/,
+    );
+    await page.locator(".breadcrumb a").last().click();
+    await page.locator("#page-4 .locked-editor").waitFor();
+    assert.match(
+      await page.locator("#page-4 .locked-editor").innerText(),
+      /あなたが編集中/,
+    );
+    await page.locator("#page-4").click();
+    await button("原文表示").click();
+    assert.equal(await raw.inputValue(), "もう一つの下書き");
+    await button("破棄").click();
+    await button("破棄する").click();
+    await button("編集開始").waitFor();
+    assert.deepEqual(errors, []);
+    console.log(
+      `Workbench parity checks passed (${theme}): independent skeletons, cache, controls, diagnostics, retained locks, server draft freshness, page-specific save/discard.`,
+    );
+  } catch (error) {
+    console.error(
+      "Parity failure",
+      errors,
+      await page.locator("main").innerText(),
+    );
+    await page.screenshot({
+      path: resolve(
+        import.meta.dir,
+        "../../.local/shots/15-parity-failure.png",
+      ),
+    });
+    throw error;
+  } finally {
+    await context.close();
+  }
+}
+
+export async function checkRegionTimeout(browser: Browser, origin: string) {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  try {
+    await page.clock.install();
+    await context.addInitScript(() => {
+      window.honkokuFixtureDelays = { list_projects: 60_000 };
+    });
+    await page.goto(`${origin}/#/`);
+    await page.locator(".project-groups .skeleton").waitFor();
+    await page.locator(".activity").first().waitFor();
+    await page.clock.fastForward(15_100);
+    await page.locator(".project-list .region-notice").waitFor();
+    assert.equal(
+      await page.locator(".timeline-panel .region-notice").count(),
+      0,
+    );
+    await page.evaluate(() => (window.honkokuFixtureDelays!.list_projects = 0));
+    await page
+      .locator(".project-list .region-notice")
+      .getByRole("button", { name: "再試行" })
+      .click();
+    await page.locator(".project-row").first().waitFor();
+    assert.equal(await page.locator(".project-list .region-notice").count(), 0);
+    console.log(
+      "Region timeout checks passed: 15-second retry, isolated refresh.",
     );
   } finally {
     await context.close();

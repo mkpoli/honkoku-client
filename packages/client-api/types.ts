@@ -356,3 +356,18 @@ export interface RecentWork {
   thumbnail: string | null;
   nextUnfinishedIndex: number | null;
 }
+
+export interface PageLockState {
+  /** Fresh server snapshot returned with the lock check. */
+  page?: Page;
+}
+
+export interface OcrDiagnostics {
+  status: OcrStatus | null;
+  environment_ready: boolean;
+  models_present: boolean;
+  models_directory_exists: boolean;
+  models_bytes: number;
+  last_error: string | null;
+  log_path: string;
+}

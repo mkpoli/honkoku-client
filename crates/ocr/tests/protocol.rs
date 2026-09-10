@@ -17,6 +17,7 @@ for raw in sys.stdin:
  r=json.loads(raw);m=r['method'];i=r['id']
  if m=='shutdown': break
  if m=='crash': os._exit(7)
+ if m=='stderr': print('sidecar diagnostic line',file=sys.stderr,flush=True)
  if m=='cancel': flag.set();emit({'id':i,'result':True})
  elif m=='process':
   emit({'id':i,'event':'progress','stage':'process','done':0,'total':1,'message':'ready'})
@@ -83,5 +84,44 @@ async fn cancellation_bypasses_the_request_queue() -> Result<(), Box<dyn std::er
             .is_err()
     );
     worker.shutdown().await?;
+    Ok(())
+}
+
+#[tokio::test]
+async fn stderr_is_written_to_the_configured_log() -> Result<(), Box<dyn std::error::Error>> {
+    let (temp, worker) = worker()?;
+    worker
+        .request("stderr", json!({}), Arc::new(|_| {}))
+        .await?;
+    worker.shutdown().await?;
+    let path = temp.path().join("ocr/ocr.log");
+    tokio::time::timeout(std::time::Duration::from_secs(2), async {
+        loop {
+            if std::fs::read_to_string(&path).is_ok_and(|s| s.contains("sidecar diagnostic line")) {
+                break;
+            }
+            tokio::task::yield_now().await;
+        }
+    })
+    .await?;
+    Ok(())
+}
+#[tokio::test]
+async fn missing_environment_has_actionable_diagnostics() -> Result<(), Box<dyn std::error::Error>>
+{
+    let temp = tempfile::tempdir()?;
+    let worker = OcrSidecar::new(OcrEnvironment::new(temp.path()))
+        .with_log_path(temp.path().join("logs/ocr.log"));
+    let diagnostics = worker.diagnostics().await?;
+    assert!(!diagnostics.environment_ready);
+    assert!(!diagnostics.models_present);
+    assert_eq!(diagnostics.models_bytes, 0);
+    assert!(diagnostics.log_path.ends_with("logs/ocr.log"));
+    assert!(
+        !diagnostics
+            .status
+            .ok_or("missing status")?
+            .environment_ready
+    );
     Ok(())
 }

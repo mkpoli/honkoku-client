@@ -569,14 +569,18 @@ pub async fn page_lock_state(
     entry_id: String,
     index: u32,
     state: State<'_, AppState>,
+    editing: State<'_, EditingState>,
 ) -> Result<PageLockState, AppError> {
-    Ok(state
-        .connection
-        .read()
-        .await
-        .client
-        .page_lock_state(&entry_id, index)
-        .await?)
+    let connection = state.connection.read().await;
+    let lock = connection.client.page_lock_state(&entry_id, index).await?;
+    if lock.is_mine {
+        editing
+            .session(&connection.client, &entry_id, index)
+            .await?;
+    } else {
+        editing.pages.lock().await.remove(&lock.page_id);
+    }
+    Ok(lock)
 }
 
 #[cfg(test)]
@@ -730,4 +734,169 @@ pub async fn history_recent(
 #[tauri::command]
 pub async fn history_clear(state: State<'_, AppState>) -> Result<(), AppError> {
     Ok(state.connection.read().await.client.history_clear().await?)
+}
+
+#[tauri::command]
+pub async fn editing_pages(
+    state: State<'_, AppState>,
+    editing: State<'_, EditingState>,
+) -> Result<Vec<Page>, AppError> {
+    let connection = state.connection.read().await;
+    let uid = connection.client.signed_in_uid().await?;
+    let sessions: Vec<_> = editing
+        .pages
+        .lock()
+        .await
+        .values()
+        .filter(|live| live.uid == uid)
+        .cloned()
+        .collect();
+    let mut pages = Vec::new();
+    for live in sessions {
+        if let Some(session) = live.session.lock().await.as_ref() {
+            pages.push(session.page().clone());
+        }
+    }
+    pages.sort_by(|a, b| a.entry_id.cmp(&b.entry_id).then(a.index.cmp(&b.index)));
+    Ok(pages)
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct PageActivity {
+    entry_id: String,
+    updated_at: Option<honkoku_core::model::Timestamp>,
+}
+#[tauri::command]
+pub async fn project_page_activity(
+    project_id: String,
+    state: State<'_, AppState>,
+) -> Result<HashMap<String, honkoku_core::model::Timestamp>, AppError> {
+    let connection = state.connection.read().await;
+    let rows: Vec<PageActivity> = connection
+        .client
+        .run_query(json!({
+            "from": [{"collectionId": "transcriptions"}],
+            "select": {"fields": [{"fieldPath": "entryId"}, {"fieldPath": "updatedAt"}]},
+            "where": equal("projectId", &project_id)
+        }))
+        .await?;
+    let mut latest = HashMap::<String, honkoku_core::model::Timestamp>::new();
+    for row in rows {
+        if let Some(updated_at) = row.updated_at {
+            latest
+                .entry(row.entry_id)
+                .and_modify(|current| {
+                    if updated_at.0 > current.0 {
+                        *current = updated_at.clone();
+                    }
+                })
+                .or_insert(updated_at);
+        }
+    }
+    Ok(latest)
+}
+
+#[derive(Clone, Deserialize)]
+#[serde(tag = "kind", rename_all = "camelCase")]
+pub enum ReadRegion {
+    Projects,
+    Project { id: String },
+    Collections { id: String },
+    Collection { id: String },
+    Entry { id: String },
+    Pages { id: String },
+    Entries { id: String },
+    CollectionProgress { id: String },
+    EntryProgress { ids: Vec<String> },
+}
+#[tauri::command]
+pub async fn region_cached(
+    resource: ReadRegion,
+    state: State<'_, AppState>,
+) -> Result<Option<Value>, AppError> {
+    Ok(honkoku_core::cache::blocking(&state.storage, move |db| {
+        let read = |key: &str| db.fresh_response::<Value>(key, std::time::Duration::MAX);
+        let key = match resource {
+            ReadRegion::Projects => "projects".into(),
+            ReadRegion::Project { id } => format!("project/{id}"),
+            ReadRegion::Collection { id } => format!("collection/{id}"),
+            ReadRegion::Entry { id } => format!("entry/{id}"),
+            ReadRegion::Pages { id } => format!("pages/{id}"),
+            ReadRegion::Entries { id } => format!("entry-summaries/{id}"),
+            ReadRegion::CollectionProgress { id } => format!("collection-progress/{id}"),
+            ReadRegion::Collections { id } => {
+                let Some(project) = read(&format!("project/{id}"))? else {
+                    return Ok(None);
+                };
+                let Some(ids) = project["collections"].as_array() else {
+                    return Ok(None);
+                };
+                let mut rows = Vec::new();
+                for id in ids.iter().filter_map(Value::as_str) {
+                    if let Some(row) = read(&format!("collection/{id}"))? {
+                        rows.push(row);
+                    }
+                }
+                return Ok((!rows.is_empty() || ids.is_empty()).then_some(Value::Array(rows)));
+            }
+            ReadRegion::EntryProgress { ids } => {
+                let mut rows = Vec::new();
+                for id in &ids {
+                    if let Some(row) = read(&format!("entry-progress/{id}"))? {
+                        rows.push(row);
+                    }
+                }
+                return Ok((!rows.is_empty() || ids.is_empty()).then_some(Value::Array(rows)));
+            }
+        };
+        read(&key)
+    })
+    .await?)
+}
+#[tauri::command]
+pub async fn region_refresh(
+    resource: ReadRegion,
+    state: State<'_, AppState>,
+) -> Result<Value, AppError> {
+    let connection = state.connection.read().await;
+    let client = &connection.client;
+    let value = match resource {
+        ReadRegion::Projects => {
+            serde_json::to_value(client.cached_projects(&state.storage, true).await?)
+        }
+        ReadRegion::Project { id } => {
+            serde_json::to_value(client.cached_project(&state.storage, &id, true).await?)
+        }
+        ReadRegion::Collections { id } => {
+            serde_json::to_value(client.cached_collections(&state.storage, &id, true).await?)
+        }
+        ReadRegion::Collection { id } => {
+            serde_json::to_value(client.cached_collection(&state.storage, &id, true).await?)
+        }
+        ReadRegion::Entry { id } => match client.cached_entry(&state.storage, &id, true).await {
+            Ok(entry) => serde_json::to_value(entry),
+            Err(honkoku_core::Error::Json(_)) => {
+                let mut value: Value = client.document(&format!("entries/{id}")).await?;
+                if let Some(canvases) = value["canvases"].as_array_mut() {
+                    canvases.iter_mut().for_each(crate::normalize_canvas);
+                }
+                Ok(value)
+            }
+            Err(error) => return Err(error.into()),
+        },
+        ReadRegion::Pages { id } => {
+            serde_json::to_value(client.cached_pages(&state.storage, &id, true).await?)
+        }
+        ReadRegion::Entries { id } => {
+            serde_json::to_value(client.list_entries_with_refresh(&id, true).await?)
+        }
+        ReadRegion::CollectionProgress { id } => {
+            serde_json::to_value(client.collection_progress(&id, true).await?)
+        }
+        ReadRegion::EntryProgress { ids } => {
+            serde_json::to_value(client.entry_progress_with_refresh(&ids, true).await?)
+        }
+    };
+    Ok(value.map_err(honkoku_core::Error::from)?)
 }

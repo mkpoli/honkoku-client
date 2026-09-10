@@ -1,4 +1,7 @@
 <script lang="ts">
+  import Skeleton from "./Skeleton.svelte";
+  import RegionNotice from "./RegionNotice.svelte";
+  import type { Region } from "../region.svelte";
   import { untrack } from "svelte";
   import type {
     PageLines,
@@ -8,6 +11,8 @@
   import type { Canvas } from "@honkoku/client-api/types";
   let {
     canvas,
+    pending = false,
+    region,
     pageNumber,
     half = $bindable(""),
     lineModel = { engine: null, lines: [], estimated: false },
@@ -17,6 +22,8 @@
     onlineselect,
   }: {
     canvas?: Canvas;
+    pending?: boolean;
+    region?: Region<Canvas[]>;
     pageNumber: number;
     half?: string;
     lineModel?: PageLines | LocalPageLines;
@@ -26,8 +33,11 @@
     onlineselect?: (index: number) => void;
   } = $props();
   let host: HTMLDivElement;
+  let retryVersion = $state(0);
+  let imageSlow = $state(false);
   let viewer = $state<OpenSeadragon.Viewer>();
   let opened = $state(false);
+  let imageReady = $state(false);
   let overlayElements = $state<HTMLButtonElement[]>([]);
   let fallback = $state(false),
     imageFailed = $state(false),
@@ -47,14 +57,20 @@
   }
   $effect(() => {
     const current = canvas;
+    retryVersion;
+    imageSlow = false;
+    const timer = setTimeout(() => (imageSlow = true), 15000);
     fallback = !current?.infoJsonUrl && !current?.imageUrl;
     opened = false;
+    imageReady = false;
     imageFailed = false;
     plainScale = 1;
     scale = 100;
     half = "";
-    if (!host || !current || (!current.infoJsonUrl && !current.imageUrl))
+    if (!host || !current || (!current.infoJsonUrl && !current.imageUrl)) {
+      clearTimeout(timer);
       return;
+    }
     const v = OpenSeadragon({
       element: host,
       tileSources: current.infoJsonUrl ?? {
@@ -67,32 +83,42 @@
       animationTime: window.matchMedia("(prefers-reduced-motion: reduce)")
         .matches
         ? 0
-        : 0.2,
+        : 0.6,
       blendTime: window.matchMedia("(prefers-reduced-motion: reduce)").matches
         ? 0
         : 0.1,
-      visibilityRatio: 1,
-      constrainDuringPan: true,
-      gestureSettingsMouse: { clickToZoom: false },
-      maxZoomPixelRatio: 3,
+      visibilityRatio: 0.2,
+      constrainDuringPan: false,
+      springStiffness: 6,
+      minZoomImageRatio: 1,
+      gestureSettingsMouse: {
+        clickToZoom: false,
+        dblClickToZoom: true,
+        scrollToZoom: true,
+        zoomToRefPoint: true,
+      },
+      maxZoomPixelRatio: 4,
     });
     viewer = v;
-    v.addHandler("open-failed", () => (fallback = true));
-    v.addHandler("open", () => (opened = true));
-    v.addHandler("canvas-click", (event) => {
-      if (!event.quick || !v.world.getItemCount()) return;
-      const point = v.viewport.viewportToImageCoordinates(
-        v.viewport.pointFromPixel(event.position),
-      );
-      const size = v.world.getItemAt(0).getContentSize();
-      if (
-        point.x >= 0 &&
-        point.x <= size.x &&
-        point.y >= 0 &&
-        point.y <= size.y
-      )
-        half = point.x < size.x / 2 ? "左丁" : "右丁";
+    v.addHandler("open-failed", () => {
+      fallback = true;
     });
+    const fitMinimum = () => {
+      (
+        v.viewport as OpenSeadragon.Viewport & { minZoomLevel: number }
+      ).minZoomLevel = v.viewport.getHomeZoom();
+    };
+    v.addHandler("open", () => {
+      opened = true;
+      fitMinimum();
+    });
+    v.addHandler("tile-loaded", () => {
+      imageReady = true;
+      imageSlow = false;
+      clearTimeout(timer);
+    });
+    v.addHandler("resize", fitMinimum);
+    v.addHandler("canvas-drag-end", () => v.viewport.applyConstraints());
     v.addHandler("zoom", () => {
       if (v.viewport)
         scale = Math.round(
@@ -100,6 +126,7 @@
         );
     });
     return () => {
+      clearTimeout(timer);
       v.destroy();
       if (untrack(() => viewer) === v) viewer = undefined;
     };
@@ -224,7 +251,6 @@
 
 <section class="panel facsimile-panel">
   <div class="pane-toolbar">
-    <h2>原本</h2>
     {#if (showLines || highlightedLine !== null) && lineModel.lines.length}<span
         class="caption muted"
         >{lineModel.engine === "local"
@@ -251,13 +277,22 @@
     >
   </div>
   <div class="facsimile-canvas">
+    {#if pending || (!imageReady && !imageFailed && (canvas?.infoJsonUrl || canvas?.imageUrl))}<Skeleton
+        shape="frame"
+        count={1}
+        label="原本を取得中"
+      />{/if}
+    {#if region}<RegionNotice {region} />{/if}
+    {#if imageSlow && !imageReady}<div class="region-notice">
+        <button onclick={() => retryVersion++}>再試行</button>
+      </div>{/if}
     <div
       class="osd"
       class:hidden={fallback}
       bind:this={host}
       aria-label={`コマ${pageNumber}の拡大画像`}
     ></div>
-    {#if fallback}{#if canvas?.imageUrl && !imageFailed}<div
+    {#if fallback && !pending}{#if canvas?.imageUrl && !imageFailed}<div
           class="plain-image"
         >
           <img
@@ -265,10 +300,16 @@
             alt={`コマ${pageNumber}の原本`}
             style:transform={`scale(${plainScale})`}
             referrerpolicy="no-referrer"
+            onload={() => {
+              imageReady = true;
+              imageSlow = false;
+            }}
             onerror={() => (imageFailed = true)}
           />
         </div>{:else}<p class="empty">
-          原本画像を読み込めませんでした。
+          原本画像を読み込めませんでした。<button onclick={() => retryVersion++}
+            >再試行</button
+          >
         </p>{/if}{/if}
   </div>
 </section>

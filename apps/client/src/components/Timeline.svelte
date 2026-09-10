@@ -1,4 +1,8 @@
 <script lang="ts">
+  import { untrack } from "svelte";
+  import { Region } from "../region.svelte";
+  import Skeleton from "./Skeleton.svelte";
+  import RegionNotice from "./RegionNotice.svelte";
   import type { SessionInfo, TimelineItem } from "@honkoku/client-api/types";
   import { homeTimeline } from "@honkoku/client-api/invoke";
   import { action, errorMessage, label, relative } from "../lib";
@@ -22,50 +26,48 @@
   $effect(() => {
     if (projectId) tab = "project";
   });
-  let items = $state<TimelineItem[]>([]);
-  let loading = $state(false),
-    error = $state(""),
-    more = $state(true);
-  let generation = 0;
+  const region = new Region<TimelineItem[]>();
+  let items = $derived(region.value ?? []);
+  let loading = $derived(region.pending);
+  let error = $derived(region.error);
+  let more = $state(true);
   let now = $state(Date.now());
-  async function load(append = false) {
-    const current = ++generation;
+  function load(append = false) {
     const previous = append ? items.at(-1)?.event : undefined;
-    loading = true;
-    error = "";
-    try {
-      const batch = await homeTimeline(
-        {
-          project_id:
-            projectId && (compact || tab === "project") ? projectId : undefined,
-          joined: tab === "joined",
-          before: previous?.createdAt,
-          before_id: previous?.id,
-        },
-        20,
-      );
-      if (current !== generation) return;
-      const combined = append ? [...items, ...batch] : batch;
-      items = [...new Map(combined.map((i) => [i.event.id, i])).values()];
-      more = batch.length === 20;
-      now = Date.now();
-      onitems?.(items);
-    } catch (e) {
-      if (current === generation) error = errorMessage(e);
-    } finally {
-      if (current === generation) loading = false;
-    }
+    const retained = items;
+    const filter = {
+      project_id:
+        projectId && (compact || tab === "project") ? projectId : undefined,
+      joined: tab === "joined",
+      before: previous?.createdAt,
+      before_id: previous?.id,
+    };
+    return region.load(
+      `timeline:${session?.uid}:${projectId}:${tab}`,
+      async () => {
+        const batch = await homeTimeline(filter, 20);
+        more = batch.length === 20;
+        return [
+          ...new Map(
+            (append ? [...retained, ...batch] : batch).map((i) => [
+              i.event.id,
+              i,
+            ]),
+          ).values(),
+        ];
+      },
+      (value) => {
+        now = Date.now();
+        onitems?.(value);
+      },
+    );
   }
   $effect(() => {
     projectId;
     session?.uid;
     tab;
-    items = [];
-    more = true;
-    void load();
-    return () => {
-      generation++;
-    };
+    void untrack(() => load());
+    return () => region.cancel();
   });
 </script>
 
@@ -125,17 +127,18 @@
             /></a
           >
         </div>
-        {#if item.excerpt}<blockquote><span class="excerpt-text">{item.excerpt}</span></blockquote>{/if}
+        {#if item.excerpt}<blockquote>
+            <span class="excerpt-text">{item.excerpt}</span>
+          </blockquote>{/if}
       </article>
     {:else}{#if !loading && !error}<p class="empty">
           活動はまだありません。
         </p>{/if}{/each}
-    {#if error}<p class="error" role="alert">{error}</p>
-      <button onclick={() => load(items.length > 0)}>再試行</button>{/if}
-    {#if loading}<p class="empty" role="status">
-        読み込み中…
-      </p>{:else if more && !error}<button
+    <RegionNotice {region} />
+    {#if loading && !items.length}<Skeleton label="活動を取得中" count={5} />
+    {:else if more && !error}<button
         class="load-more"
+        disabled={loading}
         onclick={() => load(true)}>さらに表示⌄</button
       >{/if}
   </div>

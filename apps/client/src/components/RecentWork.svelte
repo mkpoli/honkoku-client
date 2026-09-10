@@ -1,26 +1,20 @@
 <script lang="ts">
+  import { Region } from "../region.svelte";
+  import Skeleton from "./Skeleton.svelte";
+  import RegionNotice from "./RegionNotice.svelte";
   import { onMount } from "svelte";
   import type { RecentWork } from "@honkoku/client-api/types";
   import { historyRecent } from "@honkoku/client-api/invoke";
   import { errorMessage, label, relative, status, statusClass } from "../lib";
   import { href } from "../routes";
   import Thumbnail from "./Thumbnail.svelte";
-  let items = $state<RecentWork[]>([]),
-    loading = $state(true),
-    error = $state("");
-  async function load() {
-    loading = true;
-    error = "";
-    try {
-      items = await historyRecent(8);
-    } catch (e) {
-      error = errorMessage(e);
-    } finally {
-      loading = false;
-    }
-  }
+  const region = new Region<RecentWork[]>();
+  let items = $derived(region.value ?? []);
+  let loading = $derived(region.pending);
+  let error = $derived(region.error);
   onMount(() => {
-    void load();
+    void region.load("recent", () => historyRecent(8));
+    return () => region.cancel();
   });
 </script>
 
@@ -66,9 +60,7 @@
     {:else}{#if !loading && !error}<p class="empty">
           最近の作業はありません。
         </p>{/if}{/each}
-    {#if loading}<p class="empty" role="status">履歴を読み込み中…</p>{/if}
-    {#if error}<p class="error" role="alert">
-        {error}<button onclick={load}>再試行</button>
-      </p>{/if}
+    {#if loading && !items.length}<Skeleton count={2} />{/if}
+    <RegionNotice {region} />
   </div>
 </section>

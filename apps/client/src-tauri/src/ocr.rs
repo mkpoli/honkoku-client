@@ -85,3 +85,21 @@ pub async fn ocr_publish_page(
         .await?;
     Ok(())
 }
+
+#[tauri::command]
+pub async fn ocr_diagnostics(
+    engine: State<'_, OcrSidecar>,
+) -> Result<honkoku_ocr::OcrDiagnostics, AppError> {
+    Ok(engine.diagnostics().await?)
+}
+#[tauri::command]
+pub async fn ocr_doctor(engine: State<'_, OcrSidecar>) -> Result<String, AppError> {
+    Ok(engine.doctor().await?)
+}
+#[tauri::command]
+pub async fn ocr_repair_models(
+    app: tauri::AppHandle,
+    engine: State<'_, OcrSidecar>,
+) -> Result<OcrStatus, AppError> {
+    Ok(engine.repair_models(progress(app)).await?)
+}

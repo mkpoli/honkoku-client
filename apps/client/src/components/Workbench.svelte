@@ -1,4 +1,9 @@
 <script lang="ts">
+  import { openSessions } from "../editing-sessions.svelte";
+  import { restoreDraft } from "../editing-draft";
+  import type { Region } from "../region.svelte";
+  import Skeleton from "./Skeleton.svelte";
+  import RegionNotice from "./RegionNotice.svelte";
   import { onMount, tick, untrack } from "svelte";
   import type {
     Canvas,
@@ -20,11 +25,12 @@
     textareaSource,
   } from "@honkoku/editor";
   import Transcription from "./Transcription.svelte";
-  import { date, notes, status, statusClass, user } from "../lib";
+  import { date, label, notes, status, statusClass, user } from "../lib";
   import { href, parseRoute } from "../routes";
   import VerticalEditor from "@honkoku/editor/VerticalEditor.svelte";
   import type { EditorUpdate } from "@honkoku/editor";
   import {
+    editingPages,
     pageLock,
     pageDraftTextAndNotes,
     isTauri,
@@ -47,7 +53,13 @@
     session,
     onpage,
     registerLeave,
+    pagesRegion,
+    pagesPending = false,
+    canvasesRegion,
   }: {
+    pagesRegion: Region<Page[]>;
+    pagesPending?: boolean;
+    canvasesRegion: Region<Canvas[]>;
     entry: Entry;
     pages: Page[];
     canvases: Canvas[];
@@ -56,6 +68,8 @@
     onpage: (page: Page) => void;
     registerLeave: (guard: (() => Promise<void>) | undefined) => void;
   } = $props();
+  let currentEntryId = $derived(entry.id);
+  let sessionUid = $derived(session?.uid);
   let page = $derived(pages.find((p) => p.index === index)!);
   let swapped = $state(false),
     horizontal = $state(false),
@@ -66,6 +80,10 @@
   let editing = $state(false),
     busy = $state(false),
     composing = $state(false);
+  let verifying = $state(false),
+    lockSlow = $state(false),
+    lockFailed = $state(false),
+    validationAttempt = $state(0);
   let source = $state(""),
     saveState = $state(""),
     notice = $state("");
@@ -218,8 +236,38 @@
     share = $state(false),
     requestReview = $state(false),
     comment = $state("");
-  let resumable = $state(false),
-    lockName = $state("名前を確認中");
+  let lockName = $state("名前を確認中");
+  let menuOpen = $state(false);
+  let otherEdits = $derived(
+    [
+      ...new Map(
+        [...Object.values(openSessions.pages), ...pages].map((p) => [p.id, p]),
+      ).values(),
+    ].filter(
+      (p) =>
+        p.id !== page.id &&
+        p.status === "editing" &&
+        !!session &&
+        p.tempEditedBy === session.uid,
+    ),
+  );
+  $effect(() => {
+    const current = pages;
+    untrack(() => current.forEach((p) => openSessions.observe(p)));
+  });
+  $effect(() => {
+    const uid = session?.uid;
+    let alive = true;
+    if (uid)
+      void editingPages()
+        .then((values) => {
+          if (alive) values.forEach((p) => openSessions.observe(p));
+        })
+        .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  });
   let celebration = $state<number | null | undefined>();
   let recovered = $state("");
   let queue: Drafts | undefined;
@@ -279,7 +327,6 @@
     try {
       localStorage.removeItem(storageKey());
     } catch {}
-    resumable = false;
   }
   async function reread() {
     const pageIndex = index;
@@ -311,7 +358,7 @@
     }
   }
   function act(action: () => Promise<void>) {
-    if (busy) return;
+    if (busy || verifying) return;
     busy = true;
     notice = "";
     operation = action()
@@ -321,7 +368,7 @@
         operation = undefined;
       });
   }
-  function begin(locked: Page, restore = false) {
+  function begin(locked: Page, restore = false, verified = true) {
     celebration = undefined;
     clearTimeout(toastTimer);
     lastOptions = savedOptions();
@@ -329,10 +376,9 @@
     const local = restore ? localDraft() : undefined;
     acknowledged = locked.tempText ?? "";
     draftUpdatedAt = locked.updatedAt;
-    source =
-      local && local.source !== local.draft ? local.source : acknowledged;
-    tempNotes =
-      local?.notes ?? structuredClone(locked.tempNotes ?? locked.notes);
+    const restored = restoreDraft(locked, local);
+    source = restored.source;
+    tempNotes = restored.notes;
     editing = true;
     recovered = "";
     saveState = locked.tempTextChanged
@@ -342,6 +388,7 @@
     completed = lastOptions?.status === "completed";
     requestReview = lastOptions?.requestReview ?? false;
     comment = lastOptions?.comment ?? "";
+    if (!verified) return;
     const entryId = entry.id,
       pageIndex = index;
     queue = new Drafts(
@@ -387,35 +434,6 @@
   }
   function start() {
     act(async () => begin(await pageLock(entry.id, index, false)));
-  }
-  function resume() {
-    act(async () => {
-      const state = await pageLockState(entry.id, index);
-      const fresh = await reread();
-      if (
-        !state.isMine ||
-        !fresh ||
-        fresh.status !== "editing" ||
-        fresh.tempEditedBy !== session?.uid
-      )
-        throw { kind: "conflict", message: "編集状態が変わりました。" };
-      if (localDraft()?.updatedAt !== fresh.updatedAt) {
-        resumable = false;
-        throw {
-          kind: "conflict",
-          message: "この端末以外で編集内容が更新されました。",
-        };
-      }
-      begin(fresh, true);
-    });
-  }
-  function takeOver() {
-    act(async () => {
-      await pageDiscard(entry.id, index);
-      forget();
-      await reread();
-      begin(await pageLock(entry.id, index, false));
-    });
   }
   function save(options: SaveOptions) {
     if (composing || !editing) return;
@@ -488,6 +506,10 @@
     queue?.request(draftPayload());
   }
   async function leave() {
+    if (verifying) {
+      if (editing) remember();
+      return;
+    }
     await operation;
     if (!editing) return;
     if (composing) throw Error("文字の変換を確定してから移動してください。");
@@ -497,7 +519,7 @@
       await queue?.stop();
       queue = undefined;
       editing = false;
-      resumable = true;
+      remember();
     } catch (error) {
       await failure(error);
       throw error;
@@ -506,8 +528,17 @@
     }
   }
   $effect(() => {
-    index;
+    const pageIndex = index,
+      entryId = currentEntryId,
+      uid = sessionUid,
+      pending = pagesPending;
+    validationAttempt;
+    let cancelled = false;
+    let validationTimer: ReturnType<typeof setTimeout>;
     untrack(() => {
+      verifying = false;
+      lockSlow = false;
+      lockFailed = false;
       editing = false;
       currentColumn = -1;
       hoveredLine = null;
@@ -524,9 +555,57 @@
       clearTimeout(toastTimer);
       void queue?.stop();
       queue = undefined;
-      const local = localDraft();
-      resumable = !!local && local.updatedAt === page.updatedAt;
+      if (!uid || pending) return;
+      busy = true;
+      verifying = true;
+      validationTimer = setTimeout(() => (lockSlow = true), 15000);
+      if (page.status === "editing" && page.tempEditedBy === uid)
+        begin(page, true, false);
+      operation = (async () => {
+        const state = await pageLockState(entryId, pageIndex);
+        if (cancelled) return;
+        const fresh = state.page ?? (await reread());
+        if (cancelled || !fresh) return;
+        onpage(fresh);
+        if (state.isMine) begin(fresh, true);
+        else {
+          editing = false;
+          if (localDraft()) {
+            recovered = localDraft()?.source ?? "";
+            notice = "編集状態が変わりました。";
+          } else if (fresh.status === "editing")
+            notice = "他のユーザーが編集中です。";
+        }
+      })()
+        .catch((error) => {
+          if (!cancelled) {
+            lockFailed = true;
+            void failure(error);
+          }
+        })
+        .finally(() => {
+          if (!cancelled) {
+            busy = false;
+            if (!lockFailed) verifying = false;
+            lockSlow = false;
+            clearTimeout(validationTimer);
+            operation = undefined;
+          }
+        });
     });
+    return () => {
+      cancelled = true;
+      clearTimeout(validationTimer);
+    };
+  });
+  $effect(() => {
+    saveState;
+    notice;
+    const timer = setTimeout(() => {
+      saveState = "";
+      notice = "";
+    }, 6000);
+    return () => clearTimeout(timer);
   });
   $effect(() => {
     if (!session && editing) {
@@ -661,14 +740,16 @@
         );
         return;
       }
-      if (editing || busy) return;
+      if (busy && !verifying) return;
       if (
         e.altKey ||
         e.ctrlKey ||
         e.metaKey ||
         e.shiftKey ||
         (e.target instanceof HTMLElement &&
-          e.target.closest('input,textarea,select,[contenteditable="true"]'))
+          e.target.closest(
+            'input,textarea,select,[contenteditable="true"],.workbench-editor,.ocr-drawer,.note-popover,.save-popover,.workbench-menu',
+          ))
       )
         return;
       const current = parseRoute(location.hash).pageIndex ?? index;
@@ -709,26 +790,64 @@
 </script>
 
 <div class="workbench">
-  <div class="workbench-toolbar">
-    <div class="page-position">
-      <button
-        disabled={index === 0}
-        onclick={() => go(index - 1)}
-        aria-label="前のコマ">‹</button
-      ><button
-        disabled={index === pages.length - 1}
-        onclick={() => go(index + 1)}
-        aria-label="次のコマ">›</button
-      ><span class="caption muted edit-status" role="status"
-        >{saveState || (editing ? "未保存の変更" : "閲覧のみ")}</span
+  <RegionNotice region={pagesRegion} />
+  {#if lockSlow || lockFailed}<div class="region-notice caption">
+      ロックを確認できません。<button onclick={() => validationAttempt++}
+        >再試行</button
       >
+    </div>{/if}
+  {#if notice || saveState || celebration !== undefined}<div
+      class="workbench-notification caption"
+      role="status"
+    >
+      {#if celebration !== undefined}<span class="completion-toast"
+          >✓完了{celebration !== null
+            ? `・${celebration.toLocaleString("ja-JP")}文字`
+            : ""}</span
+        >
+      {:else if notice}<span class="edit-notice">{notice}</span>{:else}<span
+          class="edit-status">{saveState}</span
+        >{/if}
+    </div>{/if}
+  <div class="workbench-toolbar">
+    <div class="editing-pages">
+      {#if otherEdits.length}<details>
+          <summary
+            >編集中のコマ<span class="count">{otherEdits.length}</span></summary
+          >
+          <div class="editing-page-links">
+            {#each otherEdits as p}<a
+                href={href({ entryId: p.entryId, pageIndex: p.index })}
+                >{p.entryId === entry.id ? "" : "別の資料・"}コマ{p.index +
+                  1}</a
+              >{/each}
+          </div>
+        </details>{/if}
+    </div>
+    <div class="page-position">
+      <span class="entry-position-title caption muted"
+        >{label(entry.label)}</span
+      >
+      <div>
+        <button
+          disabled={index === 0}
+          onclick={() => go(index - 1)}
+          aria-label="前のコマ">‹</button
+        ><span class="page-count numeric"
+          >{index + 1}／{entry.size ?? pages.length}</span
+        ><button
+          disabled={index === pages.length - 1}
+          onclick={() => go(index + 1)}
+          aria-label="次のコマ">›</button
+        >
+      </div>
     </div>
     <div class="toolbar-actions">
       {#if editing}
         <div class="save-control">
           <button
             class="primary"
-            disabled={busy || composing}
+            disabled={busy || composing || verifying}
             onclick={() => {
               savePopover = !savePopover;
               discardPopover = false;
@@ -766,7 +885,7 @@
                 <button
                   type="submit"
                   class="primary"
-                  disabled={busy || composing}>保存を確定</button
+                  disabled={busy || composing || verifying}>保存を確定</button
                 ><button type="button" onclick={() => (savePopover = false)}
                   >閉じる</button
                 >
@@ -775,7 +894,7 @@
         </div>
         <div class="save-control">
           <button
-            disabled={busy || composing}
+            disabled={busy || composing || verifying}
             onclick={() => {
               discardPopover = !discardPopover;
               savePopover = false;
@@ -791,20 +910,10 @@
               </div>
             </div>{/if}
         </div>
-      {:else if page.status === "editing"}
-        {#if session && page.tempEditedBy === session.uid}
-          {#if resumable}<button disabled={busy} onclick={resume}
-              >編集を再開</button
-            >
-          {:else}<span class="caption muted">この端末以外で編集中</span><button
-              disabled={busy}
-              onclick={takeOver}>破棄して引き継ぐ</button
-            >{/if}
-        {:else}<span class="caption muted"
-            >他のユーザーが編集中・{lockName}</span
-          >{/if}
-      {:else if session}<button class="primary" disabled={busy} onclick={start}
-          >編集開始</button
+      {:else if session && page.status !== "editing"}<button
+          class="primary"
+          disabled={busy || pagesPending || verifying}
+          onclick={start}>編集開始</button
         >{/if}
       {#if noteCount && !hasReferences}<button
           class="notes-count"
@@ -828,36 +937,45 @@
         disabled={!lineModel.lines.length}
         onclick={() => (showLines = !showLines)}>行枠</button
       >
-      <button onclick={() => (swapped = !swapped)}>⇄左右を入れ替え</button
-      ><button
-        disabled={editing}
-        aria-pressed={!horizontal}
-        onclick={() => (horizontal = !horizontal)}
-        >{horizontal ? "横書き" : "縦書き"}⌄</button
-      >
+      <div class="workbench-menu">
+        <button
+          aria-label="表示設定"
+          aria-expanded={menuOpen}
+          onclick={() => (menuOpen = !menuOpen)}>⋯</button
+        >
+        {#if menuOpen}<div class="menu-options">
+            <button
+              onclick={() => {
+                swapped = !swapped;
+                menuOpen = false;
+              }}>⇄左右を入れ替え</button
+            ><button
+              disabled={editing}
+              aria-pressed={!horizontal}
+              onclick={() => {
+                horizontal = !horizontal;
+                menuOpen = false;
+              }}>{horizontal ? "横書き" : "縦書き"}</button
+            >
+          </div>{/if}
+      </div>
     </div>
   </div>
-  {#if notice}<div class="edit-notice caption" role="status">{notice}</div>{/if}
   {#if recovered}<details class="edit-recovery">
       <summary>端末に残っている本文</summary><textarea
         readonly
         value={recovered}
         aria-label="端末に残っている本文"></textarea>
     </details>{/if}
-  {#if celebration !== undefined}<div class="completion-toast" role="status">
-      ✓完了{celebration !== null
-        ? `・${celebration.toLocaleString("ja-JP")}文字`
-        : ""}
-    </div>{/if}
   <div class="workbench-panes" class:swapped>
     <section class="panel transcription-panel" use:references>
-      <div class="pane-toolbar">
-        <h2>翻刻</h2>
-        <span class="caption muted"
-          >{horizontal ? "横書き" : "縦書き"}{half ? `・${half}` : ""}</span
+      {#if pagesPending}<Skeleton
+          shape="columns"
+          count={8}
+        />{:else if editing}<div
+          class="workbench-editor"
+          inert={busy || verifying}
         >
-      </div>
-      {#if editing}<div class="workbench-editor" inert={busy}>
           <VerticalEditor
             bind:this={editor}
             bind:source
@@ -896,7 +1014,7 @@
         <OcrPanel
           {page}
           {editing}
-          disabled={busy || composing}
+          disabled={busy || composing || verifying}
           onresult={(result) => (localOcr = result)}
           oninsert={insertOcr}
           oninsertall={appendOcr}
@@ -905,6 +1023,8 @@
     </section>
     <Facsimile
       canvas={canvases[index]}
+      pending={canvasesRegion.pending && !canvases[index]}
+      region={canvasesRegion}
       pageNumber={index + 1}
       bind:half
       {lineModel}
@@ -927,18 +1047,12 @@
       if (!e.currentTarget.contains(e.relatedTarget as Node)) expanded = false;
     }}
   >
-    <div class="filmstrip-heading">
-      <strong>コマ</strong><span class="status completed caption">✓完了</span
-      ><span class="status initiated caption">◐翻刻中</span><span
-        class="status default caption">○未着手</span
-      ><span class="caption muted">←→で移動・Nで次の未着手へ</span>
-    </div>
     <div class="status-strip">
       {#each pages as p (p.id)}<a
           class={statusClass(p.status)}
           class:current={p.index === index}
           href={href({ entryId: entry.id, pageIndex: p.index })}
-          aria-label={`コマ${p.index + 1}・${status(p.status).label}`}
+          aria-label={`コマ${p.index + 1}・${p.status === "editing" && p.tempEditedBy === session?.uid ? "あなたが編集中" : status(p.status).label}`}
           aria-current={p.index === index ? "page" : undefined}
         ></a>{/each}
     </div>

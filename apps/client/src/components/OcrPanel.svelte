@@ -1,13 +1,19 @@
 <script lang="ts">
+  import { Region } from "../region.svelte";
+  import Skeleton from "./Skeleton.svelte";
+  import RegionNotice from "./RegionNotice.svelte";
   import { onMount } from "svelte";
   import type {
     Page,
     LocalOcrPage,
     OcrStatus,
     OcrProgress,
+    OcrDiagnostics,
   } from "@honkoku/client-api/types";
   import {
-    ocrStatus,
+    ocrDiagnostics,
+    ocrDoctor,
+    ocrRepairModels,
     ocrSetup,
     ocrRunPage,
     ocrResult,
@@ -32,7 +38,34 @@
     oninsertall: (text: string) => void;
   } = $props();
   let local = $state<LocalOcrPage | null>(null);
-  let environment = $state<OcrStatus>();
+  const diagnostics = new Region<OcrDiagnostics>();
+  const results = new Region<LocalOcrPage | null>();
+  const doctor = new Region<string>();
+  let environment = $derived(diagnostics.value?.status);
+  let lastError = $state("");
+  let copyNotice = $state("");
+  const captureError = (error: unknown) => {
+    lastError = (
+      error && typeof error === "object" && "message" in error
+        ? String(error.message)
+        : String(error)
+    ).replace(/\/home\/[^/\s]+/g, "~");
+  };
+  function refreshDiagnostics() {
+    return diagnostics.load("ocr-diagnostics", ocrDiagnostics, (value) => {
+      gpu = value.status?.cuda_available ?? false;
+      if (value.last_error) lastError = value.last_error;
+    });
+  }
+  async function copyError() {
+    try {
+      await navigator.clipboard.writeText(lastError);
+      copyNotice = "コピーしました。";
+    } catch {
+      copyNotice = "本文を選択してコピーしてください。";
+    }
+  }
+
   let gpu = $state(false),
     running = $state(false),
     settingUp = $state(false),
@@ -88,19 +121,13 @@
       if (alive) stop = fn;
       else fn();
     });
-    void ocrStatus()
-      .then((s) => {
-        if (alive) {
-          environment = s;
-          gpu = s.cuda_available;
-        }
-      })
-      .catch((e) => {
-        if (alive) message = errorMessage(e);
-      });
+    void refreshDiagnostics();
     return () => {
       alive = false;
       stop?.();
+      diagnostics.cancel();
+      results.cancel();
+      doctor.cancel();
     };
   });
   $effect(() => {
@@ -111,18 +138,19 @@
     confirm = false;
     message = "";
     onresult(null);
-    void ocrResult(entryId, index)
-      .then((result) => {
+    void results.load(
+      `ocr-result:${entryId}:${index}`,
+      () => ocrResult(entryId, index),
+      (result) => {
         if (alive) {
           local = result;
           onresult(result);
         }
-      })
-      .catch((e) => {
-        if (alive) message = errorMessage(e);
-      });
+      },
+    );
     return () => {
       alive = false;
+      results.cancel();
     };
   });
   async function setup() {
@@ -130,9 +158,21 @@
     message = "";
     progress = undefined;
     try {
-      environment = await ocrSetup(gpu);
+      await ocrSetup(gpu);
+      await refreshDiagnostics();
     } catch (e) {
-      message = errorMessage(e);
+      captureError(e);
+    } finally {
+      settingUp = false;
+    }
+  }
+  async function repair() {
+    settingUp = true;
+    try {
+      await ocrRepairModels();
+      await refreshDiagnostics();
+    } catch (e) {
+      captureError(e);
     } finally {
       settingUp = false;
     }
@@ -150,8 +190,9 @@
         onresult(result);
       }
     } catch (e) {
-      message = errorMessage(e);
+      captureError(e);
     } finally {
+      void refreshDiagnostics();
       running = false;
     }
   }
@@ -163,7 +204,7 @@
       await ocrPublishPage(page.entryId, page.index);
       message = "翻刻サイトに保存しました。";
     } catch (e) {
-      message = errorMessage(e);
+      captureError(e);
     } finally {
       publishing = false;
     }
@@ -175,8 +216,8 @@
     <div>
       <h2>OCR</h2>
       <span class="engine"
-        >{local ? `ローカルOCR · ${local.model}` : "サイトのOCR"}{date(stamp)
-          ? ` · ${date(stamp)}`
+        >{local ? `ローカルOCR・${local.model}` : "サイトのOCR"}{date(stamp)
+          ? `・${date(stamp)}`
           : ""}</span
       >
     </div>
@@ -186,8 +227,7 @@
           onclick={() => oninsertall(allText)}>本文に挿入</button
         >{/if}
       {#if running}<button
-          onclick={() =>
-            void ocrCancel().catch((e) => (message = errorMessage(e)))}
+          onclick={() => void ocrCancel().catch((e) => captureError(e))}
           >中止</button
         >{:else}<button
           disabled={!environment?.environment_ready ||
@@ -201,7 +241,7 @@
         >{/if}
     </div>
   </div>
-  {#if !environment?.environment_ready || !environment.models_ready}
+  {#if diagnostics.value && (!environment?.environment_ready || !environment.models_ready)}
     <div class="setup">
       <span class="muted">OCR環境とモデルの準備が必要です。</span><label
         ><input
@@ -233,27 +273,105 @@
         onclick={() => (confirm = false)}>戻る</button
       >
     </div>{/if}
-  <div class="ocr-lines scroll">
-    {#each lines as line, i}<div class="ocr-line">
-        <span class="line-number numeric">{i + 1}</span><span class="line-text"
-          >{line.text}</span
-        ><span
-          class="confidence numeric"
-          style:color={line.confidence > 0.9
-            ? "var(--status-completed)"
-            : line.confidence < 0.7
-              ? "var(--accent)"
-              : "var(--text-muted)"}>{Math.round(line.confidence * 100)}%</span
-        >{#if editing}<button {disabled} onclick={() => oninsert(line.text)}
-            >挿入</button
+  <div class="ocr-content scroll">
+    <section class="ocr-diagnostics" aria-label="OCR診断">
+      <h3>診断</h3>
+      <RegionNotice region={diagnostics} />
+      {#if !diagnostics.value && diagnostics.pending}<Skeleton
+          count={2}
+        />{:else if diagnostics.value}
+        <dl>
+          <div>
+            <dt>環境</dt>
+            <dd>{diagnostics.value.environment_ready ? "あり" : "なし"}</dd>
+          </div>
+          <div>
+            <dt>モデル</dt>
+            <dd>
+              {diagnostics.value.models_present ? "あり" : "なし"}・{(
+                diagnostics.value.models_bytes /
+                1024 /
+                1024
+              ).toFixed(1)}MB・{environment?.models_ready
+                ? "検証済み"
+                : "未確認"}
+            </dd>
+          </div>
+          <div>
+            <dt>デバイス</dt>
+            <dd>
+              {environment
+                ? environment.device.toLowerCase() === "cuda"
+                  ? "CUDA"
+                  : environment.device.toUpperCase()
+                : "未確認"}
+            </dd>
+          </div>
+        </dl>
+        <p class="caption muted">
+          ログ：<code>{diagnostics.value.log_path}</code>
+        </p>
+        {#if diagnostics.value.models_directory_exists && !environment?.models_ready}<button
+            disabled={settingUp || running}
+            onclick={repair}>モデルを再取得</button
           >{/if}
-      </div>
-    {:else}{#if allText}<pre>{allText}</pre>{:else}<p class="muted">
-          OCRの記録はありません。
-        </p>{/if}{/each}
-    {#each local?.warnings ?? [] as warning}<p class="muted">
-        {warning}
-      </p>{/each}
+      {/if}
+      {#if lastError}<label class="ocr-last-error"
+          >最後のエラー<textarea
+            readonly
+            value={lastError}
+            aria-label="最後のエラー"></textarea></label
+        ><button onclick={copyError}>エラーをコピー</button><span
+          class="caption"
+          role="status">{copyNotice}</span
+        >{/if}
+      <button
+        disabled={doctor.pending}
+        onclick={() =>
+          doctor.load("ocr-doctor", async () => {
+            try {
+              return await ocrDoctor();
+            } catch (e) {
+              captureError(e);
+              throw e;
+            }
+          })}>診断を実行</button
+      >
+      <RegionNotice region={doctor} />
+      {#if doctor.pending && !doctor.value}<Skeleton count={2} />{/if}
+      {#if doctor.value}<textarea
+          class="doctor-report"
+          readonly
+          value={doctor.value}
+          aria-label="診断結果"></textarea>{/if}
+    </section>
+    <RegionNotice region={results} />
+    <div class="ocr-lines">
+      {#if results.pending && results.value === undefined && !shown}<Skeleton
+          count={5}
+        />{/if}
+      {#each lines as line, i}<div class="ocr-line">
+          <span class="line-number numeric">{i + 1}</span><span
+            class="line-text">{line.text}</span
+          ><span
+            class="confidence numeric"
+            style:color={line.confidence > 0.9
+              ? "var(--status-completed)"
+              : line.confidence < 0.7
+                ? "var(--accent)"
+                : "var(--text-muted)"}
+            >{Math.round(line.confidence * 100)}%</span
+          >{#if editing}<button {disabled} onclick={() => oninsert(line.text)}
+              >挿入</button
+            >{/if}
+        </div>
+      {:else}{#if allText}<pre>{allText}</pre>{:else}<p class="muted">
+            OCRの記録はありません。
+          </p>{/if}{/each}
+      {#each local?.warnings ?? [] as warning}<p class="muted">
+          {warning}
+        </p>{/each}
+    </div>
   </div>
 </section>
 
@@ -289,7 +407,7 @@
     font-size: 12px;
     white-space: nowrap;
   }
-  .ocr-lines {
+  .ocr-content {
     min-height: 0;
     flex: 1;
   }
@@ -337,6 +455,44 @@
     padding: 12px;
     z-index: 2;
     overflow: auto;
+  }
+  .ocr-diagnostics {
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 8px;
+  }
+  .ocr-diagnostics h3 {
+    font: 500 13px/22px var(--font-sans);
+  }
+  dl {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin: 4px 0;
+    font-size: 12px;
+  }
+  dl > div {
+    display: flex;
+    gap: 4px;
+  }
+  dd {
+    margin: 0;
+  }
+  textarea {
+    display: block;
+    width: 100%;
+    min-height: 70px;
+    background: var(--surface-inset);
+    color: var(--text);
+    border: 1px solid var(--border);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+  .doctor-report {
+    min-height: 180px;
+  }
+  .ocr-last-error {
+    font-size: 12px;
   }
   pre {
     white-space: pre-wrap;

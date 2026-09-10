@@ -2,6 +2,13 @@ fn main() {
     tauri_build::try_build(tauri_build::Attributes::new().app_manifest(
         tauri_build::AppManifest::new().commands(&[
             "ocr_status",
+            "editing_pages",
+            "project_page_activity",
+            "region_cached",
+            "region_refresh",
+            "ocr_diagnostics",
+            "ocr_doctor",
+            "ocr_repair_models",
             "ocr_setup",
             "ocr_run_page",
             "ocr_cancel",

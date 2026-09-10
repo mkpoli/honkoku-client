@@ -59,6 +59,7 @@ export function fixtureEdit(
   const mine = page.status === "editing" && page.tempEditedBy === actor.uid;
   if (command === "page_lock_state")
     return {
+      page: structuredClone(page),
       pageId: page.id,
       status: page.status,
       tempEditedBy: page.tempEditedBy ?? null,

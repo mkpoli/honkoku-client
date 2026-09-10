@@ -177,9 +177,12 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             install_diagnostics(app);
             let result = (|| -> Result<(), Box<dyn std::error::Error>> {
                 iiif_protocol::initialize(app)?;
-                app.manage(honkoku_ocr::OcrSidecar::new(
-                    honkoku_ocr::OcrEnvironment::new(app.path().data_dir()?.join("honkoku-client")),
-                ));
+                app.manage(
+                    honkoku_ocr::OcrSidecar::new(honkoku_ocr::OcrEnvironment::new(
+                        app.path().data_dir()?.join("honkoku-client"),
+                    ))
+                    .with_log_path(app.path().app_log_dir()?.join("ocr.log")),
+                );
                 app.manage(commands::EditingState::default());
                 app.manage(signin::SignInState::default());
                 let cache = app.path().cache_dir()?.join("honkoku-client");
@@ -238,6 +241,9 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         })
         .invoke_handler(tauri::generate_handler![
             ocr::ocr_status,
+            ocr::ocr_diagnostics,
+            ocr::ocr_doctor,
+            ocr::ocr_repair_models,
             ocr::ocr_setup,
             ocr::ocr_run_page,
             ocr::ocr_cancel,
@@ -266,6 +272,10 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             commands::page_save,
             commands::page_discard,
             commands::page_lock_state,
+            commands::editing_pages,
+            commands::project_page_activity,
+            commands::region_cached,
+            commands::region_refresh,
             list_projects,
             get_project,
             list_collections,
