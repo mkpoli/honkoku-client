@@ -33,6 +33,7 @@ fn main() {
             "session_clear",
             "home_timeline",
             "home_ranking",
+            "home_ranking_self",
             "home_announcements",
             "home_daily_progress",
             "me",

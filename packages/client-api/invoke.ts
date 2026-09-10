@@ -8,6 +8,7 @@ import type {
   TimelineFilter,
   TimelineItem,
   RankingSort,
+  RankingSelf,
   User,
   Announcement,
   DailyProgress,
@@ -72,6 +73,8 @@ export const homeTimeline = (filter: TimelineFilter = {}, limit = 20) =>
   invoke<TimelineItem[]>("home_timeline", { filter, limit });
 export const homeRanking = (sort: RankingSort = "exp", limit = 100) =>
   invoke<User[]>("home_ranking", { sort, limit });
+export const homeRankingSelf = (sort: RankingSort = "exp") =>
+  invoke<RankingSelf>("home_ranking_self", { sort });
 export const homeAnnouncements = (limit = 5) =>
   invoke<Announcement[]>("home_announcements", { limit });
 export const homeDailyProgress = () =>

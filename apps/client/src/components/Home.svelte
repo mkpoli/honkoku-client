@@ -1,16 +1,22 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount, tick } from "svelte";
   import { Region } from "../region.svelte";
   import Skeleton from "./Skeleton.svelte";
   import RegionNotice from "./RegionNotice.svelte";
   import type {
     Announcement,
+    RankingSelf,
+    RankingSort,
     Project,
     SessionInfo,
     TimelineItem,
     User,
   } from "@honkoku/client-api/types";
-  import { homeAnnouncements, homeRanking } from "@honkoku/client-api/invoke";
+  import {
+    homeAnnouncements,
+    homeRanking,
+    homeRankingSelf,
+  } from "@honkoku/client-api/invoke";
   import { aggregate, date, errorMessage, number, percent, user } from "../lib";
   import { href } from "../routes";
   import Avatar from "./Avatar.svelte";
@@ -38,6 +44,59 @@
   let collapsed = $state<string[]>([]),
     owners = $state<Record<string, string>>({});
   const rankingRegion = new Region<User[]>();
+  let rankSort = $state<RankingSort>("exp");
+  let selfRegion = $state(new Region<RankingSelf>());
+  let rankingPanel: HTMLElement;
+  let pulse = $state(false);
+  const rankUnits = { exp: "pt", charCount: "字", likeCount: "いいね" };
+  let unit = $derived(rankTab === "total" ? rankUnits[rankSort] : "字");
+  async function findSelf() {
+    pulse = false;
+    await tick();
+    const row = rankingPanel.querySelector<HTMLElement>("[data-ranking-self]");
+    if (!row) return;
+    const bounds = row.getBoundingClientRect();
+    const list = row.closest<HTMLElement>(".ranking-list");
+    const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (list)
+      list.scrollTo({
+        top:
+          list.scrollTop +
+          bounds.top -
+          list.getBoundingClientRect().top -
+          (list.clientHeight - row.clientHeight) / 2,
+        behavior: reduced ? "auto" : "smooth",
+      });
+    pulse = true;
+  }
+  $effect(() => {
+    const field = rankSort;
+    void rankingRegion.load(`ranking/${field}`, () => homeRanking(field));
+    return () => rankingRegion.cancel();
+  });
+  $effect(() => {
+    rankSort;
+    rankTab;
+    session?.uid;
+    pulse = false;
+  });
+  $effect(() => {
+    const uid = session?.uid;
+    const field = rankSort;
+    const region = new Region<RankingSelf>();
+    selfRegion = region;
+    if (
+      uid &&
+      rankTab === "total" &&
+      !rankingRegion.pending &&
+      rankingRegion.value !== undefined &&
+      !ranking.some((user) => user.uid === uid)
+    )
+      void region.load(`ranking-self/${uid}/${field}`, () =>
+        homeRankingSelf(field),
+      );
+    return () => region.cancel();
+  });
   const announcementRegion = new Region<Announcement[]>();
   let ranking = $derived(rankingRegion.value ?? []);
   let announcements = $derived(announcementRegion.value ?? []);
@@ -89,8 +148,11 @@
   });
   let ranked = $derived(
     rankTab === "total"
-      ? ranking.map((user) => ({ user, count: user.exp ?? 0 }))
+      ? ranking.map((user) => ({ user, count: user[rankSort] ?? 0 }))
       : aggregate(activity, rankTab === "today" ? 24 : 168),
+  );
+  let selfLoaded = $derived(
+    !!session && ranked.some((record) => record.user.uid === session.uid),
   );
   $effect(() => {
     if (!session && filter === "joined") filter = "official";
@@ -123,7 +185,6 @@
     };
   });
   onMount(() => {
-    void rankingRegion.load("ranking", homeRanking);
     void announcementRegion.load("announcements", homeAnnouncements);
     return () => {
       rankingRegion.cancel();
@@ -206,8 +267,24 @@
     <RecentWork /><Timeline {session} onitems={(items) => (activity = items)} />
   </div>
   <aside class="home-side scroll">
-    <section class="panel ranking">
-      <h2>ランキング</h2>
+    <section class="panel ranking" bind:this={rankingPanel}>
+      <div class="ranking-heading">
+        <h2>ランキング</h2>
+        {#if session}<button
+            disabled={!selfLoaded && !selfRegion.value}
+            onclick={findSelf}>自分の順位</button
+          >{/if}
+      </div>
+      {#if rankTab === "total"}<label class="ranking-sort"
+          >集計項目<select
+            aria-label="ランキングの集計項目"
+            bind:value={rankSort}
+          >
+            <option value="exp">ポイント</option><option value="charCount"
+              >文字数</option
+            ><option value="likeCount">いいね</option>
+          </select></label
+        >{/if}
       <div class="tabs" aria-label="集計期間">
         {#each [["today", "今日"], ["week", "今週"], ["total", "累計"]] as [value, text]}<button
             class:active={rankTab === value}
@@ -223,25 +300,62 @@
           count={5}
         />{/if}
       <ol class="ranking-list">
-        {#each ranked as record, i (record.user.uid)}<li>
+        {#each ranked as record, i (record.user.uid)}
+          {@const own = record.user.uid === session?.uid}
+          <li
+            class:ranking-self={own}
+            class:ranking-pulse={own && pulse}
+            data-ranking-self={own ? "true" : undefined}
+            onanimationend={() => (pulse = false)}
+          >
             <span class="rank" class:leading={i < 3}>{i + 1}</span><Avatar
               user={record.user}
               small
             />
             <div class="rank-copy">
-              <strong>{record.user.displayName}</strong>
+              <strong
+                ><span class="ranking-name">{record.user.displayName}</span
+                >{#if own}<span class="ranking-self-tag">自分</span
+                  >{/if}</strong
+              >
               <div>
-                <span class="numeric"
-                  >{number(record.count)}{rankTab === "total"
-                    ? "pt"
-                    : "字"}</span
-                ><span class="muted">Lv.{number(record.user.level)}</span>
+                <span class="numeric">{number(record.count)}{unit}</span><span
+                  class="muted">Lv.{number(record.user.level)}</span
+                >
               </div>
             </div>
           </li>{:else}{#if !rankingRegion.pending}<li class="empty">
               この期間の活動はありません。
             </li>{/if}{/each}
       </ol>
+      {#if session && rankTab === "total" && !selfLoaded}
+        <RegionNotice region={selfRegion} />
+        {#if selfRegion.pending && !selfRegion.value}<p
+            class="caption muted"
+            role="status"
+          >
+            自分の順位を取得中
+          </p>{/if}
+        {#if selfRegion.value}
+          <div
+            class="ranking-self ranking-self-footer"
+            class:ranking-pulse={pulse}
+            data-ranking-self="true"
+            onanimationend={() => (pulse = false)}
+          >
+            <span
+              >{selfRegion.value.rank === null
+                ? "未集計"
+                : `${number(selfRegion.value.rank)}位`}</span
+            >
+            <strong>あなた</strong><span
+              >· {selfRegion.value.value === null
+                ? "—"
+                : `${number(selfRegion.value.value)}${unit}`}</span
+            >
+          </div>
+        {/if}
+      {/if}
     </section>
     {#if session && profile}<section class="panel own-record">
         <h2>あなたの記録</h2>

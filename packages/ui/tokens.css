@@ -36,6 +36,7 @@
   --surface: var(--color-ffffff);
   --surface-inset: var(--color-f7f5f1);
   --text: var(--color-202632);
+  --text-strong: var(--text);
   --text-muted: var(--color-68717d);
   --border: var(--color-dddcd6);
   --border-strong: var(--color-b9b7b0);

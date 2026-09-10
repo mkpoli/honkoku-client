@@ -2,7 +2,7 @@ use crate::{AppError, AppState};
 use futures_util::{StreamExt, TryStreamExt, stream};
 use honkoku_core::{
     auth::{Session, SessionStore, TokenManager, import_dev_session},
-    home::{RankingSort, TimelineFilter as CoreTimelineFilter},
+    home::{RankingSelf, RankingSort, TimelineFilter as CoreTimelineFilter},
     model::{Announcement, DailyProgress, Label, TimelineEvent, TimelineItem, User},
 };
 use serde::{Deserialize, Serialize};
@@ -269,17 +269,35 @@ pub enum Sort {
     #[serde(rename = "likeCount")]
     LikeCount,
 }
+impl From<Sort> for RankingSort {
+    fn from(sort: Sort) -> Self {
+        match sort {
+            Sort::Exp => Self::Exp,
+            Sort::CharCount => Self::CharCount,
+            Sort::LikeCount => Self::LikeCount,
+        }
+    }
+}
+#[tauri::command]
+pub async fn home_ranking_self(
+    sort: Sort,
+    state: State<'_, AppState>,
+) -> Result<RankingSelf, AppError> {
+    Ok(state
+        .connection
+        .read()
+        .await
+        .client
+        .ranking_self(sort.into())
+        .await?)
+}
 #[tauri::command]
 pub async fn home_ranking(
     sort: Sort,
     limit: Option<u32>,
     state: State<'_, AppState>,
 ) -> Result<Vec<User>, AppError> {
-    let sort = match sort {
-        Sort::Exp => RankingSort::Exp,
-        Sort::CharCount => RankingSort::CharCount,
-        Sort::LikeCount => RankingSort::LikeCount,
-    };
+    let sort = sort.into();
     Ok(state
         .connection
         .read()

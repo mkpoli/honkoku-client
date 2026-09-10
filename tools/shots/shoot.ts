@@ -1,5 +1,6 @@
 import { checkInlineEditor } from "./editor-checks";
 import {
+  checkRankingSelf,
   checkGlyphs,
   checkKunten,
   checkSearch,
@@ -34,7 +35,7 @@ const routes = [
 ] as const;
 async function available() {
   try {
-    const r = await fetch(origin, { signal: AbortSignal.timeout(1000) });
+    const r = await fetch(origin, { signal: AbortSignal.timeout(5000) });
     return r.ok && (await r.text()).includes("みんなで翻刻");
   } catch {
     return false;
@@ -156,7 +157,8 @@ try {
         );
       }),
     );
-    for (let attempt = 0; attempt < 100; attempt++) {
+    const startupDeadline = Date.now() + 60_000;
+    while (Date.now() < startupDeadline) {
       if (await available()) break;
       if (server.exitCode !== null)
         throw Error("Vite exited before becoming ready.");
@@ -166,6 +168,8 @@ try {
       throw Error("Vite did not start on the assigned port.");
   }
   browser = await chromium.launch({ headless: true });
+  for (const theme of ["light", "dark"] as const)
+    await checkRankingSelf(browser, origin, theme);
   for (const theme of ["light", "dark"] as const) await checkGlyphs(browser,origin,theme);
   if (process.env.HONKOKU_SHOTS_GLYPHS_ONLY === "1") { await browser.close(); browser=undefined; await stopServer(); process.exit(0); }
   for (const theme of ["light", "dark"] as const)

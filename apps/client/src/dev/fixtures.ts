@@ -22,6 +22,7 @@ import entryJson from "../../../../fixtures/api/entry-0916dafb80cdc48ca7687afcad
 import firestorePages from "../../../../fixtures/api/firestore-pages-0916dafb.json";
 import timelineJson from "../../../../fixtures/home/timeline.json";
 import projectTimelineJson from "../../../../fixtures/home/timeline-ainu.json";
+import rankingSelf from "../../../../fixtures/home/ranking-self.json";
 import rankingJson from "../../../../fixtures/home/ranking.json";
 import announcements from "../../../../fixtures/home/announcements.json";
 import whoami from "../../../../fixtures/home/whoami.json";
@@ -394,9 +395,23 @@ export async function fixtureInvoke(
       return announcements.slice(0, limit);
     case "home_ranking": {
       const key = (args.sort ?? "exp") as "exp" | "charCount" | "likeCount";
-      return [...ranking]
+      const outside =
+        sessionStorage.getItem("honkoku.fixture.rankingSelf") === "outside";
+      return ranking
+        .filter((user) => !outside || user.uid !== whoami.uid)
         .sort((a, b) => (b[key] ?? 0) - (a[key] ?? 0))
         .slice(0, limit);
+    }
+    case "home_ranking_self": {
+      if (!signedIn)
+        throw { kind: "signed_out", message: "ログインしてください。" };
+      const field = args.sort as keyof typeof rankingSelf;
+      if (!(field in rankingSelf))
+        throw { kind: "invalid", message: "集計項目が正しくありません。" };
+      return sessionStorage.getItem("honkoku.fixture.rankingUncounted") ===
+        "true"
+        ? { rank: null, value: null }
+        : rankingSelf[field];
     }
     case "home_timeline": {
       const filter = (args.filter ?? {}) as TimelineFilter;
