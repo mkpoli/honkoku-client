@@ -1,3 +1,4 @@
+import localOcr from "../../../../fixtures/api/ocr-local-0916dafb-3.json";
 import collectionFigures from "../../../../fixtures/home/collection-progress-ainu.json";
 import entrySummaries from "../../../../fixtures/api/entry-summaries-ainu.json";
 import selectedSummaries from "../../../../fixtures/api/entries-3R4VhlBfvOYeqPY13cJm.json";
@@ -157,6 +158,26 @@ export async function fixtureInvoke(
     );
   }
   switch (command) {
+    case "ocr_status":
+    case "ocr_setup":
+      return {
+        version: "0.3.0",
+        device: "cuda",
+        environment_ready: true,
+        models_ready: true,
+        model_version: "v18",
+        cuda_available: true,
+      };
+    case "ocr_result":
+    case "ocr_run_page":
+      return args.entryId === entry.id && Number(args.index) === 3
+        ? structuredClone(localOcr)
+        : null;
+    case "ocr_cancel":
+      return;
+    case "ocr_publish_page":
+      return;
+
     case "list_projects":
       return structuredClone(projects);
     case "get_project":

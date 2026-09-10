@@ -1,6 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 mod commands;
 mod iiif_protocol;
+mod ocr;
 mod signin;
 use honkoku_core::{
     HonkokuClient,
@@ -164,9 +165,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .register_asynchronous_uri_scheme_protocol("honkoku-iiif", iiif_protocol::handle)
         .setup(|app| {
             iiif_protocol::initialize(app)?;
+            app.manage(honkoku_ocr::OcrSidecar::new(
+                honkoku_ocr::OcrEnvironment::new(app.path().data_dir()?.join("honkoku-client")),
+            ));
             app.manage(commands::EditingState::default());
             app.manage(signin::SignInState::default());
-            let cache = app.path().app_cache_dir()?;
+            let cache = app.path().cache_dir()?.join("honkoku-client");
             std::fs::create_dir_all(&cache)?;
             use honkoku_core::auth::{FileStore, SessionStore, TokenManager};
             let storage = Arc::new(Mutex::new(Storage::open(cache.join("cache.sqlite"))?));
@@ -203,6 +207,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            ocr::ocr_status,
+            ocr::ocr_setup,
+            ocr::ocr_run_page,
+            ocr::ocr_cancel,
+            ocr::ocr_result,
+            ocr::ocr_publish_page,
             signin::session_sign_in,
             signin::session_capture,
             commands::session_import,
@@ -232,7 +242,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             iiif_protocol::iiif_prepare_entry,
             iiif_protocol::iiif_local_url
         ])
-        .run(tauri::generate_context!())?;
+        .build(tauri::generate_context!())?
+        .run(|app, event| {
+            if matches!(event, tauri::RunEvent::Exit) {
+                tauri::async_runtime::block_on(async {
+                    if let Some(engine) = app.try_state::<honkoku_ocr::OcrSidecar>() {
+                        let _ = engine.shutdown().await;
+                    }
+                });
+            }
+        });
     Ok(())
 }
 

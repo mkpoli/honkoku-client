@@ -26,6 +26,10 @@ struct Args {
 }
 #[derive(Subcommand)]
 enum Command {
+    Ocr {
+        #[command(subcommand)]
+        command: OcrCommand,
+    },
     Edit {
         #[command(subcommand)]
         command: EditCommand,
@@ -73,6 +77,21 @@ enum Command {
         entry_id: String,
         #[arg(long)]
         status: bool,
+    },
+}
+#[derive(Subcommand)]
+enum OcrCommand {
+    Status,
+    Setup {
+        #[arg(long)]
+        gpu: bool,
+    },
+    Page {
+        #[arg(value_name = "entryId")]
+        entry_id: String,
+        index: u32,
+        #[arg(long)]
+        publish: bool,
     },
 }
 #[derive(Subcommand)]
@@ -171,6 +190,66 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         client = client.with_session(TokenManager::new(session, store)?);
     }
     let output = match args.command {
+        Command::Ocr { command } => {
+            use honkoku_ocr::{OcrEngine, OcrEnvironment, OcrSidecar};
+            let engine = OcrSidecar::new(OcrEnvironment::new(data_dir.join("honkoku-client")));
+            let progress: honkoku_ocr::ProgressHandler =
+                Arc::new(|event| eprintln!("{}: {}", event.stage, event.message));
+            let result = async {
+                Ok::<_, Box<dyn std::error::Error>>(match command {
+                    OcrCommand::Status => pretty(&engine.status().await?)?,
+                    OcrCommand::Setup { gpu } => pretty(&engine.setup(gpu, progress).await?)?,
+                    OcrCommand::Page {
+                        entry_id,
+                        index,
+                        publish,
+                    } => {
+                        let images = honkoku_iiif::ImageCache::open(
+                            cache.join("iiif"),
+                            honkoku_iiif::DEFAULT_MAX_BYTES,
+                        )?;
+                        let http = reqwest::Client::builder()
+                            .redirect(reqwest::redirect::Policy::none())
+                            .build()?;
+                        let fetcher = honkoku_iiif::Fetcher::new(images, http);
+                        let page = honkoku_ocr::run_page(
+                            &engine, &client, &storage, &fetcher, &entry_id, index, progress,
+                        )
+                        .await?;
+                        if publish {
+                            client
+                                .write_ocr(&entry_id, index, "minna", page.site_result()?)
+                                .await?;
+                        }
+                        if args.json {
+                            pretty(&page)?
+                        } else {
+                            let mut text = page
+                                .lines
+                                .iter()
+                                .map(|line| {
+                                    format!(
+                                        "{} [{:.1}%] {}",
+                                        line.reading_order,
+                                        line.confidence * 100.0,
+                                        line.koji
+                                    )
+                                })
+                                .collect::<Vec<_>>()
+                                .join("\n");
+                            text.push_str(&format!(
+                                "\nTimings (s): {}\n",
+                                serde_json::to_string(&page.timings)?
+                            ));
+                            text
+                        }
+                    }
+                })
+            }
+            .await;
+            engine.shutdown().await?;
+            result?
+        }
         Command::Edit { command } => match command {
             EditCommand::Lock {
                 entry_id,

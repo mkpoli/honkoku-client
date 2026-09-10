@@ -1,6 +1,6 @@
 <script lang="ts">
   import { untrack } from "svelte";
-  import type { PageLines } from "../../../../packages/client-api/ocr";
+  import type { PageLines, LocalPageLines } from "../../../../packages/client-api/ocr";
   import OpenSeadragon from "openseadragon";
   import type { Canvas } from "@honkoku/client-api/types";
   let {
@@ -15,7 +15,7 @@
     canvas?: Canvas;
     pageNumber: number;
     half?: string;
-    lineModel?: PageLines;
+    lineModel?: PageLines | LocalPageLines;
     highlightedLine?: number | null;
     onlinehover?: (index: number | null) => void;
     onlineselect?: (index: number) => void;
@@ -224,7 +224,9 @@
     <h2>原本</h2>
     {#if (showLines || highlightedLine !== null) && lineModel.lines.length}<span
         class="caption muted"
-        >{lineModel.engine === "minna"
+        >{lineModel.engine === "local"
+          ? "ローカルOCR"
+          : lineModel.engine === "minna"
           ? "みんなで翻刻"
           : "国立国会図書館"}{lineModel.estimated ? "・推定" : ""}</span
       >{/if}

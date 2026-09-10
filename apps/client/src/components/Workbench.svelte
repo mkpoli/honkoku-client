@@ -8,7 +8,15 @@
     SaveOptions,
   } from "@honkoku/client-api/types";
   import { alignColumns, transcriptionColumns } from "@honkoku/markup";
-  import { pageLines } from "../../../../packages/client-api/ocr";
+  import { pageLinesWithLocal as pageLines } from "../../../../packages/client-api/ocr";
+  import OcrPanel from "./OcrPanel.svelte";
+  import type { LocalOcrPage } from "@honkoku/client-api/types";
+  import {
+    createEditor,
+    fromMarkup,
+    TextSelection,
+    textareaSource,
+  } from "@honkoku/editor";
   import Transcription from "./Transcription.svelte";
   import { date, notes, status, statusClass, user } from "../lib";
   import { href, parseRoute } from "../routes";
@@ -64,7 +72,41 @@
       ? (page.tempText ?? page.text)
       : page.text,
   );
-  let lineModel = $derived(pageLines(page, canvases[index]));
+  let localOcr = $state<LocalOcrPage | null>(null);
+  let lineModel = $derived(
+    pageLines({ ocr: { ...page.ocr, local: localOcr } }, canvases[index]),
+  );
+  let editorInstance: ReturnType<typeof createEditor> | undefined;
+  function insertOcr(text: string) {
+    if (!editing || busy || composing || !editorInstance) return;
+    const raw = document.querySelector<HTMLTextAreaElement>(
+      ".editor-raw-textarea",
+    );
+    if (raw) {
+      const end = raw.value.indexOf("\n", raw.selectionStart);
+      const position = end < 0 ? raw.value.length : end;
+      source = textareaSource(
+        source,
+        raw.value.slice(0, position) + "\n" + text + raw.value.slice(position),
+      );
+      saveState = "未保存の変更";
+      remember();
+      queue?.request(source);
+      return;
+    }
+    const instance = editorInstance;
+    instance.run((state, dispatch) => {
+      if (state.selection.$head.depth < 1) return false;
+      const position = state.selection.$head.after(1);
+      const content = fromMarkup(text).content;
+      const transaction = state.tr.insert(position, content);
+      transaction.setSelection(
+        TextSelection.near(transaction.doc.resolve(position + 1)),
+      );
+      dispatch?.(transaction.scrollIntoView());
+      return true;
+    });
+  }
   let columns = $derived(
     transcriptionColumns(editing ? source : displayedSource),
   );
@@ -411,11 +453,6 @@
   });
   let strip: HTMLDivElement;
   let notePanel: HTMLElement;
-  const ocrText = (v: Page["ocr"]) => ({
-    minna: typeof v?.minna === "string" ? v.minna : v?.minna?.text,
-    ndl: typeof v?.ndl === "string" ? v.ndl : v?.ndl?.text,
-  });
-  let ocr = $derived(ocrText(page.ocr));
   $effect(() => {
     index;
     noteIndex = null;
@@ -661,6 +698,7 @@
           <VerticalEditor
             bind:this={editor}
             bind:source
+            onready={(instance) => (editorInstance = instance)}
             onupdate={update}
             oncolumnchange={columnChange}
             {highlightedColumn}
@@ -689,28 +727,14 @@
     />
   </div>
   <div class="workbench-supplement">
-    <section class="panel ocr-panel">
-      <h2>OCR</h2>
-      <div class="ocr-columns scroll">
-        {#if ocr.minna}<div>
-            <h3>みんなで翻刻</h3>
-            {#if editing}<button
-                disabled={busy || composing}
-                onclick={() => appendOcr(ocr.minna!)}>本文に挿入</button
-              >{/if}
-            <pre>{ocr.minna}</pre>
-          </div>{/if}{#if ocr.ndl}<div>
-            <h3>国立国会図書館</h3>
-            {#if editing}<button
-                disabled={busy || composing}
-                onclick={() => appendOcr(ocr.ndl!)}>本文に挿入</button
-              >{/if}
-            <pre>{ocr.ndl}</pre>
-          </div>{/if}{#if !ocr.minna && !ocr.ndl}<p class="muted">
-            OCRの記録はありません。
-          </p>{/if}
-      </div>
-    </section>
+    <OcrPanel
+      {page}
+      {editing}
+      disabled={busy || composing}
+      onresult={(result) => (localOcr = result)}
+      oninsert={insertOcr}
+      oninsertall={appendOcr}
+    />
     <section class="panel notes-panel" bind:this={notePanel}>
       <h2>注記</h2>
       <div class="scroll">

@@ -300,3 +300,41 @@ export interface EntryProgress extends StatusCounts {
   size: number;
   fetchedAt: Timestamp;
 }
+
+export interface LocalOcrLine {
+  reading_order: number;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  confidence: number;
+  koji: string;
+  plain: string;
+  raw: string;
+}
+export interface LocalOcrPage {
+  width: number;
+  height: number;
+  processed_width: number;
+  processed_height: number;
+  model: string;
+  created_at: string;
+  lines: LocalOcrLine[];
+  timings: Record<string, number>;
+  warnings: string[];
+}
+export interface OcrStatus {
+  version: string | null;
+  device: string;
+  environment_ready: boolean;
+  models_ready: boolean;
+  model_version: string;
+  cuda_available: boolean;
+}
+export interface OcrProgress {
+  id: number;
+  stage: string;
+  done: number;
+  total: number;
+  message: string;
+}

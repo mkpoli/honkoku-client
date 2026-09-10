@@ -40,6 +40,7 @@ impl Storage {
             (1, include_str!("../migrations/001_cache.sql")),
             (2, include_str!("../migrations/002_home.sql")),
             (3, include_str!("../migrations/003_progress.sql")),
+            (4, include_str!("../migrations/004_ocr.sql")),
         ];
         if version > migrations.len() as u32 {
             return Err(Error::Invalid(
@@ -61,6 +62,21 @@ impl Storage {
         let result = operation(self)?;
         transaction.commit()?;
         Ok(result)
+    }
+    pub fn put_ocr<T: Serialize>(
+        &self,
+        page_id: &str,
+        model_version: &str,
+        payload: &T,
+    ) -> Result<()> {
+        self.connection.execute("INSERT INTO ocr_results(page_id,model_version,payload,created_at) VALUES (?1,?2,?3,?4) ON CONFLICT(page_id,model_version) DO UPDATE SET payload=excluded.payload,created_at=excluded.created_at", params![page_id,model_version,serde_json::to_string(payload)?,now()?])?;
+        Ok(())
+    }
+    pub fn ocr_result<T: DeserializeOwned>(&self, page_id: &str) -> Result<Option<T>> {
+        let payload: Option<String> = self.connection.query_row("SELECT payload FROM ocr_results WHERE page_id=? ORDER BY created_at DESC,model_version DESC LIMIT 1", [page_id], |row| row.get(0)).optional()?;
+        payload
+            .map(|text| serde_json::from_str(&text).map_err(Error::from))
+            .transpose()
     }
     fn put<T: Serialize>(&self, table: &str, record: &T) -> Result<()> {
         let value = serde_json::to_value(record)?;
@@ -368,7 +384,38 @@ mod tests {
         let versions: i64 =
             db.connection
                 .query_row("SELECT COUNT(*) FROM schema_version", [], |row| row.get(0))?;
-        assert_eq!(versions, 3);
+        assert_eq!(versions, 4);
+        Ok(())
+    }
+    #[test]
+    fn ocr_results_keep_model_versions_and_replace_a_rerun() -> Result<()> {
+        let db = Storage::in_memory()?;
+        db.put_ocr(
+            "page_3",
+            "v17",
+            &serde_json::json!({"model":"v17","text":"old"}),
+        )?;
+        db.put_ocr(
+            "page_3",
+            "v18",
+            &serde_json::json!({"model":"v18","text":"new"}),
+        )?;
+        db.put_ocr(
+            "page_3",
+            "v18",
+            &serde_json::json!({"model":"v18","text":"rerun"}),
+        )?;
+        let result: serde_json::Value = db
+            .ocr_result("page_3")?
+            .ok_or_else(|| Error::Invalid("missing OCR result".into()))?;
+        assert_eq!(result["text"], "rerun");
+        assert_eq!(
+            db.connection
+                .query_row("SELECT COUNT(*) FROM ocr_results", [], |row| row
+                    .get::<_, i64>(0))?,
+            2
+        );
+        assert!(db.ocr_result::<serde_json::Value>("page_4")?.is_none());
         Ok(())
     }
 }

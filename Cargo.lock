@@ -1872,8 +1872,11 @@ dependencies = [
  "clap",
  "directories",
  "honkoku-core",
+ "honkoku-iiif",
+ "honkoku-ocr",
  "honkoku-storage",
  "honkoku-text",
+ "reqwest",
  "serde",
  "serde_json",
  "tokio",
@@ -1887,6 +1890,7 @@ dependencies = [
  "futures-util",
  "honkoku-core",
  "honkoku-iiif",
+ "honkoku-ocr",
  "honkoku-storage",
  "honkoku-text",
  "reqwest",
@@ -1936,6 +1940,22 @@ dependencies = [
  "tokio",
  "url",
  "wiremock",
+]
+
+[[package]]
+name = "honkoku-ocr"
+version = "0.1.0"
+dependencies = [
+ "honkoku-core",
+ "honkoku-iiif",
+ "honkoku-storage",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "tempfile",
+ "thiserror 2.0.20",
+ "time",
+ "tokio",
 ]
 
 [[package]]
@@ -4862,6 +4882,7 @@ dependencies = [
  "libc",
  "mio",
  "pin-project-lite",
+ "signal-hook-registry",
  "socket2",
  "tokio-macros",
  "windows-sys 0.61.2",

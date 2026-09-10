@@ -1,6 +1,12 @@
 fn main() {
     tauri_build::try_build(tauri_build::Attributes::new().app_manifest(
         tauri_build::AppManifest::new().commands(&[
+            "ocr_status",
+            "ocr_setup",
+            "ocr_run_page",
+            "ocr_cancel",
+            "ocr_result",
+            "ocr_publish_page",
             "session_sign_in",
             "session_capture",
             "session_import",
