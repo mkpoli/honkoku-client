@@ -302,13 +302,13 @@ fn desktop_prefers_keyring_and_migrates_file_without_retaining_a_copy() -> Resul
     let keyring = Arc::new(FileStore::new(dir.path().join("fake-keyring.json")));
     let path = dir.path().join("session.json");
     FileStore::new(&path).save(&session(60)?)?;
-    let store = DesktopStore::select(Ok(keyring.clone()), FileStore::new(&path))?;
+    let store = DesktopStore::select(Ok(keyring.clone()), FileStore::new(&path));
     assert_eq!(store.kind(), CredentialStore::Os);
     assert!(!path.exists());
     assert_eq!(store.load()?.ok_or(Error::SignedOut)?.uid, "fixture-user");
     // An existing OS credential takes precedence even over a malformed file.
     std::fs::write(&path, "malformed")?;
-    let store = DesktopStore::select(Ok(keyring), FileStore::new(&path))?;
+    let store = DesktopStore::select(Ok(keyring), FileStore::new(&path));
     assert_eq!(store.kind(), CredentialStore::Os);
     assert!(!path.exists());
     store.clear()?;
@@ -316,30 +316,51 @@ fn desktop_prefers_keyring_and_migrates_file_without_retaining_a_copy() -> Resul
     Ok(())
 }
 #[test]
-fn desktop_falls_back_only_for_unavailable_keyring() -> Result<()> {
+fn desktop_falls_back_to_the_file_for_any_keyring_failure() -> Result<()> {
     let dir = tempfile::tempdir()?;
     let path = dir.path().join("session.json");
     let store = DesktopStore::select(
         Err(Error::Keyring(keyring::Error::NoDefaultStore)),
         FileStore::new(&path),
-    )?;
+    );
     assert_eq!(store.kind(), CredentialStore::File);
+    assert!(store.fallback_reason().is_some());
     store.save(&session(60)?)?;
     assert!(path.exists());
-    assert!(
-        DesktopStore::select(
-            Err(Error::Invalid("malformed credential".into())),
-            FileStore::new(&path)
-        )
-        .is_err()
+    // A credential that cannot be written to the OS store keeps the file copy.
+    let store = DesktopStore::select(
+        Err(Error::Keyring(keyring::Error::TooLong(
+            "session".into(),
+            1200,
+        ))),
+        FileStore::new(&path),
     );
+    assert_eq!(store.kind(), CredentialStore::File);
+    assert!(path.exists());
+    assert_eq!(store.load()?.ok_or(Error::SignedOut)?.uid, "fixture-user");
+    Ok(())
+}
+#[test]
+fn stored_credential_drops_the_id_token_and_expires_immediately() -> Result<()> {
+    let original = session(60)?;
+    let restored: Session = StoredCredential::from(&original).into();
+    assert_eq!(restored.uid, original.uid);
+    assert_eq!(restored.refresh_token, original.refresh_token);
+    assert!(restored.id_token.is_empty());
+    assert!(restored.expires_at.0 < OffsetDateTime::now_utc());
+    let json = serde_json::to_string(&StoredCredential::from(&original))?;
+    assert!(json.chars().count() <= MAX_CREDENTIAL_CHARS);
     Ok(())
 }
 #[test]
 #[ignore = "probes the host credential service without writing credentials"]
 fn desktop_host_store_probe() -> Result<()> {
     let dir = tempfile::tempdir()?;
-    let store = DesktopStore::new(dir.path().join("session.json"))?;
-    println!("desktop credential store: {:?}", store.kind());
+    let store = DesktopStore::new(dir.path().join("session.json"));
+    println!(
+        "desktop credential store: {:?} ({})",
+        store.kind(),
+        store.fallback_reason().unwrap_or("os store in use")
+    );
     Ok(())
 }

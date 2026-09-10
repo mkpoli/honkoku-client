@@ -64,15 +64,58 @@ impl KeyringStore {
     }
 }
 
+/// What the OS credential store keeps. Windows caps a credential at 2,560
+/// bytes of UTF-16, so the short-lived ID token stays out; a session loaded
+/// from here carries an expired token and is refreshed on first use.
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct StoredCredential {
+    api_key: String,
+    uid: String,
+    email: Option<String>,
+    display_name: Option<String>,
+    #[serde(default)]
+    providers: Vec<String>,
+    refresh_token: String,
+}
+impl From<&Session> for StoredCredential {
+    fn from(session: &Session) -> Self {
+        Self {
+            api_key: session.api_key.clone(),
+            uid: session.uid.clone(),
+            email: session.email.clone(),
+            display_name: session.display_name.clone(),
+            providers: session.providers.clone(),
+            refresh_token: session.refresh_token.clone(),
+        }
+    }
+}
+impl From<StoredCredential> for Session {
+    fn from(stored: StoredCredential) -> Self {
+        Self {
+            api_key: stored.api_key,
+            uid: stored.uid,
+            email: stored.email,
+            display_name: stored.display_name,
+            providers: stored.providers,
+            refresh_token: stored.refresh_token,
+            id_token: String::new(),
+            expires_at: Timestamp(OffsetDateTime::UNIX_EPOCH),
+        }
+    }
+}
+/// Below the Windows limit with room for the store's own overhead.
+const MAX_CREDENTIAL_CHARS: usize = 1_200;
+
 impl SessionStore for KeyringStore {
     fn load(&self) -> Result<Option<Session>> {
         match self.entry.get_password() {
             Ok(json) => {
-                let session: Session = serde_json::from_str(&json)?;
-                if self.uid.as_ref().is_some_and(|uid| uid != &session.uid) {
+                let stored: StoredCredential = serde_json::from_str(&json)?;
+                if self.uid.as_ref().is_some_and(|uid| uid != &stored.uid) {
                     return Err(Error::Invalid("credential uid mismatch".into()));
                 }
-                Ok(Some(session))
+                Ok(Some(stored.into()))
             }
             Err(keyring::Error::NoEntry) => Ok(None),
             Err(error) => Err(error.into()),
@@ -82,7 +125,14 @@ impl SessionStore for KeyringStore {
         if self.uid.as_ref().is_some_and(|uid| uid != &session.uid) {
             return Err(Error::Invalid("credential uid mismatch".into()));
         }
-        Ok(self.entry.set_password(&serde_json::to_string(session)?)?)
+        let json = serde_json::to_string(&StoredCredential::from(session))?;
+        if json.chars().count() > MAX_CREDENTIAL_CHARS {
+            return Err(Error::Keyring(keyring::Error::TooLong(
+                "session".into(),
+                MAX_CREDENTIAL_CHARS as u32,
+            )));
+        }
+        Ok(self.entry.set_password(&json)?)
     }
     fn clear(&self) -> Result<()> {
         match self.entry.delete_credential() {
@@ -145,29 +195,29 @@ pub enum CredentialStore {
 }
 
 /// Select the OS store at startup, migrating an existing file session when possible.
-/// Malformed or ambiguous credentials are errors, never a reason to use plaintext.
+/// Any failure of the OS store falls back to the file store; the application
+/// must start regardless of the credential store's state.
 pub struct DesktopStore {
     store: Arc<dyn SessionStore>,
     kind: CredentialStore,
+    fallback_reason: Option<String>,
 }
 impl DesktopStore {
-    pub fn new(path: impl Into<PathBuf>) -> Result<Self> {
+    pub fn new(path: impl Into<PathBuf>) -> Self {
         Self::select(
             KeyringStore::desktop().map(|s| Arc::new(s) as Arc<dyn SessionStore>),
             FileStore::new(path),
         )
     }
-    fn select(keyring: Result<Arc<dyn SessionStore>>, file: FileStore) -> Result<Self> {
-        let unavailable = |error: &Error| {
-            matches!(
-                error,
-                Error::Keyring(
-                    keyring::Error::NoDefaultStore
-                        | keyring::Error::NoStorageAccess(_)
-                        | keyring::Error::PlatformFailure(_)
-                )
-            )
-        };
+    /// The file store only, for platforms or situations without an OS store.
+    pub fn file(path: impl Into<PathBuf>, reason: impl Into<String>) -> Self {
+        Self {
+            store: Arc::new(FileStore::new(path)),
+            kind: CredentialStore::File,
+            fallback_reason: Some(reason.into()),
+        }
+    }
+    fn select(keyring: Result<Arc<dyn SessionStore>>, file: FileStore) -> Self {
         let selected = keyring.and_then(|store| {
             if store.load()?.is_none()
                 && let Some(session) = file.load()?
@@ -178,21 +228,30 @@ impl DesktopStore {
         });
         match selected {
             Ok(store) => {
-                file.clear()?;
-                Ok(Self {
+                // A file copy that cannot be removed is reported, not fatal.
+                let fallback_reason = file
+                    .clear()
+                    .err()
+                    .map(|error| format!("file session not removed: {error}"));
+                Self {
                     store,
                     kind: CredentialStore::Os,
-                })
+                    fallback_reason,
+                }
             }
-            Err(error) if unavailable(&error) => Ok(Self {
+            Err(error) => Self {
                 store: Arc::new(file),
                 kind: CredentialStore::File,
-            }),
-            Err(error) => Err(error),
+                fallback_reason: Some(error.to_string()),
+            },
         }
     }
     pub fn kind(&self) -> CredentialStore {
         self.kind
+    }
+    /// Why the OS store is not in use, or a warning about the migration.
+    pub fn fallback_reason(&self) -> Option<&str> {
+        self.fallback_reason.as_deref()
     }
 }
 impl SessionStore for DesktopStore {

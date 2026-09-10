@@ -164,49 +164,67 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .plugin(tauri_plugin_opener::init())
         .register_asynchronous_uri_scheme_protocol("honkoku-iiif", iiif_protocol::handle)
         .setup(|app| {
-            iiif_protocol::initialize(app)?;
-            app.manage(honkoku_ocr::OcrSidecar::new(
-                honkoku_ocr::OcrEnvironment::new(app.path().data_dir()?.join("honkoku-client")),
-            ));
-            app.manage(commands::EditingState::default());
-            app.manage(signin::SignInState::default());
-            let cache = app.path().cache_dir()?.join("honkoku-client");
-            std::fs::create_dir_all(&cache)?;
-            use honkoku_core::auth::{DesktopStore, SessionStore, TokenManager};
-            let storage = Arc::new(Mutex::new(Storage::open(cache.join("cache.sqlite"))?));
-            let store = Arc::new(DesktopStore::new(
-                app.path().app_data_dir()?.join("session.json"),
-            )?);
-            let stored = store.load()?;
-            let session = stored
-                .as_ref()
-                .map(|session| commands::SessionInfo::new(session, store.kind()));
-            let mut client = HonkokuClient::new()?.with_storage(storage.clone());
-            if let Some(stored) = stored {
-                client = client.with_session(TokenManager::new(stored, store.clone())?);
-            }
-            app.manage(AppState {
-                connection: tokio::sync::RwLock::new(Connection { client, session }),
-                storage,
-                store,
-            });
-            #[cfg(debug_assertions)]
-            if std::env::var_os("HONKOKU_SIGNIN_PROBE").is_some() {
-                let handle = app.handle().clone();
-                tauri::async_runtime::spawn(async move {
-                    let result = signin::session_sign_in(
-                        handle.clone(),
-                        handle.state::<signin::SignInState>(),
-                        honkoku_core::auth::SignInProvider::Twitter,
-                    )
-                    .await;
-                    println!(
-                        "signin probe command: {}",
-                        if result.is_ok() { "ok" } else { "failed" }
-                    );
+            install_diagnostics(app);
+            let result = (|| -> Result<(), Box<dyn std::error::Error>> {
+                iiif_protocol::initialize(app)?;
+                app.manage(honkoku_ocr::OcrSidecar::new(
+                    honkoku_ocr::OcrEnvironment::new(app.path().data_dir()?.join("honkoku-client")),
+                ));
+                app.manage(commands::EditingState::default());
+                app.manage(signin::SignInState::default());
+                let cache = app.path().cache_dir()?.join("honkoku-client");
+                std::fs::create_dir_all(&cache)?;
+                use honkoku_core::auth::{DesktopStore, SessionStore, TokenManager};
+                let storage = Arc::new(Mutex::new(Storage::open(cache.join("cache.sqlite"))?));
+                let store = Arc::new(DesktopStore::new(
+                    app.path().app_data_dir()?.join("session.json"),
+                ));
+                if let Some(reason) = store.fallback_reason() {
+                    diagnostic(app, &format!("credential store: {reason}"));
+                }
+                // A credential that cannot be read means signed out, never a failed start.
+                let stored = match store.load() {
+                    Ok(stored) => stored,
+                    Err(error) => {
+                        diagnostic(app, &format!("stored session ignored: {error}"));
+                        let _ = store.clear();
+                        None
+                    }
+                };
+                let session = stored
+                    .as_ref()
+                    .map(|session| commands::SessionInfo::new(session, store.kind()));
+                let mut client = HonkokuClient::new()?.with_storage(storage.clone());
+                if let Some(stored) = stored {
+                    client = client.with_session(TokenManager::new(stored, store.clone())?);
+                }
+                app.manage(AppState {
+                    connection: tokio::sync::RwLock::new(Connection { client, session }),
+                    storage,
+                    store,
                 });
+                #[cfg(debug_assertions)]
+                if std::env::var_os("HONKOKU_SIGNIN_PROBE").is_some() {
+                    let handle = app.handle().clone();
+                    tauri::async_runtime::spawn(async move {
+                        let result = signin::session_sign_in(
+                            handle.clone(),
+                            handle.state::<signin::SignInState>(),
+                            honkoku_core::auth::SignInProvider::Twitter,
+                        )
+                        .await;
+                        println!(
+                            "signin probe command: {}",
+                            if result.is_ok() { "ok" } else { "failed" }
+                        );
+                    });
+                }
+                Ok(())
+            })();
+            if let Err(error) = &result {
+                diagnostic(app, &format!("startup failed: {error}"));
             }
-            Ok(())
+            result
         })
         .invoke_handler(tauri::generate_handler![
             ocr::ocr_status,
@@ -249,14 +267,58 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .build(tauri::generate_context!())?
         .run(|app, event| {
             if matches!(event, tauri::RunEvent::Exit) {
+                // A sidecar that is busy installing or recognising must not keep
+                // the process alive after the last window closes.
                 tauri::async_runtime::block_on(async {
                     if let Some(engine) = app.try_state::<honkoku_ocr::OcrSidecar>() {
-                        let _ = engine.shutdown().await;
+                        let _ = tokio::time::timeout(
+                            std::time::Duration::from_secs(2),
+                            engine.shutdown(),
+                        )
+                        .await;
                     }
                 });
+                std::process::exit(0);
             }
         });
     Ok(())
+}
+
+/// Startup problems and panics are written to the platform log directory,
+/// since a release build on Windows has no console to show them.
+fn diagnostics_path(app: &tauri::App) -> Option<std::path::PathBuf> {
+    let dir = app.path().app_log_dir().ok()?;
+    std::fs::create_dir_all(&dir).ok()?;
+    Some(dir.join("startup.log"))
+}
+fn diagnostic(app: &tauri::App, message: &str) {
+    if let Some(path) = diagnostics_path(app) {
+        append_line(&path, message);
+    }
+}
+fn append_line(path: &std::path::Path, message: &str) {
+    use std::io::Write;
+    if let Ok(mut file) = std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(path)
+    {
+        let seconds = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs())
+            .unwrap_or_default();
+        let _ = writeln!(file, "{seconds} {message}");
+    }
+}
+fn install_diagnostics(app: &tauri::App) {
+    let Some(path) = diagnostics_path(app) else {
+        return;
+    };
+    let previous = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |info| {
+        append_line(&path, &format!("panic: {info}"));
+        previous(info);
+    }));
 }
 
 #[cfg(test)]
