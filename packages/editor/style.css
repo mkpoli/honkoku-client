@@ -49,7 +49,9 @@
   inline-size: 100%;
   padding: 4px;
   caret-color: var(--accent);
-  cursor: default;
+  cursor: text;
+  user-select: text;
+  -webkit-user-select: text;
   outline: none;
   flex-shrink: 0;
 }
@@ -58,12 +60,9 @@
   block-size: auto;
   height: auto;
   min-width: 44px;
-  padding: 0 8px;
+  padding: 0 4px;
   margin: 0;
   border-inline-start: 1px solid transparent;
-}
-.vertical-editor:focus .transcription-column:has(.ProseMirror-selectednode) {
-  background: var(--selection);
 }
 .vertical-editor ::selection {
   background: var(--selection);
@@ -85,45 +84,100 @@
   font: 400 13px/18px var(--font-sans);
 }
 .editor-annotation {
+  line-height: 1;
+  white-space: nowrap;
+}
+.editor-segment {
+  white-space: pre-wrap;
+  min-inline-size: 0.5em;
+  cursor: text;
+}
+.editor-segment:empty,
+.editor-segment.editor-empty-field {
+  display: inline-block;
+  min-inline-size: 1em;
+  min-block-size: 1em;
+  outline: 1px dotted var(--border-strong);
+}
+.editor-ruby {
+  ruby-position: over;
+  ruby-align: center;
+  ruby-overhang: auto;
+
+  position: relative;
+
+  display: inline-block;
+  vertical-align: baseline;
+}
+.editor-ruby > .editor-right,
+.editor-ruby > .editor-left {
+  font-size: 0.5em;
+  line-height: 1;
+
+  position: absolute;
+  display: block;
+  inset-block-start: -1em;
+  inset-inline-start: 50%;
+  inline-size: max-content;
+  transform: translateY(-50%);
+  white-space: nowrap;
+
+  writing-mode: inherit;
+}
+.editor-ruby > .editor-left {
+  ruby-position: under;
+
+  inset-block-start: auto;
+  inset-block-end: -1em;
+}
+
+.editor-warigaki {
   display: inline-flex;
   writing-mode: horizontal-tb;
   flex-direction: row-reverse;
-  vertical-align: top;
   align-items: flex-start;
-  line-height: 1.4;
+  vertical-align: middle;
+  font-size: 0.5em;
+  line-height: 1.15;
 }
-.editor-segment {
+.editor-warigaki > .editor-segment {
   writing-mode: vertical-rl;
-  white-space: pre-wrap;
-  min-inline-size: 0.5em;
+  flex: none;
+  inline-size: max-content;
+  min-block-size: 1.15em;
 }
-.editor-ruby > .editor-base {
-  order: 1;
-}
-.editor-ruby > .editor-right {
-  order: 0;
-}
-.editor-ruby > .editor-left {
-  order: 2;
-}
-.editor-ruby > .editor-right,
-.editor-ruby > .editor-left,
-.editor-warigaki {
-  font-size: 13px;
-  line-height: 18px;
+.editor-misekechi {
+  display: inline-block;
+  position: relative;
+  vertical-align: baseline;
 }
 .editor-misekechi > .editor-base {
   text-decoration: line-through;
+  text-decoration-thickness: 1px;
+}
+.editor-misekechi > .editor-right {
+  position: absolute;
+  font-size: 0.5em;
+  inset-block-start: -1em;
+  inset-inline-start: 50%;
+  transform: translateY(-50%);
+  inline-size: max-content;
 }
 .editor-kenten > .editor-base {
   text-emphasis: var(--kenten-mark, "﹅");
+  text-emphasis-position: over right;
 }
 .editor-kenten > .editor-right {
-  font-size: 13px;
+  font-size: 0.5em;
   color: var(--link);
+
+  position: absolute;
+  inline-size: 0;
+  block-size: 0;
+  overflow: hidden;
 }
 .editor-rightLine {
-  border-inline-end: 1px solid currentColor;
+  border-block-start: 1px solid currentColor;
 }
 .editor-title {
   font-weight: 600;
@@ -133,13 +187,12 @@
   padding: 2px;
 }
 .editor-place {
-  text-decoration: underline;
-  text-decoration-style: dotted;
+  text-decoration: underline dotted;
 }
 .editor-return,
 .editor-okurigana {
-  font-size: 13px;
-  line-height: 18px;
+  font-size: 0.5em;
+  line-height: 1;
   vertical-align: bottom;
 }
 .editor-raw {
@@ -191,32 +244,26 @@
   padding: 2px 8px;
   font: 400 20px/28px var(--editor-font);
 }
-.construct-dialog {
-  width: min(400px, calc(100vw - 32px));
-  padding: 24px;
-  color: var(--text);
-  background: var(--surface);
-  border: 1px solid var(--border-strong);
-  border-radius: 7px;
-}
-.construct-dialog::backdrop {
-  background: #0004;
-}
-.construct-dialog form,
-.construct-dialog label {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.construct-dialog form {
-  gap: 16px;
-}
-.construct-dialog h2 {
-  margin: 0;
-}
 .dialog-actions {
   display: flex;
   gap: 8px;
+}
+.editor-note-popover label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 12px 0;
+}
+.editor-note-popover textarea {
+  min-height: 90px;
+  width: 100%;
+  resize: vertical;
+}
+.editor-status {
+  margin: 0;
+  padding: 4px 12px;
+  font-size: 13px;
+  color: var(--text-muted);
 }
 .editor-raw-textarea {
   flex: 1;
@@ -250,10 +297,9 @@
   font-family: var(--editor-font);
 }
 
-.vertical-editor .editor-active-column,
-.vertical-editor .alignment-active-column {
-  background: var(--selection);
-  border-block-end: 1px solid var(--focus);
+.transcription-column.editor-active-column {
+  background: color-mix(in srgb, var(--selection) 6%, transparent);
+  box-shadow: inset -2px 0 var(--accent);
 }
 
 .editor-workspace,
@@ -265,13 +311,51 @@
   width: 100%;
 }
 
-.editor-segment {
-  min-width: 1em;
-  cursor: text;
-}
 .editor-raw-textarea {
   caret-color: var(--accent);
 }
 .editor-token.markup-reference {
   cursor: pointer;
+}
+
+.transcription-column:hover {
+  background: color-mix(in srgb, var(--selection) 6%, transparent);
+}
+
+.editor-misekechi:has(> .editor-base .editor-ruby) > .editor-right {
+  inset-block-start: -2em;
+}
+.editor-kenten {
+  position: relative;
+}
+
+.editor-kenten > .editor-right:focus-within {
+  inline-size: auto;
+  block-size: auto;
+}
+
+.editor-reading {
+  font-size: inherit;
+  line-height: inherit;
+  display: block;
+}
+
+.editor-warigaki > .editor-segment:has(.editor-ruby, .editor-misekechi) {
+  padding-block-start: 0.5em;
+}
+.transcription.horizontal .editor-warigaki {
+  flex-direction: column;
+}
+.transcription.horizontal .editor-warigaki > .editor-segment {
+  writing-mode: horizontal-tb;
+}
+.transcription.horizontal .editor-ruby > .editor-right,
+.transcription.horizontal .editor-ruby > .editor-left,
+.transcription.horizontal .editor-misekechi > .editor-right {
+  transform: translateX(-50%);
+}
+
+.vertical-editor .alignment-active-column:not(.editor-active-column) {
+  background: color-mix(in srgb, var(--selection) 6%, transparent);
+  box-shadow: none;
 }

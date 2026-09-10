@@ -1185,23 +1185,6 @@ main {
   background: var(--selection);
   border: 0;
 }
-.transcription ruby rt {
-  font-size: 13px;
-}
-.markup-warichu,
-.markup-correction {
-  display: inline-flex;
-  flex-direction: row;
-  align-items: flex-start;
-  font-size: 13px;
-  line-height: 18px;
-  vertical-align: middle;
-  writing-mode: horizontal-tb;
-}
-.markup-correction {
-  font-size: 26px;
-  line-height: 36px;
-}
 .markup-reading {
   position: relative;
   padding-right: 8px;
@@ -1499,42 +1482,6 @@ main {
 .compact .tabs button {
   flex: 1;
 }
-.markup-warichu > span,
-.markup-correction > span,
-.markup-correction > s {
-  writing-mode: vertical-rl;
-}
-.horizontal .markup-warichu {
-  flex-direction: column;
-}
-.horizontal .markup-warichu > span,
-.horizontal .markup-correction > span,
-.horizontal .markup-correction > s {
-  writing-mode: horizontal-tb;
-}
-
-.markup-rightLine {
-  border-block-start: 1px solid currentColor;
-}
-.markup-title {
-  font-weight: 600;
-}
-.markup-box {
-  border: 1px solid currentColor;
-}
-.markup-place {
-  text-decoration: underline dotted;
-}
-.markup-double-ruby {
-  ruby-position: under;
-}
-.markup-double-ruby > ruby {
-  ruby-position: over;
-}
-.markup-left-ruby {
-  font-size: 13px;
-}
-
 .workbench {
   position: relative;
 }
@@ -1702,7 +1649,7 @@ main {
   min-width: 0;
 }
 .transcription-column.alignment-active-column {
-  background: var(--selection);
+  background: color-mix(in srgb, var(--selection) 6%, transparent);
 }
 button.line-overlay {
   padding: 0;
