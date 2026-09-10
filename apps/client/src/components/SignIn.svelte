@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import type { SignInProvider } from "@honkoku/client-api/types";
+  import { sessionCurrent } from "@honkoku/client-api/invoke";
+  import type { CredentialStore, SignInProvider } from "@honkoku/client-api/types";
   let {
     mode = "signin",
     busy = false,
@@ -20,7 +21,13 @@
   } = $props();
   let dialog: HTMLDialogElement;
   let clearSiteData = $state(false);
-  onMount(() => dialog.showModal());
+  let credentialStore = $state<CredentialStore>();
+  onMount(() => {
+    dialog.showModal();
+    if (mode === "signout") void sessionCurrent().then((session) => {
+      credentialStore = session?.credential_store;
+    }).catch(() => {});
+  });
 </script>
 
 <dialog bind:this={dialog} {onclose} aria-labelledby="signin-title">
@@ -37,6 +44,7 @@
         disabled={busy}
         onclick={() => onprovider("google.com")}>Googleでログイン</button
       >
+      <p class="caption">Googleは埋め込みブラウザーでのログインを拒否することがあります。その場合はXでログインしてください。</p>
       <button disabled={busy} onclick={() => onprovider("twitter.com")}
         >Xでログイン</button
       >
@@ -48,6 +56,7 @@
       >開発用セッションを読み込む</button
     >
   {:else}
+    {#if credentialStore}<p role="status">{credentialStore === "os" ? "資格情報はOSに保存" : "ファイルに保存"}</p>{/if}
     <label
       ><input
         type="checkbox"
@@ -102,6 +111,10 @@
   }
   .providers button {
     padding: 12px 16px;
+  }
+  .caption {
+    margin: 0;
+    color: var(--text-muted);
   }
   .import {
     display: block;

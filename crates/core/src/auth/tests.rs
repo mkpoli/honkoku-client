@@ -174,3 +174,172 @@ async fn failed_persistence_keeps_rotated_token_for_retry() -> Result<()> {
     );
     Ok(())
 }
+
+fn capture() -> CapturedSession {
+    CapturedSession {
+        attempt_id: "attempt".into(),
+        uid: "fixture-user".into(),
+        refresh_token: "fixture-refresh-token".into(),
+        id_token: "captured-id".into(),
+    }
+}
+fn lookup_user() -> serde_json::Value {
+    json!({"localId":"fixture-user", "email":"verified@example.test", "displayName":"確認済み",
+        "providerUserInfo":[{"providerId":"twitter.com"},{"providerId":"google.com"}]})
+}
+async fn lookup_mock(server: &MockServer, users: serde_json::Value) {
+    Mock::given(method("POST"))
+        .and(path("/lookup"))
+        .and(query_param("key", FIREBASE_API_KEY))
+        .and(wiremock::matchers::body_json(
+            json!({"idToken":"captured-id"}),
+        ))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({"users":users})))
+        .expect(1)
+        .mount(server)
+        .await;
+}
+async fn refresh_mock(server: &MockServer, response: ResponseTemplate) {
+    Mock::given(method("POST"))
+        .and(path("/refresh"))
+        .and(query_param("key", FIREBASE_API_KEY))
+        .and(body_string(
+            "grant_type=refresh_token&refresh_token=fixture-refresh-token",
+        ))
+        .respond_with(response)
+        .expect(1)
+        .mount(server)
+        .await;
+}
+#[tokio::test]
+async fn capture_verifies_lookup_then_refreshes_before_persistence() -> Result<()> {
+    let server = MockServer::start().await;
+    lookup_mock(&server, json!([lookup_user()])).await;
+    refresh_mock(
+        &server,
+        ResponseTemplate::new(200).set_body_json(refreshed()),
+    )
+    .await;
+    let session = capture()
+        .verify_with_endpoints(
+            SignInProvider::Twitter,
+            &format!("{}/lookup", server.uri()),
+            &format!("{}/refresh", server.uri()),
+        )
+        .await?;
+    assert_eq!(session.uid, "fixture-user");
+    assert_eq!(session.email.as_deref(), Some("verified@example.test"));
+    assert_eq!(session.display_name.as_deref(), Some("確認済み"));
+    assert_eq!(session.providers, ["twitter.com", "google.com"]);
+    assert_eq!(session.id_token, "new-id");
+    assert_eq!(session.refresh_token, "rotated-refresh");
+    let requests = server.received_requests().await.unwrap();
+    assert_eq!(
+        requests.iter().map(|r| r.url.path()).collect::<Vec<_>>(),
+        ["/lookup", "/refresh"]
+    );
+    let dir = tempfile::tempdir()?;
+    let store = FileStore::new(dir.path().join("session.json"));
+    store.save(&session)?;
+    assert_eq!(store.load()?.ok_or(Error::SignedOut)?.id_token, "new-id");
+    Ok(())
+}
+#[tokio::test]
+async fn capture_rejects_lookup_uid_provider_and_user_count() {
+    let mut wrong_uid = lookup_user();
+    wrong_uid["localId"] = json!("someone-else");
+    let mut wrong_provider = lookup_user();
+    wrong_provider["providerUserInfo"] = json!([{"providerId":"google.com"}]);
+    for users in [
+        json!([wrong_uid]),
+        json!([wrong_provider]),
+        json!([]),
+        json!([lookup_user(), lookup_user()]),
+    ] {
+        let server = MockServer::start().await;
+        lookup_mock(&server, users).await;
+        assert!(
+            capture()
+                .verify_with_endpoints(
+                    SignInProvider::Twitter,
+                    &format!("{}/lookup", server.uri()),
+                    &format!("{}/refresh", server.uri())
+                )
+                .await
+                .is_err()
+        );
+        assert_eq!(server.received_requests().await.unwrap().len(), 1);
+    }
+}
+#[tokio::test]
+async fn capture_rejects_failed_refresh_and_different_refresh_identity() {
+    let mut wrong_uid = refreshed();
+    wrong_uid["user_id"] = json!("someone-else");
+    for response in [
+        ResponseTemplate::new(400)
+            .set_body_json(json!({"error":{"message":"INVALID_REFRESH_TOKEN"}})),
+        ResponseTemplate::new(503).set_body_json(json!({})),
+        ResponseTemplate::new(200).set_body_json(wrong_uid),
+    ] {
+        let server = MockServer::start().await;
+        lookup_mock(&server, json!([lookup_user()])).await;
+        refresh_mock(&server, response).await;
+        assert!(
+            capture()
+                .verify_with_endpoints(
+                    SignInProvider::Twitter,
+                    &format!("{}/lookup", server.uri()),
+                    &format!("{}/refresh", server.uri())
+                )
+                .await
+                .is_err()
+        );
+    }
+}
+#[test]
+fn desktop_prefers_keyring_and_migrates_file_without_retaining_a_copy() -> Result<()> {
+    let dir = tempfile::tempdir()?;
+    let keyring = Arc::new(FileStore::new(dir.path().join("fake-keyring.json")));
+    let path = dir.path().join("session.json");
+    FileStore::new(&path).save(&session(60)?)?;
+    let store = DesktopStore::select(Ok(keyring.clone()), FileStore::new(&path))?;
+    assert_eq!(store.kind(), CredentialStore::Os);
+    assert!(!path.exists());
+    assert_eq!(store.load()?.ok_or(Error::SignedOut)?.uid, "fixture-user");
+    // An existing OS credential takes precedence even over a malformed file.
+    std::fs::write(&path, "malformed")?;
+    let store = DesktopStore::select(Ok(keyring), FileStore::new(&path))?;
+    assert_eq!(store.kind(), CredentialStore::Os);
+    assert!(!path.exists());
+    store.clear()?;
+    assert!(store.load()?.is_none());
+    Ok(())
+}
+#[test]
+fn desktop_falls_back_only_for_unavailable_keyring() -> Result<()> {
+    let dir = tempfile::tempdir()?;
+    let path = dir.path().join("session.json");
+    let store = DesktopStore::select(
+        Err(Error::Keyring(keyring::Error::NoDefaultStore)),
+        FileStore::new(&path),
+    )?;
+    assert_eq!(store.kind(), CredentialStore::File);
+    store.save(&session(60)?)?;
+    assert!(path.exists());
+    assert!(
+        DesktopStore::select(
+            Err(Error::Invalid("malformed credential".into())),
+            FileStore::new(&path)
+        )
+        .is_err()
+    );
+    Ok(())
+}
+#[test]
+#[ignore = "probes the host credential service without writing credentials"]
+fn desktop_host_store_probe() -> Result<()> {
+    let dir = tempfile::tempdir()?;
+    let store = DesktopStore::new(dir.path().join("session.json"))?;
+    println!("desktop credential store: {:?}", store.kind());
+    Ok(())
+}

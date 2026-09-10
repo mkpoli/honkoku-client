@@ -9,6 +9,8 @@ fn main() {
             "ocr_publish_page",
             "session_sign_in",
             "session_capture",
+            "session_sign_in_retry",
+            "session_sign_in_complete",
             "session_import",
             "session_current",
             "session_clear",
