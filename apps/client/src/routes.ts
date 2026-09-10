@@ -4,11 +4,14 @@ export interface Route {
   entryId?: string;
   pageIndex?: number;
   invalid?: boolean;
+  editorSpike?: boolean;
 }
 export function parseRoute(hash: string): Route {
   try {
     const path = hash.replace(/^#/, "") || "/";
     if (path === "/") return {};
+    if (import.meta.env?.DEV && path === "/spike/editor")
+      return { editorSpike: true };
     const project = /^\/projects\/([^/]+)(?:\/collections\/([^/]+))?\/?$/.exec(
       path,
     );

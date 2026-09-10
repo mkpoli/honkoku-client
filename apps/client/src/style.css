@@ -1547,3 +1547,25 @@ main {
 .horizontal .markup-correction > s {
   writing-mode: horizontal-tb;
 }
+
+.markup-rightLine {
+  border-block-start: 1px solid currentColor;
+}
+.markup-title {
+  font-weight: 600;
+}
+.markup-box {
+  border: 1px solid currentColor;
+}
+.markup-place {
+  text-decoration: underline dotted;
+}
+.markup-double-ruby {
+  ruby-position: under;
+}
+.markup-double-ruby > ruby {
+  ruby-position: over;
+}
+.markup-left-ruby {
+  font-size: 13px;
+}

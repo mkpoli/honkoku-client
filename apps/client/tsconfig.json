@@ -29,6 +29,7 @@
     "src/**/*.ts",
     "src/**/*.svelte",
     "vite.config.ts",
-    "../../packages/**/*.ts"
+    "../../packages/**/*.ts",
+    "../../packages/editor/**/*.svelte"
   ]
 }
