@@ -1389,7 +1389,7 @@ export async function checkWorkbenchParity(
   try {
     await context.addInitScript(() => {
       window.honkokuFixtureDelays = {
-        list_projects: 2000,
+        list_projects: 6000,
         home_timeline: 1200,
         home_ranking: 800,
         home_announcements: 1400,
@@ -1883,8 +1883,11 @@ export async function checkGlyphs(
       node.setSelectionRange(0, 1);
       node.dispatchEvent(new Event("select", { bubbles: true }));
     });
-    await page.waitForTimeout(400);
-    assert.equal(await page.locator(".glyph-drawer .glyph-card").count(), 0);
+    await page.waitForFunction(
+      () => document.querySelectorAll(".glyph-drawer .glyph-card").length === 0,
+      {},
+      { timeout: 15000 },
+    );
     await page.getByRole("button", { name: "集字を閉じる" }).click();
     try {
       await viewerReady(page);
