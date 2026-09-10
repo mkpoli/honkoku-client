@@ -155,7 +155,19 @@ export function renderInline(nodes: Inline[]): string {
         case "reference":
           return `<button class="markup-reference" data-note="${node.number}" aria-label="注記${node.number}">＃${node.number}</button>`;
         case "reading":
-          return `<span class="markup-reading">${escape(node.base)}<span class="markup-return">${escape(node.returnMark)}</span><span class="markup-okurigana">${escape(node.okurigana)}</span></span>`;
+          return `<span class="markup-reading">${escape(node.base)}${[
+            ["return", node.returnMark],
+            ["okurigana", node.okurigana],
+          ]
+            .filter(([, value]) => value)
+            .map(([kind, value], i) => {
+              const length = Math.max(
+                [...node.returnMark].length,
+                [...node.okurigana].length,
+              );
+              return `<span class="markup-${kind} kunten-mark kunten-${kind}" style="--kunten-length:${length};--kunten-back:${i === 0 ? 0 : length};--kunten-offset:0">${escape(value)}</span>`;
+            })
+            .join("")}</span>`;
       }
     })
     .join("");

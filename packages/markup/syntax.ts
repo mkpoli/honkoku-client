@@ -63,7 +63,7 @@ export function allowsChild(parent: string, child: string): boolean {
   if (parent === "misekechi") return child === "ruby";
   return false;
 }
-function splitFields(source: string): string[] {
+export function splitFields(source: string): string[] {
   const fields: string[] = [];
   let depth = 0,
     start = 0;

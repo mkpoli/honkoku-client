@@ -1,16 +1,36 @@
 import type { CanvasLine } from "../client-api/ocr";
-import { parseLine } from "./syntax";
+import { parseLine, splitFields } from "./syntax";
 
 export function plainColumn(source: string): string {
+  if (/^\s*％/.test(source)) return "";
   return parseLine(source)
     .map((node) => {
+      // Older transcriptions include single-part or otherwise noneditable shells.
+      if (node.kind === "raw") {
+        const shell =
+          /^《(割書|振り仮名|見せ消ち|圏点|右線|題|箱|場所)：([\s\S]*)》$/.exec(
+            node.source,
+          );
+        if (shell) {
+          const fields = splitFields(shell[2]);
+          return shell[1] === "割書"
+            ? fields.map(plainColumn).join("")
+            : plainColumn(fields[0]);
+        }
+      }
       if (
-        ["divider", "editorial", "comment", "reference", "return"].includes(
-          node.kind,
-        )
+        [
+          "divider",
+          "editorial",
+          "comment",
+          "reference",
+          "return",
+          "okurigana",
+        ].includes(node.kind)
       )
         return "";
-      if (node.kind === "warigaki") return node.segments!.map(plainColumn).join("");
+      if (node.kind === "warigaki")
+        return node.segments!.map(plainColumn).join("");
       return node.segments ? plainColumn(node.segments[0]) : node.source;
     })
     .join("");

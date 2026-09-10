@@ -1162,21 +1162,7 @@ main {
   border: 0;
 }
 .markup-reading {
-  position: relative;
-  padding-right: 8px;
-}
-.markup-return,
-.markup-okurigana {
-  position: absolute;
-  font-size: 13px;
-  line-height: 18px;
-  right: -8px;
-}
-.markup-return {
-  bottom: -4px;
-}
-.markup-okurigana {
-  top: -4px;
+  white-space: nowrap;
 }
 .half-tabs {
   display: flex;

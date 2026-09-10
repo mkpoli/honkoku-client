@@ -1012,6 +1012,7 @@
           inert={busy || verifying}
         >
           <VerticalEditor
+            accountId={session?.uid}
             bind:this={editor}
             bind:source
             onready={(instance) => (editorInstance = instance)}

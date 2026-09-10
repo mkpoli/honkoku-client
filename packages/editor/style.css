@@ -189,11 +189,26 @@
 .editor-place {
   text-decoration: underline dotted;
 }
-.editor-return,
-.editor-okurigana {
+/* Both sides reserve the longer run's height in the vertical column. */
+.kunten-mark {
+  display: inline-block;
+  position: relative;
   font-size: 0.5em;
   line-height: 1;
-  vertical-align: bottom;
+  inline-size: calc(var(--kunten-length, 1) * 1em);
+  block-size: 1em;
+  margin-inline-start: calc(var(--kunten-back, 0) * -1em);
+  padding-inline-start: calc(var(--kunten-offset, 0) * 1em);
+  box-sizing: border-box;
+  vertical-align: baseline;
+  color: var(--text);
+  white-space: nowrap;
+}
+.kunten-return {
+  inset-block-start: 0.65em;
+}
+.kunten-okurigana {
+  inset-block-start: -0.65em;
 }
 .editor-raw {
   color: var(--text-muted);
@@ -206,6 +221,7 @@
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
   position: relative;
+  flex-wrap: wrap;
   z-index: 4;
 }
 .palette-category {
@@ -226,7 +242,11 @@
   position: absolute;
   top: 100%;
   left: 0;
-  width: 260px;
+  width: 320px;
+  max-width: min(320px, 85vw);
+  max-height: var(--palette-height, 240px);
+  overflow-y: auto;
+  box-sizing: border-box;
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
@@ -358,4 +378,36 @@
 .vertical-editor .alignment-active-column:not(.editor-active-column) {
   background: color-mix(in srgb, var(--selection) 6%, transparent);
   box-shadow: none;
+}
+
+.palette-custom {
+  display: inline-flex;
+}
+.palette-custom button:last-child {
+  min-width: 22px;
+  padding: 2px;
+  font-size: 13px;
+}
+.palette-custom-input {
+  width: 100%;
+  min-width: 0;
+  padding: 4px 8px;
+}
+
+.palette-kanji {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+}
+.palette-kanji > button {
+  padding: 2px;
+}
+.palette-custom-input {
+  grid-column: 1 / -1;
+}
+.palette-kanji .palette-custom {
+  grid-column: span 2;
+}
+.palette-expressions button {
+  font-size: 17px;
+  white-space: nowrap;
 }

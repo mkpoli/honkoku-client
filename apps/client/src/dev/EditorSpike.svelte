@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import Transcription from "../components/Transcription.svelte";
   import VerticalEditor from "@honkoku/editor/VerticalEditor.svelte";
   import {
     historyKey,
@@ -10,6 +11,7 @@
   } from "./editor-harness";
   import { editorFixture } from "./editor-fixture";
   let source = $state(editorFixture.text);
+  let reading = $state(false);
   let serialized = $state(toMarkup(fromMarkup(editorFixture.text)));
   let column = $state(0),
     composing = $state(false);
@@ -41,6 +43,7 @@
         <span class="caption muted">↑↓文字　←→列　Enter改行</span>
       </div>
       <VerticalEditor
+        accountId="fixture-editor"
         bind:source
         onupdate={update}
         onready={(editor) => {
@@ -56,23 +59,26 @@
     </section>
     <section class="panel editor-source-panel">
       <div class="pane-toolbar">
-        <h2>原文</h2>
+        <h2>{reading ? "表示" : "原文"}</h2>
+        <button aria-pressed={reading} onclick={() => (reading = !reading)}
+          >表示を確認</button
+        >
         <output
           class="editor-equality"
           class:equal={serialized === source}
           aria-live="polite">{serialized === source ? "一致" : "不一致"}</output
         >
       </div>
-      <textarea
-        class="editor-raw-textarea"
-        aria-label="原文"
-        onkeydown={(event) => historyKey(event, window.editorSpike)}
-        value={source}
-        disabled={composing}
-        oninput={(event) =>
-          window.editorSpike?.setSource(
-            textareaSource(source, event.currentTarget.value),
-          )}></textarea>
+      {#if reading}<Transcription {source} />{:else}<textarea
+          class="editor-raw-textarea"
+          aria-label="原文"
+          onkeydown={(event) => historyKey(event, window.editorSpike)}
+          value={source}
+          disabled={composing}
+          oninput={(event) =>
+            window.editorSpike?.setSource(
+              textareaSource(source, event.currentTarget.value),
+            )}></textarea>{/if}
       <div class="editor-source-footer caption muted">
         {source.length.toLocaleString("ja-JP")}文字・{source.split(/\r\n|\r|\n/)
           .length}列

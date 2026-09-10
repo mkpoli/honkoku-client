@@ -225,6 +225,46 @@ export function toMarkup(doc: PMNode): string {
   );
   return source;
 }
+/** Preserve wrappers only for complete shells; any selected kunten retains its prefix. */
+export function selectedMarkup(doc: PMNode, from: number, to: number): string {
+  function selected(node: PMNode, pos: number): string {
+    const end = pos + node.nodeSize;
+    if (to <= pos || from >= end) return "";
+    if (node.isText)
+      return node.text!.slice(
+        Math.max(0, from - pos),
+        Math.min(node.nodeSize, to - pos),
+      );
+    if (from <= pos && to >= end && node.type.name !== "column")
+      return inlineSource(node);
+    const values: string[] = [];
+    node.forEach((child, offset) => {
+      const start = pos + 1 + offset;
+      if (to > start && from < start + child.nodeSize)
+        values.push(selected(child, start));
+    });
+    const text = values.join(
+      node.firstChild?.type.name === "segment" ? "｜" : "",
+    );
+    if (text && node.type.name === "okurigana") return `￣${text}`;
+    if (text && node.type.name === "return") return `＿${text}`;
+    return node.attrs.placeholder ? text.replace("\u200b", "") : text;
+  }
+  let result = "";
+  doc.forEach((column, pos, index) => {
+    result += selected(column, pos);
+    if (
+      index < doc.childCount - 1 &&
+      from < pos + column.nodeSize &&
+      to > pos + column.nodeSize
+    )
+      result += column.attrs.ending || doc.attrs.newline;
+  });
+  return result;
+}
+export function clipboardMarkup(text: string): Slice {
+  return new Slice(fromMarkup(text).content, 1, 1);
+}
 export interface SourcePatch {
   from: number;
   to: number;
@@ -480,6 +520,96 @@ export const insertText =
     dispatch?.(closeHistory(state.tr).insertText(text).scrollIntoView());
     return true;
   };
+const isKunten = (node: PMNode | null | undefined) =>
+  !!node && ["return", "okurigana"].includes(node.type.name);
+export const insertOkurigana =
+  (kana: string): Command =>
+  (state, dispatch) => {
+    if (!/^[ァ-ヶー]{1,8}$/u.test(kana) || !canInsert(state, "okurigana"))
+      return false;
+    const { $to, to } = state.selection;
+    if (!$to.nodeBefore) return false;
+    const node = annotation("okurigana", [kana]);
+    const tr = closeHistory(state.tr).insert(to, node);
+    dispatch?.(
+      tr
+        .setSelection(TextSelection.create(tr.doc, to + node.nodeSize))
+        .scrollIntoView(),
+    );
+    return true;
+  };
+export const deleteKunten: Command = (state, dispatch) => {
+  const { empty, $from, from } = state.selection;
+  const previous = $from.nodeBefore;
+  if (!empty || !isKunten(previous)) return false;
+  dispatch?.(state.tr.delete(from - previous!.nodeSize, from).scrollIntoView());
+  return true;
+};
+export const extendOkurigana =
+  (text: string): Command =>
+  (state, dispatch) => {
+    const { empty, $from, from } = state.selection;
+    if (!empty || !/^[ァ-ヶー]+$/u.test(text)) return false;
+    const previous = $from.nodeBefore;
+    if (previous?.type.name === "okurigana") {
+      const node = annotation("okurigana", [parts(previous)[0] + text]);
+      const tr = state.tr.replaceWith(from - previous.nodeSize, from, node);
+      dispatch?.(
+        tr
+          .setSelection(
+            TextSelection.create(
+              tr.doc,
+              from - previous.nodeSize + node.nodeSize,
+            ),
+          )
+          .scrollIntoView(),
+      );
+      return true;
+    }
+    if (
+      (previous?.isText || previous?.type.name === "raw") &&
+      previous.textContent.endsWith("￣")
+    ) {
+      const start =
+        from - (previous.type.name === "raw" ? previous.nodeSize : 1);
+      const node = annotation("okurigana", [text]);
+      const tr = state.tr.replaceWith(start, from, node);
+      dispatch?.(
+        tr
+          .setSelection(TextSelection.create(tr.doc, start + node.nodeSize))
+          .scrollIntoView(),
+      );
+      return true;
+    }
+    return false;
+  };
+/** IME commits arrive as document mutations rather than insertText events. */
+export const normalizeTypedOkurigana: Command = (state, dispatch) => {
+  const { empty, $from, from } = state.selection;
+  const text = $from.nodeBefore;
+  if (!empty || !text?.isText || $from.parent.type.name === "raw") return false;
+  const prefixed = /￣([ァ-ヶー]+)$/u.exec(text.text!);
+  let start: number;
+  let kana: string;
+  if (prefixed) {
+    start = from - prefixed[0].length;
+    kana = prefixed[1];
+  } else {
+    if (!/^[ァ-ヶー]+$/u.test(text.text!)) return false;
+    const previous = $from.parent.childBefore(
+      $from.parentOffset - text.nodeSize,
+    ).node;
+    if (previous?.type.name !== "okurigana") return false;
+    start = from - text.nodeSize - previous.nodeSize;
+    kana = parts(previous)[0] + text.text!;
+  }
+  const node = annotation("okurigana", [kana]);
+  const tr = state.tr.replaceWith(start, from, node);
+  dispatch?.(
+    tr.setSelection(TextSelection.create(tr.doc, start + node.nodeSize)),
+  );
+  return true;
+};
 export const insertSource =
   (text: string): Command =>
   (state, dispatch) => {
@@ -513,6 +643,10 @@ function caretPositions(doc: PMNode, columnIndex: number): number[] {
   const column = doc.child(columnIndex);
   if (!column.childCount) positions.push(offset + 1);
   column.descendants((node, pos) => {
+    if (isKunten(node)) {
+      positions.push(offset + 1 + pos, offset + 1 + pos + node.nodeSize);
+      return false;
+    }
     if (
       node.type.name === "segment" &&
       node.attrs.placeholder &&
@@ -577,6 +711,38 @@ export const newColumn: Command = (state, dispatch) => {
 };
 function decorations(doc: PMNode): DecorationSet {
   const decorations: Decoration[] = [];
+  doc.descendants((parent, parentPos) => {
+    if (!parent.inlineContent || isKunten(parent)) return;
+    const children: { node: PMNode; pos: number }[] = [];
+    parent.forEach((node, offset) =>
+      children.push({ node, pos: parentPos + 1 + offset }),
+    );
+    for (let i = 0; i < children.length; i++) {
+      if (!isKunten(children[i].node)) continue;
+      let end = i;
+      const sizes = { return: 0, okurigana: 0 };
+      while (end < children.length && isKunten(children[end].node)) {
+        const node = children[end++].node;
+        sizes[node.type.name as keyof typeof sizes] += [
+          ...node.textContent,
+        ].length;
+      }
+      const length = Math.max(sizes.return, sizes.okurigana);
+      const offsets = { return: 0, okurigana: 0 };
+      for (let j = i; j < end; j++) {
+        const { node, pos } = children[j];
+        const kind = node.type.name as keyof typeof offsets;
+        decorations.push(
+          Decoration.node(pos, pos + node.nodeSize, {
+            class: `kunten-mark kunten-${kind}`,
+            style: `--kunten-length:${length};--kunten-back:${j === i ? 0 : length};--kunten-offset:${offsets[kind]}`,
+          }),
+        );
+        offsets[kind] += [...node.textContent].length;
+      }
+      i = end - 1;
+    }
+  });
   doc.descendants((node, pos) => {
     if (node.type.name !== "source") return;
     decorations.push(
@@ -905,6 +1071,8 @@ export function createEditor(
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "a")
         return selectColumn(view.state, view.dispatch);
       if (event.ctrlKey || event.metaKey || event.altKey) return false;
+      if (event.key === "Backspace" && deleteKunten(view.state, view.dispatch))
+        return true;
       if (!event.shiftKey && shellKey(event.key)(view.state, view.dispatch))
         return true;
       if (event.key === "Tab")
@@ -952,7 +1120,8 @@ export function createEditor(
           return true;
         }
         onstatus("");
-        view.dispatch(view.state.tr.insertText(event.data).scrollIntoView());
+        if (!extendOkurigana(event.data)(view.state, view.dispatch))
+          view.dispatch(view.state.tr.insertText(event.data).scrollIntoView());
         return true;
       },
       mousedown: (view, event) => {
@@ -1061,23 +1230,17 @@ export function createEditor(
             pendingSource = undefined;
             setSource(next);
           }
+          normalizeTypedOkurigana(view.state, view.dispatch);
           view.dispatch(view.state.tr.setMeta("refreshDecorations", true));
         }, 30);
         return false;
       },
     },
-    clipboardTextSerializer: (slice, editorView) => {
-      const { $from, $to } = editorView.state.selection;
-      if ($from.sameParent($to) && $from.parent.type.name === "segment")
-        return columnSource(
-          $from.parent.cut($from.parentOffset, $to.parentOffset),
-        );
-      if (slice.content.firstChild?.type.name === "column")
-        return toMarkup(schema.nodes.doc.create(null, slice.content));
-      let result = "";
-      slice.content.forEach((node) => (result += inlineSource(node)));
-      return result;
+    clipboardTextSerializer: (_slice, editorView) => {
+      const { from, to } = editorView.state.selection;
+      return selectedMarkup(editorView.state.doc, from, to);
     },
+    clipboardTextParser: (text) => clipboardMarkup(text),
     handlePaste: (view, event) => {
       if (composing || view.composing) return false;
       const text = event.clipboardData?.getData("text/plain");
@@ -1112,11 +1275,8 @@ export function createEditor(
         );
         return true;
       }
-      const doc = fromMarkup(text);
       view.dispatch(
-        view.state.tr
-          .replaceSelection(new Slice(doc.content, 1, 1))
-          .scrollIntoView(),
+        view.state.tr.replaceSelection(clipboardMarkup(text)).scrollIntoView(),
       );
       return true;
     },
