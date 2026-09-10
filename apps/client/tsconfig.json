@@ -1,4 +1,34 @@
 {
-  "compilerOptions": {"target":"ES2022", "useDefineForClassFields":true, "module":"ESNext", "lib":["ES2022","DOM","DOM.Iterable"], "skipLibCheck":true, "moduleResolution":"bundler", "allowImportingTsExtensions":true, "resolveJsonModule":true, "isolatedModules":true, "verbatimModuleSyntax":true, "moduleDetection":"force", "noEmit":true, "strict":true, "allowJs":true, "checkJs":true, "types":["svelte","vite/client"]},
-  "include":["src/**/*.ts","src/**/*.svelte","vite.config.ts","../../packages/**/*.ts"]
+  "compilerOptions": {
+    "target": "ES2022",
+    "useDefineForClassFields": true,
+    "module": "ESNext",
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "skipLibCheck": true,
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "strict": true,
+    "allowJs": true,
+    "checkJs": true,
+    "types": [
+      "svelte",
+      "vite/client",
+      "bun"
+    ]
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.svelte",
+    "vite.config.ts",
+    "../../packages/**/*.ts"
+  ]
 }

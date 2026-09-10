@@ -1,20 +1,40 @@
-export interface Route { projectId?: string; collectionId?: string; entryId?: string; pageId?: string }
+export interface Route {
+  projectId?: string;
+  collectionId?: string;
+  entryId?: string;
+  pageIndex?: number;
+  invalid?: boolean;
+}
 export function parseRoute(hash: string): Route {
-  const parts = hash.replace(/^#\/?/, '').split('/');
-  const route: Route = {};
-  const keys = ['projects', 'collections', 'entries', 'pages'];
-  const fields = ['projectId', 'collectionId', 'entryId', 'pageId'] as const;
-  for (let i = 0; i < keys.length; i++) {
-    if (parts[i * 2] !== keys[i] || !parts[i * 2 + 1]) break;
-    try { route[fields[i]] = decodeURIComponent(parts[i * 2 + 1]); } catch { break; }
+  try {
+    const path = hash.replace(/^#/, "") || "/";
+    if (path === "/") return {};
+    const project = /^\/projects\/([^/]+)(?:\/collections\/([^/]+))?\/?$/.exec(
+      path,
+    );
+    if (project)
+      return {
+        projectId: decodeURIComponent(project[1]),
+        ...(project[2] ? { collectionId: decodeURIComponent(project[2]) } : {}),
+      };
+    const entry = /^\/entries\/([^/]+)(?:\/pages\/(\d+))?\/?$/.exec(path);
+    if (
+      entry &&
+      (entry[2] === undefined || Number.isSafeInteger(Number(entry[2])))
+    )
+      return {
+        entryId: decodeURIComponent(entry[1]),
+        ...(entry[2] === undefined ? {} : { pageIndex: Number(entry[2]) }),
+      };
+  } catch {
+    /* Invalid percent encoding is an unknown route. */
   }
-  return route;
+  return { invalid: true };
 }
 export function href(route: Route): string {
-  let path = '#';
-  for (const [name, id] of [['projects', route.projectId], ['collections', route.collectionId], ['entries', route.entryId], ['pages', route.pageId]]) {
-    if (!id) break;
-    path += `/${name}/${encodeURIComponent(id)}`;
-  }
-  return path === '#' ? '#/' : path;
+  if (route.entryId)
+    return `#/entries/${encodeURIComponent(route.entryId)}${route.pageIndex === undefined ? "" : `/pages/${route.pageIndex}`}`;
+  if (route.projectId)
+    return `#/projects/${encodeURIComponent(route.projectId)}${route.collectionId ? `/collections/${encodeURIComponent(route.collectionId)}` : ""}`;
+  return "#/";
 }
