@@ -67,6 +67,11 @@
     "allow-search-choose-dump",
     "allow-search-build",
     "allow-search-query",
-    "allow-search-sync"
+    "allow-search-sync",
+    "allow-glyph-attestations",
+    "allow-clips-list",
+    "allow-clip-create",
+    "allow-clip-delete",
+    "allow-glyph-image-url"
   ]
 }

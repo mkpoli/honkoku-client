@@ -246,6 +246,11 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             result
         })
         .invoke_handler(tauri::generate_handler![
+            commands::glyph_attestations,
+            commands::glyph_image_url,
+            commands::clips_list,
+            commands::clip_create,
+            commands::clip_delete,
             search::search_status,
             search::search_choose_dump,
             search::search_build,
