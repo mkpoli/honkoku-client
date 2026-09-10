@@ -7,6 +7,7 @@
     Page,
     Project,
     SessionInfo,
+    SignInProvider,
     User,
   } from "@honkoku/client-api/types";
   import {
@@ -18,7 +19,10 @@
     listPages,
     listProjects,
     me,
-    sessionClear,
+    sessionClearWithSite,
+    sessionSignIn,
+    onSessionChanged,
+    onSignInClosed,
     sessionCurrent,
     sessionImport,
     unreadNotificationCount,
@@ -34,6 +38,7 @@
   import ProjectScreen from "./components/Project.svelte";
   import EntryScreen from "./components/Entry.svelte";
   import Workbench from "./components/Workbench.svelte";
+  import SignIn from "./components/SignIn.svelte";
   import Avatar from "./components/Avatar.svelte";
   let EditorSpike = $state<typeof import("./dev/EditorSpike.svelte").default>();
   let route = $state<Route>(parseRoute(location.hash)),
@@ -55,6 +60,8 @@
     loading = $state(true),
     signingIn = $state(false),
     direction = $state("forward");
+  let signInDialog = $state<"signin" | "signout" | null>(null);
+  let sessionListeners: Promise<unknown> = Promise.resolve();
   let generation = 0;
   let sound = $state(soundEnabled());
   const themeOptions: { value: Theme; label: string; glyph: string }[] = [
@@ -79,28 +86,50 @@
       unread = 0;
     }
   }
-  async function login() {
+  async function login(provider: SignInProvider) {
     signingIn = true;
     loginError = "";
     try {
+      await sessionListeners;
+      if (!isTauri()) throw new Error("デスクトップアプリでログインしてください。");
+      await sessionSignIn(provider);
+    } catch (e) {
+      loginError = errorMessage(e);
+      signingIn = false;
+    }
+  }
+  async function importSession() {
+    signingIn = true;
+    loginError = "";
+    try {
+      await sessionListeners;
+      await leaveWorkbench?.();
       session = await sessionImport();
       await identity();
+      signInDialog = null;
     } catch {
       loginError =
-        "ログイン情報を読み込めませんでした。端末でbun tools/session/login.tsを実行し、ログイン情報を取得してから再試行してください。";
+        "開発用セッションを読み込めませんでした。ログイン情報を取得してから再試行してください。";
     } finally {
       signingIn = false;
     }
   }
-  async function logout() {
+  async function logout(clearSiteData: boolean) {
+    signingIn = true;
+    loginError = "";
     try {
       await leaveWorkbench?.();
-      await sessionClear();
+      await sessionClearWithSite(clearSiteData);
       session = null;
       profile = null;
       unread = 0;
+      signInDialog = null;
     } catch (e) {
       loginError = errorMessage(e);
+      // The local session may already be cleared if browser-data removal fails.
+      await identity().catch(() => {});
+    } finally {
+      signingIn = false;
     }
   }
   async function load(next: Route) {
@@ -156,6 +185,34 @@
     }
   }
   onMount(() => {
+    let disposed = false;
+    const unlisteners: (() => void)[] = [];
+    const updateSession = async () => {
+      if (disposed) return;
+      signingIn = false;
+      signInDialog = null;
+      loginError = "";
+      try {
+        await identity();
+      } catch (e) {
+        if (!disposed) loginError = errorMessage(e);
+      }
+    };
+    if (isTauri()) {
+      sessionListeners = Promise.all(
+        [
+          onSessionChanged(() => void updateSession()),
+          onSignInClosed(() => void updateSession()),
+        ].map(async (registration) => {
+          const stop = await registration;
+          if (disposed) stop();
+          else unlisteners.push(stop);
+        }),
+      );
+      void sessionListeners.catch((e) => {
+        if (!disposed) loginError = errorMessage(e);
+      });
+    }
     const connection = (e: Event) => {
       const outcome = (e as CustomEvent<ConnectionOutcome>).detail;
       connected = outcome.connected;
@@ -205,6 +262,8 @@
     };
     window.addEventListener("hashchange", navigate);
     return () => {
+      disposed = true;
+      unlisteners.forEach((stop) => stop());
       generation++;
       window.removeEventListener("hashchange", navigate);
       window.removeEventListener("honkoku:connection", connection);
@@ -292,13 +351,21 @@
           /><strong>{profile?.displayName ?? session.display_name}</strong><span
             class="notification-badge"
             aria-label={`未読通知${unread}件`}>♧{unread}</span
-          ><button class="logout" onclick={logout} aria-label="ログアウト"
-            >ログアウト</button
+          ><button
+            class="logout"
+            onclick={() => {
+              loginError = "";
+              signInDialog = "signout";
+            }}
+            aria-label="ログアウト">ログアウト</button
           >
         </div>{:else}<button
           class="primary"
           disabled={signingIn}
-          onclick={login}>ログイン</button
+          onclick={() => {
+            loginError = "";
+            signInDialog = "signin";
+          }}>ログイン</button
         >{/if}
     </div>
   </header>
@@ -313,7 +380,7 @@
         >{label(entry.label)}</a
       >{/if}
   </nav>
-  {#if loginError}<div class="message error" role="alert">
+  {#if loginError && !signInDialog}<div class="message error" role="alert">
       {loginError}<button onclick={() => (loginError = "")} aria-label="閉じる"
         >×</button
       >
@@ -374,3 +441,15 @@
     >
   </footer>
 </div>
+
+{#if signInDialog}
+  <SignIn
+    mode={signInDialog}
+    busy={signingIn}
+    error={loginError}
+    onprovider={login}
+    onimport={importSession}
+    onlogout={logout}
+    onclose={() => (signInDialog = null)}
+  />
+{/if}

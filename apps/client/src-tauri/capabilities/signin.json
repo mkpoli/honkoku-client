@@ -1,0 +1,16 @@
+{
+  "identifier": "signin",
+  "description": "Receive a Firebase session from the platform sign-in page",
+  "local": false,
+  "windows": [
+    "signin"
+  ],
+  "remote": {
+    "urls": [
+      "https://app.honkoku.org/*"
+    ]
+  },
+  "permissions": [
+    "allow-session-capture"
+  ]
+}

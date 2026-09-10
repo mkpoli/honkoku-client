@@ -102,3 +102,16 @@ export async function onWindowClose(
   const appWindow = getCurrentWindow();
   return appWindow.onCloseRequested((event) => handler(event, () => appWindow.close()));
 }
+
+export const sessionSignIn = (provider: import("./types").SignInProvider) =>
+  invoke<void>("session_sign_in", { provider });
+export const sessionClearWithSite = (clearSiteData: boolean) =>
+  invoke<void>("session_clear", { clearSiteData });
+export async function onSessionChanged(handler: () => void) {
+  const { listen } = await import("@tauri-apps/api/event");
+  return listen("session-changed", handler);
+}
+export async function onSignInClosed(handler: () => void) {
+  const { listen } = await import("@tauri-apps/api/event");
+  return listen("signin-closed", handler);
+}

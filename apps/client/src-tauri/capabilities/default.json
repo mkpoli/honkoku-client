@@ -17,6 +17,31 @@
           "url": "http://*"
         }
       ]
-    }
+    },
+    "core:window:allow-close",
+    "allow-session-sign-in",
+    "allow-session-import",
+    "allow-session-current",
+    "allow-session-clear",
+    "allow-home-timeline",
+    "allow-home-ranking",
+    "allow-home-announcements",
+    "allow-home-daily-progress",
+    "allow-me",
+    "allow-unread-notification-count",
+    "allow-get-user",
+    "allow-page-lock",
+    "allow-page-draft",
+    "allow-page-save",
+    "allow-page-discard",
+    "allow-page-lock-state",
+    "allow-list-projects",
+    "allow-get-project",
+    "allow-list-collections",
+    "allow-get-collection",
+    "allow-get-entry",
+    "allow-list-pages",
+    "allow-iiif-prepare-entry",
+    "allow-iiif-local-url"
   ]
 }

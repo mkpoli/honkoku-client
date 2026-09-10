@@ -1,6 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 mod commands;
 mod iiif_protocol;
+mod signin;
 use honkoku_core::{
     HonkokuClient,
     cache::SharedStorage,
@@ -164,6 +165,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .setup(|app| {
             iiif_protocol::initialize(app)?;
             app.manage(commands::EditingState::default());
+            app.manage(signin::SignInState::default());
             let cache = app.path().app_cache_dir()?;
             std::fs::create_dir_all(&cache)?;
             use honkoku_core::auth::{FileStore, SessionStore, TokenManager};
@@ -182,9 +184,27 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 storage,
                 store,
             });
+            #[cfg(debug_assertions)]
+            if std::env::var_os("HONKOKU_SIGNIN_PROBE").is_some() {
+                let handle = app.handle().clone();
+                tauri::async_runtime::spawn(async move {
+                    let result = signin::session_sign_in(
+                        handle.clone(),
+                        handle.state::<signin::SignInState>(),
+                        honkoku_core::auth::SignInProvider::Twitter,
+                    )
+                    .await;
+                    println!(
+                        "signin probe command: {}",
+                        if result.is_ok() { "ok" } else { "failed" }
+                    );
+                });
+            }
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            signin::session_sign_in,
+            signin::session_capture,
             commands::session_import,
             commands::session_current,
             commands::session_clear,

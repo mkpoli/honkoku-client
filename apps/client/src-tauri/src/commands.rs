@@ -26,6 +26,7 @@ impl From<&Session> for SessionInfo {
 }
 #[tauri::command]
 pub async fn session_import(
+    signin: State<'_, crate::signin::SignInState>,
     app: tauri::AppHandle,
     state: State<'_, AppState>,
     editing: State<'_, EditingState>,
@@ -38,8 +39,16 @@ pub async fn session_import(
             message: "ホームフォルダーを取得できません。".into(),
         })?
         .join(".local/share/honkoku-client/session.json");
-    let mut connection = state.connection.write().await;
+    let _gate = signin.gate.lock().await;
     let session = import_dev_session(path)?;
+    attach_session(&state, &editing, session).await
+}
+pub(crate) async fn attach_session(
+    state: &AppState,
+    editing: &EditingState,
+    session: Session,
+) -> Result<SessionInfo, AppError> {
+    let mut connection = state.connection.write().await;
     let info = SessionInfo::from(&session);
     let client = state
         .anonymous()?
@@ -72,15 +81,23 @@ pub async fn session_current(
 }
 #[tauri::command]
 pub async fn session_clear(
+    app: tauri::AppHandle,
+    signin: State<'_, crate::signin::SignInState>,
+    clear_site_data: Option<bool>,
     state: State<'_, AppState>,
     editing: State<'_, EditingState>,
 ) -> Result<(), AppError> {
+    let _gate = signin.gate.lock().await;
     let mut connection = state.connection.write().await;
     let client = state.anonymous()?;
     state.store.clear()?;
     connection.client = client;
     connection.session = None;
     editing.pages.lock().await.clear();
+    crate::signin::cancel(&app, &signin)?;
+    if clear_site_data.unwrap_or(false) {
+        crate::signin::clear_profile(&app).await?;
+    }
     Ok(())
 }
 #[derive(Default, Deserialize)]
@@ -342,14 +359,22 @@ mod tests {
 }
 
 use honkoku_core::{
-    editing::{DraftQueue, EditingSession, PageLockState, SaveOptions, SavedPage},
+    editing::{DraftQueue, EditingSession, PageLockState, SaveOptions, SavedPage as CoreSavedPage},
     model::Page,
 };
 use std::{collections::HashMap, sync::Arc};
 use tokio::sync::Mutex;
 
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SavedPage {
+    page: Page,
+    timeline_event_id: String,
+    count: u64,
+}
 struct LiveEditingSession {
     session: Mutex<Option<EditingSession>>,
+    saved: Mutex<Option<CoreSavedPage>>,
     drafts: DraftQueue,
     uid: String,
 }
@@ -386,6 +411,7 @@ impl EditingState {
             drafts: session.draft_queue(),
             uid,
             session: Mutex::new(Some(session)),
+            saved: Mutex::new(None),
         });
         pages.insert(key, live.clone());
         Ok(live)
@@ -415,6 +441,7 @@ pub async fn page_lock(
             drafts: session.draft_queue(),
             uid: session.uid().into(),
             session: Mutex::new(Some(session)),
+            saved: Mutex::new(None),
         }),
     );
     Ok(page)
@@ -449,15 +476,53 @@ pub async fn page_save(
     let live = editing
         .session(&connection.client, &entry_id, index)
         .await?;
-    let mut guard = live.session.lock().await;
-    let saved = guard
-        .as_mut()
-        .ok_or_else(no_editing_session)?
-        .save(options)
-        .await?;
-    *guard = None;
-    editing.remove(&saved.page.id, &live).await;
-    Ok(saved)
+    let result = live.save(&connection.client, options).await?;
+    editing.remove(&result.page.id, &live).await;
+    Ok(result)
+}
+impl LiveEditingSession {
+    async fn save(
+        &self,
+        client: &honkoku_core::HonkokuClient,
+        options: SaveOptions,
+    ) -> Result<SavedPage, AppError> {
+        let mut guard = self.session.lock().await;
+        let mut receipt = self.saved.lock().await;
+        if receipt.is_none() {
+            let saved = guard
+                .as_mut()
+                .ok_or_else(no_editing_session)?
+                .save(options)
+                .await?;
+            *receipt = Some(saved);
+            *guard = None;
+        }
+        // Keep the committed receipt until its event can be read. Retrying must not write again.
+        let saved = receipt.as_ref().ok_or_else(no_editing_session)?;
+        saved_with_count(client, saved).await
+    }
+}
+
+async fn saved_with_count(
+    client: &honkoku_core::HonkokuClient,
+    saved: &CoreSavedPage,
+) -> Result<SavedPage, AppError> {
+    #[derive(Deserialize)]
+    struct SavedEvent {
+        count: u64,
+    }
+    let event: SavedEvent = client
+        .document(&format!("timelineEvents/{}", saved.timeline_event_id))
+        .await
+        .map_err(|_| AppError {
+            kind: "saved_count".into(),
+            message: "翻刻は保存されましたが、文字数を取得できませんでした。もう一度保存を押すと、保存済みの結果を取得します。".into(),
+        })?;
+    Ok(SavedPage {
+        page: saved.page.clone(),
+        timeline_event_id: saved.timeline_event_id.clone(),
+        count: event.count,
+    })
 }
 #[tauri::command]
 pub async fn page_discard(
@@ -489,4 +554,64 @@ pub async fn page_lock_state(
         .client
         .page_lock_state(&entry_id, index)
         .await?)
+}
+
+#[cfg(test)]
+mod saved_count_tests {
+    use super::*;
+    use std::io::{Read, Write};
+
+    #[tokio::test]
+    async fn retry_after_event_read_failure_uses_the_committed_receipt() {
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let base = format!("http://{}", listener.local_addr().unwrap());
+        let server = std::thread::spawn(move || {
+            for (status, body) in [
+                ("503 Service Unavailable", "{}"),
+                (
+                    "200 OK",
+                    r#"{"name":"projects/test/databases/(default)/documents/timelineEvents/event","fields":{"count":{"integerValue":"123"}}}"#,
+                ),
+            ] {
+                let (mut socket, _) = listener.accept().unwrap();
+                socket
+                    .set_read_timeout(Some(std::time::Duration::from_secs(5)))
+                    .unwrap();
+                let mut request = [0; 4096];
+                let bytes = socket.read(&mut request).unwrap();
+                assert!(
+                    String::from_utf8_lossy(&request[..bytes])
+                        .starts_with("GET /timelineEvents/event ")
+                );
+                write!(socket, "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}", body.len()).unwrap();
+            }
+        });
+        let client = honkoku_core::HonkokuClient::with_endpoints(&base, &base).unwrap();
+        let saved = CoreSavedPage {
+            page: serde_json::from_value(json!({"id":"entry_0", "entryId":"entry", "index":0, "status":"completed", "text":"字", "notes":[]})).unwrap(),
+            timeline_event_id: "event".into(),
+        };
+        let live = LiveEditingSession {
+            session: Mutex::new(None),
+            saved: Mutex::new(Some(saved)),
+            drafts: DraftQueue::default(),
+            uid: "user".into(),
+        };
+        assert_eq!(
+            live.save(&client, SaveOptions::default())
+                .await
+                .err()
+                .unwrap()
+                .kind,
+            "saved_count"
+        );
+        assert!(live.saved.lock().await.is_some());
+        let result = live.save(&client, SaveOptions::default()).await.unwrap();
+        assert_eq!(result.count, 123);
+        let value = serde_json::to_value(result).unwrap();
+        assert_eq!(value["timelineEventId"], "event");
+        assert_eq!(value["count"], 123);
+        assert_eq!(value["page"]["text"], "字");
+        server.join().unwrap();
+    }
 }

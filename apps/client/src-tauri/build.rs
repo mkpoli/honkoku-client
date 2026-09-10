@@ -1,3 +1,32 @@
 fn main() {
-    tauri_build::build()
+    tauri_build::try_build(tauri_build::Attributes::new().app_manifest(
+        tauri_build::AppManifest::new().commands(&[
+            "session_sign_in",
+            "session_capture",
+            "session_import",
+            "session_current",
+            "session_clear",
+            "home_timeline",
+            "home_ranking",
+            "home_announcements",
+            "home_daily_progress",
+            "me",
+            "unread_notification_count",
+            "get_user",
+            "page_lock",
+            "page_draft",
+            "page_save",
+            "page_discard",
+            "page_lock_state",
+            "list_projects",
+            "get_project",
+            "list_collections",
+            "get_collection",
+            "get_entry",
+            "list_pages",
+            "iiif_prepare_entry",
+            "iiif_local_url",
+        ]),
+    ))
+    .expect("failed to build application permissions");
 }
