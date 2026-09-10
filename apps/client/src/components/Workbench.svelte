@@ -43,6 +43,8 @@
   import { errorMessage } from "../lib";
   import { Drafts } from "../drafts";
   import { prepareSound, completionSound } from "../sound";
+  import GlyphDrawer from "./GlyphDrawer.svelte";
+  import ClipSelection from "./ClipSelection.svelte";
   import Facsimile from "./Facsimile.svelte";
   import Thumbnail from "./Thumbnail.svelte";
   let {
@@ -240,6 +242,16 @@
     comment = $state("");
   let lockName = $state("名前を確認中");
   let menuOpen = $state(false);
+  let glyphOpen = $state(false), glyphCharacter = $state("");
+  let clipping = $state(false);
+  let glyphTimer: ReturnType<typeof setTimeout>;
+  function glyphChange(character: string, open: boolean) {
+    clearTimeout(glyphTimer);
+    if (open) { glyphCharacter=character; glyphOpen=true; clipping=false; }
+    else if (glyphOpen) glyphTimer=setTimeout(() => glyphCharacter=character,300);
+  }
+  $effect(() => { index; currentEntryId; sessionUid; clipping=false; glyphOpen=false; glyphCharacter=""; clearTimeout(glyphTimer); });
+
   let otherEdits = $derived(
     [
       ...new Map(
@@ -555,6 +567,7 @@
       discardPopover = false;
       celebration = undefined;
       clearTimeout(toastTimer);
+      clearTimeout(glyphTimer);
       void queue?.stop();
       queue = undefined;
       if (!uid || pending) return;
@@ -804,6 +817,7 @@
       window.removeEventListener("pagehide", unload);
       window.removeEventListener("beforeunload", unload);
       clearTimeout(toastTimer);
+      clearTimeout(glyphTimer);
       void queue?.stop();
     };
   });
@@ -964,6 +978,7 @@
           onclick={() => (menuOpen = !menuOpen)}>⋯</button
         >
         {#if menuOpen}<div class="menu-options">
+            <button disabled={!session || !canvases[index]?.infoJsonUrl} onclick={() => { clipping=true; glyphOpen=false; menuOpen=false; }}>切り抜き</button>
             <button
               onclick={() => {
                 swapped = !swapped;
@@ -1001,6 +1016,7 @@
             bind:source
             onready={(instance) => (editorInstance = instance)}
             onupdate={update}
+            onglyph={glyphChange}
             oncolumnchange={columnChange}
             {highlightedColumn}
             onnote={changeNote}
@@ -1052,7 +1068,13 @@
       highlightedLine={selectedLine}
       onlineselect={selectLine}
       onlinehover={(line) => (hoveredLine = line)}
-    />
+    >
+      {#snippet children(viewer)}
+        {#if glyphOpen}<GlyphDrawer character={glyphCharacter} onclose={() => glyphOpen=false} />{/if}
+        {#if clipping}<ClipSelection {viewer} canvas={canvases[index]} entryId={entry.id} {index}
+          onclose={() => clipping=false} onsaved={() => { clipping=false; notice="クリップを保存しました。"; }} />{/if}
+      {/snippet}
+    </Facsimile>
   </div>
   <nav
     class="panel filmstrip"
