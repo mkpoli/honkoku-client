@@ -264,3 +264,5 @@ export interface SavedPage {
   /** Character count from the save's timeline event, when supplied by the backend. */
   count?: number;
 }
+
+export type SignInProvider = "google.com" | "twitter.com";
