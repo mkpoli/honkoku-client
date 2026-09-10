@@ -80,3 +80,17 @@ export const me = () => invoke<User | null>("me");
 export const unreadNotificationCount = () =>
   invoke<number>("unread_notification_count");
 export const getUser = (uid: string) => invoke<User>("get_user", { uid });
+
+export const pageLock = (entryId: string, index: number, syncMode = false) =>
+  invoke<Page>("page_lock", { entryId, index, syncMode });
+export const pageDraft = (entryId: string, index: number, text: string) =>
+  invoke<Page>("page_draft", { entryId, index, text });
+export const pageSave = (
+  entryId: string,
+  index: number,
+  options: import("./types").SaveOptions = {},
+) => invoke<import("./types").SavedPage>("page_save", { entryId, index, options });
+export const pageDiscard = (entryId: string, index: number) =>
+  invoke<void>("page_discard", { entryId, index });
+export const pageLockState = (entryId: string, index: number) =>
+  invoke<import("./types").PageLockState>("page_lock_state", { entryId, index });

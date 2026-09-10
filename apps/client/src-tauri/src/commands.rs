@@ -28,6 +28,7 @@ impl From<&Session> for SessionInfo {
 pub async fn session_import(
     app: tauri::AppHandle,
     state: State<'_, AppState>,
+    editing: State<'_, EditingState>,
 ) -> Result<SessionInfo, AppError> {
     let path = app
         .path()
@@ -46,10 +47,14 @@ pub async fn session_import(
     state.store.save(&session)?;
     connection.client = client;
     connection.session = Some(info.clone());
+    editing.pages.lock().await.clear();
     Ok(info)
 }
 #[tauri::command]
-pub async fn session_current(state: State<'_, AppState>) -> Result<Option<SessionInfo>, AppError> {
+pub async fn session_current(
+    state: State<'_, AppState>,
+    editing: State<'_, EditingState>,
+) -> Result<Option<SessionInfo>, AppError> {
     let mut connection = state.connection.write().await;
     if connection.session.is_some() {
         match connection.client.signed_in_uid().await {
@@ -57,6 +62,7 @@ pub async fn session_current(state: State<'_, AppState>) -> Result<Option<Sessio
             Err(honkoku_core::Error::SignedOut) => {
                 connection.client = state.anonymous()?;
                 connection.session = None;
+                editing.pages.lock().await.clear();
                 return Ok(None);
             }
             Err(error) => return Err(error.into()),
@@ -65,12 +71,16 @@ pub async fn session_current(state: State<'_, AppState>) -> Result<Option<Sessio
     Ok(connection.session.clone())
 }
 #[tauri::command]
-pub async fn session_clear(state: State<'_, AppState>) -> Result<(), AppError> {
+pub async fn session_clear(
+    state: State<'_, AppState>,
+    editing: State<'_, EditingState>,
+) -> Result<(), AppError> {
     let mut connection = state.connection.write().await;
     let client = state.anonymous()?;
     state.store.clear()?;
     connection.client = client;
     connection.session = None;
+    editing.pages.lock().await.clear();
     Ok(())
 }
 #[derive(Default, Deserialize)]
@@ -329,4 +339,154 @@ mod tests {
         );
         assert_eq!(q["limit"], 20);
     }
+}
+
+use honkoku_core::{
+    editing::{DraftQueue, EditingSession, PageLockState, SaveOptions, SavedPage},
+    model::Page,
+};
+use std::{collections::HashMap, sync::Arc};
+use tokio::sync::Mutex;
+
+struct LiveEditingSession {
+    session: Mutex<Option<EditingSession>>,
+    drafts: DraftQueue,
+    uid: String,
+}
+#[derive(Default)]
+pub struct EditingState {
+    pages: Mutex<HashMap<String, Arc<LiveEditingSession>>>,
+}
+impl EditingState {
+    async fn remove(&self, key: &str, live: &Arc<LiveEditingSession>) {
+        let mut pages = self.pages.lock().await;
+        if pages
+            .get(key)
+            .is_some_and(|current| Arc::ptr_eq(current, live))
+        {
+            pages.remove(key);
+        }
+    }
+    async fn session(
+        &self,
+        client: &honkoku_core::HonkokuClient,
+        entry_id: &str,
+        index: u32,
+    ) -> Result<Arc<LiveEditingSession>, AppError> {
+        let uid = client.signed_in_uid().await?;
+        let key = format!("{entry_id}_{index}");
+        let mut pages = self.pages.lock().await;
+        if let Some(live) = pages.get(&key)
+            && live.uid == uid
+        {
+            return Ok(live.clone());
+        }
+        let session = client.resume_editing(entry_id, index).await?;
+        let live = Arc::new(LiveEditingSession {
+            drafts: session.draft_queue(),
+            uid,
+            session: Mutex::new(Some(session)),
+        });
+        pages.insert(key, live.clone());
+        Ok(live)
+    }
+}
+fn no_editing_session() -> AppError {
+    honkoku_core::Error::Invalid("Transcription is not being edited".into()).into()
+}
+#[tauri::command]
+pub async fn page_lock(
+    entry_id: String,
+    index: u32,
+    sync_mode: Option<bool>,
+    state: State<'_, AppState>,
+    editing: State<'_, EditingState>,
+) -> Result<Page, AppError> {
+    let connection = state.connection.read().await;
+    let mut pages = editing.pages.lock().await;
+    let session = connection
+        .client
+        .lock_page(&entry_id, index, sync_mode.unwrap_or(false))
+        .await?;
+    let page = session.page().clone();
+    pages.insert(
+        page.id.clone(),
+        Arc::new(LiveEditingSession {
+            drafts: session.draft_queue(),
+            uid: session.uid().into(),
+            session: Mutex::new(Some(session)),
+        }),
+    );
+    Ok(page)
+}
+#[tauri::command]
+pub async fn page_draft(
+    entry_id: String,
+    index: u32,
+    text: String,
+    state: State<'_, AppState>,
+    editing: State<'_, EditingState>,
+) -> Result<Page, AppError> {
+    let connection = state.connection.read().await;
+    let live = editing
+        .session(&connection.client, &entry_id, index)
+        .await?;
+    live.drafts.request(&text)?;
+    let mut guard = live.session.lock().await;
+    let session = guard.as_mut().ok_or_else(no_editing_session)?;
+    session.flush_drafts(false).await?;
+    Ok(session.page().clone())
+}
+#[tauri::command]
+pub async fn page_save(
+    entry_id: String,
+    index: u32,
+    options: SaveOptions,
+    state: State<'_, AppState>,
+    editing: State<'_, EditingState>,
+) -> Result<SavedPage, AppError> {
+    let connection = state.connection.read().await;
+    let live = editing
+        .session(&connection.client, &entry_id, index)
+        .await?;
+    let mut guard = live.session.lock().await;
+    let saved = guard
+        .as_mut()
+        .ok_or_else(no_editing_session)?
+        .save(options)
+        .await?;
+    *guard = None;
+    editing.remove(&saved.page.id, &live).await;
+    Ok(saved)
+}
+#[tauri::command]
+pub async fn page_discard(
+    entry_id: String,
+    index: u32,
+    state: State<'_, AppState>,
+    editing: State<'_, EditingState>,
+) -> Result<(), AppError> {
+    let connection = state.connection.read().await;
+    let live = editing
+        .session(&connection.client, &entry_id, index)
+        .await?;
+    let mut guard = live.session.lock().await;
+    let session = guard.take().ok_or_else(no_editing_session)?;
+    let result = session.discard().await;
+    editing.remove(&format!("{entry_id}_{index}"), &live).await;
+    Ok(result?)
+}
+#[tauri::command]
+pub async fn page_lock_state(
+    entry_id: String,
+    index: u32,
+    state: State<'_, AppState>,
+) -> Result<PageLockState, AppError> {
+    Ok(state
+        .connection
+        .read()
+        .await
+        .client
+        .page_lock_state(&entry_id, index)
+        .await?)
 }
