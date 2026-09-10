@@ -38,6 +38,8 @@
   import type { Route } from "./routes";
   import { savedTheme, setTheme, type Theme } from "./theme";
   import { soundEnabled, setSound } from "./sound";
+  import Glyphs from "./components/Glyphs.svelte";
+  import Clips from "./components/Clips.svelte";
   import Search from "./components/Search.svelte";
   import Home from "./components/Home.svelte";
   import ProjectScreen from "./components/Project.svelte";
@@ -100,7 +102,7 @@
       !route.entryId &&
       !route.invalid &&
       !route.editorSpike &&
-      !route.search,
+      !route.search && !route.glyph && !route.clips,
   );
   let workbench = $derived(route.pageIndex !== undefined);
   async function identity() {
@@ -200,7 +202,7 @@
       error = "ページが見つかりません。ホームから選び直してください。";
       return;
     }
-    if (next.search) return;
+    if (next.search || next.glyph || next.clips) return;
     const scope = String(accountGeneration);
     if (!next.projectId && !next.entryId) {
       await projectsRegion.load(
@@ -396,7 +398,7 @@
 {#snippet breadcrumbs()}
   <nav class="breadcrumb" aria-label="パンくず">
     <a href="#/" aria-current={isHome ? "page" : undefined}>⌂ホーム</a
-    >{#if route.search}<span>›</span><span aria-current="page">全文検索</span
+    >{#if route.glyph}<span>›</span><span aria-current="page">集字</span>{:else if route.clips}<span>›</span><span aria-current="page">クリップ</span>{:else if route.search}<span>›</span><span aria-current="page">全文検索</span
       >{/if}{#if project}<span>›</span><a href={href({ projectId: project.id })}
         >{project.title}</a
       >{/if}{#if collection && project}<span>›</span><a
@@ -528,10 +530,10 @@
         <button onclick={() => load(route)}>再試行</button><a href="#/"
           >ホームへ</a
         >
-      </div>{:else}{#key route.editorSpike ? "editor" : route.search ? "search" : (route.entryId ?? route.projectId ?? "home")}<div
+      </div>{:else}{#key route.glyph ? `glyphs:${session?.uid ?? ""}` : route.clips ? `clips:${session?.uid ?? ""}` : route.editorSpike ? "editor" : route.search ? "search" : (route.entryId ?? route.projectId ?? "home")}<div
           class="route-screen"
         >
-          {#if route.search}<Search
+          {#if route.glyph}<Glyphs character={route.glyph} />{:else if route.clips}<Clips />{:else if route.search}<Search
               query={route.query ?? ""}
             />{:else if route.editorSpike && EditorSpike}<EditorSpike
             />{:else if isHome}<Home

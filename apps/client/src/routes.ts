@@ -1,4 +1,6 @@
 export interface Route {
+  glyph?: string;
+  clips?: boolean;
   search?: boolean;
   query?: string;
   column?: number;
@@ -15,6 +17,9 @@ export function parseRoute(hash: string): Route {
     const split = raw.indexOf("?");
     const path = split < 0 ? raw : raw.slice(0, split);
     const params = new URLSearchParams(split < 0 ? "" : raw.slice(split + 1));
+    if (path === "/clips") return { clips: true };
+    const glyph = /^\/glyphs\/([^/]+)\/?$/.exec(path);
+    if (glyph) return { glyph: decodeURIComponent(glyph[1]) };
     if (path === "/search")
       return { search: true, query: params.get("q") ?? "" };
     const columnText = params.get("column");
