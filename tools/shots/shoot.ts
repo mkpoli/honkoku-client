@@ -1,5 +1,6 @@
 import { checkInlineEditor } from "./editor-checks";
 import {
+  checkGlyphs,
   checkSearch,
   checkRegionTimeout,
   checkWorkbenchParity,
@@ -141,6 +142,7 @@ try {
         stderr: "pipe",
       },
     );
+    await Bun.write(resolve(output,"server.json"),JSON.stringify({pid:server.pid,owner:process.pid,port}));
     serverLogs = Promise.all(
       [
         [server.stdout, "vite.log"],
@@ -163,6 +165,8 @@ try {
       throw Error("Vite did not start on the assigned port.");
   }
   browser = await chromium.launch({ headless: true });
+  for (const theme of ["light", "dark"] as const) await checkGlyphs(browser,origin,theme);
+  if (process.env.HONKOKU_SHOTS_GLYPHS_ONLY === "1") { await browser.close(); browser=undefined; await stopServer(); process.exit(0); }
   for (const theme of ["light", "dark"] as const)
     await checkSearch(browser, origin, theme);
   await checkRegionTimeout(browser, origin);
@@ -178,6 +182,7 @@ try {
     await checkAlignment(browser, origin, theme);
   const webkitBrowser = await webkit.launch({ headless: true });
   try {
+    await checkGlyphs(webkitBrowser,origin,"light","-webkit");
     await checkInlineEditor(webkitBrowser, origin, "light", "-webkit");
     await checkQuietWorkbench(webkitBrowser, origin, "light", "-webkit");
     await checkAlignment(webkitBrowser, origin, "light", "-webkit");

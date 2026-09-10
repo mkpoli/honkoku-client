@@ -1793,3 +1793,173 @@ export async function checkSearch(
     await context.close();
   }
 }
+
+export async function checkGlyphs(
+  browser: Browser,
+  origin: string,
+  theme: "light" | "dark",
+  suffix = "",
+) {
+  const context = await browser.newContext({
+    viewport: { width: 1600, height: 1000 },
+    locale: "ja-JP",
+    colorScheme: theme,
+    reducedMotion: "reduce",
+  });
+  await context.addInitScript(
+    (theme) => localStorage.setItem("honkoku.theme", theme),
+    theme,
+  );
+  const page = await context.newPage();
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  try {
+    await page.goto(`${origin}/#/glyphs/候`);
+    await page.locator(".glyph-card.located").first().waitFor();
+    await page
+      .getByRole("heading", { name: "位置不明", exact: true })
+      .waitFor();
+    assert.equal(await page.locator(".glyph-card.located").count(), 4);
+    await page.waitForFunction(
+      () => document.querySelectorAll(".glyph-crop img.ready").length === 4,
+      {},
+      { timeout: 60000 },
+    );
+    await page.evaluate(() => document.fonts.ready);
+    await page.screenshot({
+      path: resolve(
+        import.meta.dir,
+        `../../.local/shots/16-glyphs-${theme}${suffix}.png`,
+      ),
+    });
+    const input = page.getByRole("textbox", { name: "集字する文字" });
+    await input.fill("蝦夷");
+    assert.equal(await input.inputValue(), "候");
+    await page.getByRole("button", { name: "クリップ", exact: true }).click();
+    await page.locator(".clip-card").first().waitFor();
+    assert.equal(await page.locator(".clip-card").count(), 2);
+    await page
+      .getByRole("textbox", { name: "クリップを絞り込み" })
+      .fill("書簡");
+    assert.equal(await page.locator(".clip-card").count(), 1);
+    await page.getByRole("textbox", { name: "クリップを絞り込み" }).fill("");
+    await page.waitForFunction(
+      () => document.querySelectorAll(".clip-image img.ready").length === 2,
+      {},
+      { timeout: 60000 },
+    );
+    if (theme === "light")
+      await page.screenshot({
+        path: resolve(
+          import.meta.dir,
+          `../../.local/shots/16-clips-light${suffix}.png`,
+        ),
+      });
+    await page.goto(`${origin}/#/entries/${entry}/pages/7`);
+    const start = page.getByRole("button", { name: "編集開始", exact: true });
+    await page.locator(".editor-palette").or(start).waitFor();
+    if (await start.isVisible()) await start.click();
+    await page.locator(".editor-palette").waitFor();
+    await page.getByRole("button", { name: "原文表示", exact: true }).click();
+    const raw = page.getByRole("textbox", { name: "原文を編集", exact: true });
+    await raw.evaluate((node: HTMLTextAreaElement) => {
+      const offset = node.value.indexOf("候");
+      assertPositive(offset);
+      function assertPositive(value: number) {
+        if (value < 0) throw Error("Fixture has no 候");
+      }
+      node.focus();
+      node.setSelectionRange(offset, offset + 1);
+      node.dispatchEvent(new Event("select", { bubbles: true }));
+    });
+    await page
+      .locator(".editor-palette")
+      .getByRole("button", { name: "集字", exact: true })
+      .click();
+    await page.locator(".glyph-drawer .glyph-card.located").first().waitFor();
+    if (theme === "light")
+      await page.screenshot({
+        path: resolve(
+          import.meta.dir,
+          `../../.local/shots/16-glyph-drawer-light${suffix}.png`,
+        ),
+      });
+    await raw.evaluate((node: HTMLTextAreaElement) => {
+      node.setSelectionRange(0, 1);
+      node.dispatchEvent(new Event("select", { bubbles: true }));
+    });
+    await page.waitForTimeout(400);
+    assert.equal(await page.locator(".glyph-drawer .glyph-card").count(), 0);
+    await page.getByRole("button", { name: "集字を閉じる" }).click();
+    try {
+      await viewerReady(page);
+    } catch (e) {
+      console.log(
+        await page.evaluate(() => ({
+          items: window.honkokuViewer()?.world.getItemCount(),
+          ready: window.honkokuViewer()?.getFullyLoaded(),
+          html: document
+            .querySelector(".facsimile-panel")
+            ?.outerHTML.slice(-4000),
+        })),
+      );
+      throw e;
+    }
+    await page.getByRole("button", { name: "表示設定", exact: true }).click();
+    await page.getByRole("button", { name: "切り抜き", exact: true }).click();
+    const host = await page.locator(".osd").boundingBox();
+    assert.ok(host);
+    await page.mouse.move(
+      host.x + host.width * 0.4,
+      host.y + host.height * 0.35,
+    );
+    await page.mouse.down();
+    await page.mouse.move(
+      host.x + host.width * 0.55,
+      host.y + host.height * 0.55,
+      { steps: 8 },
+    );
+    await page.mouse.up();
+    const form = page.getByRole("form", { name: "切り抜きを保存" });
+    await form.waitFor();
+    assert.equal(
+      await page.evaluate(() =>
+        window.honkokuViewer()!.innerTracker.isTracking(),
+      ),
+      false,
+    );
+    await form.getByLabel("読み", { exact: true }).fill("候検証");
+    await form.getByRole("button", { name: "保存", exact: true }).click();
+    await form.waitFor({ state: "hidden" });
+    assert.equal(
+      await page.evaluate(() =>
+        window.honkokuViewer()!.innerTracker.isTracking(),
+      ),
+      true,
+    );
+    await page.evaluate(() => {
+      location.hash = "#/clips";
+    });
+    await page.getByText("候検証", { exact: true }).waitFor();
+    const created = page.locator(".clip-card").filter({ hasText: "候検証" });
+    await created.getByRole("button", { name: "削除", exact: true }).click();
+    await created.waitFor({ state: "hidden" });
+    await page.getByRole("button", { name: "ログアウト", exact: true }).click();
+    await page
+      .getByRole("dialog")
+      .getByRole("button", { name: "ログアウト", exact: true })
+      .click();
+    await page
+      .getByText("ログインすると、自分のクリップを表示できます。", {
+        exact: true,
+      })
+      .waitFor();
+    assert.equal(await page.locator(".clip-card").count(), 0);
+    assert.deepEqual(errors, []);
+    console.log(
+      `Glyph checks passed (${theme}${suffix}): crops, unknown positions, drawer, caret, clips, filter, rectangle, panning, deletion, sign-out.`,
+    );
+  } finally {
+    await context.close();
+  }
+}
