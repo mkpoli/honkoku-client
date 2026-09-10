@@ -13,7 +13,9 @@ HONKOKU_SHOT_PORT="$(bun -e 'const server = Bun.serve({port: 0, fetch: () => new
 export HONKOKU_SHOT_PORT
 xvfb-run -a -s '-screen 0 1600x1000x24' bash <<'CAPTURE'
 set -euo pipefail
-config=(--config "{\"build\":{\"beforeDevCommand\":\"bun run dev --port $HONKOKU_SHOT_PORT\",\"devUrl\":\"http://localhost:$HONKOKU_SHOT_PORT/$HONKOKU_SHOT_ROUTE\"}}")
+export TAURI_CONFIG="{\"build\":{\"devUrl\":\"http://127.0.0.1:$HONKOKU_SHOT_PORT/$HONKOKU_SHOT_ROUTE\"}}"
+cargo build -p honkoku-client 2>&1 | sed -u -E 's@/home/[^/[:space:]]+@~@g'
+unset TAURI_CONFIG
 runner=""
 cleanup() {
   if [ -n "$runner" ]; then
@@ -33,7 +35,18 @@ cleanup() {
   fi
 }
 trap cleanup EXIT
-(cd apps/client && exec devrun bun x --bun --no-install tauri dev --no-watch "${config[@]}") > >(sed -u -E 's@/home/[^/[:space:]]+@~@g' > .local/logs/tauri-shot.log) 2>&1 &
+devrun bash -c '
+  set -euo pipefail
+  export CHOKIDAR_USEPOLLING=1 CHOKIDAR_INTERVAL=1500
+  bun run --cwd apps/client dev --port "$HONKOKU_SHOT_PORT" &
+  ready=false
+  for _ in $(seq 1 100); do
+    if curl --silent --fail "http://127.0.0.1:$HONKOKU_SHOT_PORT/" >/dev/null; then ready=true; break; fi
+    sleep 0.2
+  done
+  if [ "$ready" != true ]; then echo "Vite did not become ready" >&2; exit 1; fi
+  exec target/debug/honkoku-client
+'  > >(sed -u -E 's@/home/[^/[:space:]]+@~@g' > .local/logs/tauri-shot.log) 2>&1 &
 runner=$!
 ready=false
 for _ in $(seq 1 90); do
