@@ -39,6 +39,7 @@ impl Storage {
         let migrations = [
             (1, include_str!("../migrations/001_cache.sql")),
             (2, include_str!("../migrations/002_home.sql")),
+            (3, include_str!("../migrations/003_progress.sql")),
         ];
         if version > migrations.len() as u32 {
             return Err(Error::Invalid(
@@ -149,11 +150,18 @@ impl Storage {
         key: &str,
         max_age: Duration,
     ) -> Result<Option<T>> {
+        let (table, column, id) = if let Some(id) = key.strip_prefix("collection-progress/") {
+            ("collection_progress", "id", id)
+        } else if let Some(id) = key.strip_prefix("entry-progress/") {
+            ("entry_progress", "id", id)
+        } else {
+            ("responses", "key", key)
+        };
         let row: Option<(String, String)> = self
             .connection
             .query_row(
-                "SELECT payload,fetched_at FROM responses WHERE key=?",
-                [key],
+                &format!("SELECT payload,fetched_at FROM {table} WHERE {column}=?"),
+                [id],
                 |row| Ok((row.get(0)?, row.get(1)?)),
             )
             .optional()?;
@@ -168,6 +176,12 @@ impl Storage {
         Ok(None)
     }
     pub fn put_response<T: Serialize>(&self, key: &str, value: &T) -> Result<()> {
+        if key.starts_with("collection-progress/") {
+            return self.put_collection_progress(value);
+        }
+        if key.starts_with("entry-progress/") {
+            return self.put_entry_progress(value);
+        }
         self.connection.execute("INSERT INTO responses(key,payload,fetched_at) VALUES (?1,?2,?3) ON CONFLICT(key) DO UPDATE SET payload=excluded.payload,fetched_at=excluded.fetched_at", params![key,serde_json::to_string(value)?,now()?])?;
         Ok(())
     }
@@ -226,10 +240,50 @@ impl Storage {
     }
 }
 
+impl Storage {
+    fn put_progress<T: Serialize>(&self, table: &str, id_field: &str, record: &T) -> Result<()> {
+        let value = serde_json::to_value(record)?;
+        let id = value[id_field]
+            .as_str()
+            .ok_or_else(|| Error::Invalid(format!("missing {id_field}")))?;
+        let fetched = value["fetchedAt"]
+            .as_str()
+            .ok_or_else(|| Error::Invalid("missing fetchedAt".into()))?;
+        self.connection.execute(&format!("INSERT INTO {table}(id,payload,fetched_at) VALUES (?1,?2,?3) ON CONFLICT(id) DO UPDATE SET payload=excluded.payload,fetched_at=excluded.fetched_at"), params![id,serde_json::to_string(&value)?,fetched])?;
+        Ok(())
+    }
+    pub fn put_collection_progress<T: Serialize>(&self, value: &T) -> Result<()> {
+        self.put_progress("collection_progress", "collectionId", value)
+    }
+    pub fn put_entry_progress<T: Serialize>(&self, value: &T) -> Result<()> {
+        self.put_progress("entry_progress", "entryId", value)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use serde_json::{Value, json};
+    #[test]
+    fn progress_snapshots_expire_at_ten_minutes_and_reject_future_dates() -> Result<()> {
+        let db = Storage::in_memory()?;
+        for (seconds, fresh) in [(599, true), (600, false), (-60, false)] {
+            let fetched =
+                (OffsetDateTime::now_utc() - time::Duration::seconds(seconds)).format(&Rfc3339)?;
+            let c = json!({"collectionId":"c","entries":1,"size":10,"completed":3,"initiated":2,"editing":1,"fetchedAt":fetched});
+            let e = json!({"entryId":"e","size":10,"completed":3,"initiated":2,"editing":1,"fetchedAt":fetched});
+            db.put_collection_progress(&c)?;
+            db.put_entry_progress(&e)?;
+            for key in ["collection-progress/c", "entry-progress/e"] {
+                let result = db.fresh_response::<Value>(key, Duration::from_secs(600))?;
+                assert_eq!(result.is_some(), fresh);
+                if let Some(value) = result {
+                    assert_eq!(value["editing"], 1);
+                }
+            }
+        }
+        Ok(())
+    }
     #[test]
     fn home_migration_upgrades_existing_cache_and_preserves_payloads() -> Result<()> {
         let connection = Connection::open_in_memory()?;
@@ -314,7 +368,7 @@ mod tests {
         let versions: i64 =
             db.connection
                 .query_row("SELECT COUNT(*) FROM schema_version", [], |row| row.get(0))?;
-        assert_eq!(versions, 2);
+        assert_eq!(versions, 3);
         Ok(())
     }
 }

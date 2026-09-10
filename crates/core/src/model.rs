@@ -449,3 +449,49 @@ pub struct OcrRecord {
     #[serde(flatten)]
     pub extra: Map<String, Value>,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct EntrySummary {
+    pub id: String,
+    pub project_id: String,
+    pub collection_id: String,
+    pub index: u32,
+    pub label: Label,
+    pub manifest_url: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub thumbnail: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub size: Option<u32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub created_at: Option<Timestamp>,
+    #[serde(flatten)]
+    pub extra: Map<String, Value>,
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct StatusCounts {
+    pub completed: u64,
+    pub initiated: u64,
+    pub editing: u64,
+}
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct CollectionProgress {
+    pub collection_id: String,
+    pub entries: usize,
+    pub size: u64,
+    #[serde(flatten)]
+    pub counts: StatusCounts,
+    pub fetched_at: Timestamp,
+}
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct EntryProgress {
+    pub entry_id: String,
+    pub size: u64,
+    #[serde(flatten)]
+    pub counts: StatusCounts,
+    pub fetched_at: Timestamp,
+}

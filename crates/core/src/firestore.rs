@@ -539,3 +539,68 @@ impl HonkokuClient {
         Ok(response.error_for_status()?.json().await?)
     }
 }
+
+impl HonkokuClient {
+    pub async fn entries_in_collection(
+        &self,
+        collection_id: &str,
+    ) -> Result<Vec<crate::model::EntrySummary>> {
+        self.run_query(json!({
+            "from": [{"collectionId": "entries"}],
+            "select": {"fields": (["projectId", "collectionId", "index", "label", "manifestUrl", "thumbnail", "size", "createdAt"].map(|field| json!({"fieldPath":field})))},
+            "where": equal("collectionId", json!({"stringValue": collection_id})),
+            "orderBy": [{"field": {"fieldPath": "index"}, "direction": "ASCENDING"}]
+        }))
+        .await
+    }
+    /// Counts across disjoint batches; no per-entry attribution is inferred from a batch.
+    pub async fn collection_status_counts(
+        &self,
+        entry_ids: &[String],
+    ) -> Result<crate::model::StatusCounts> {
+        let ids: Vec<_> = entry_ids
+            .iter()
+            .cloned()
+            .collect::<std::collections::BTreeSet<_>>()
+            .into_iter()
+            .collect();
+        let mut result = crate::model::StatusCounts::default();
+        for chunk in ids.chunks(30) {
+            let counts = self.status_counts(chunk).await?;
+            result.completed += counts.completed;
+            result.initiated += counts.initiated;
+            result.editing += counts.editing;
+        }
+        Ok(result)
+    }
+    async fn status_counts(&self, ids: &[String]) -> Result<crate::model::StatusCounts> {
+        let mut counts = crate::model::StatusCounts::default();
+        for (status, count) in [
+            ("completed", &mut counts.completed),
+            ("initiated", &mut counts.initiated),
+            ("editing", &mut counts.editing),
+        ] {
+            *count = self.run_aggregation_count("transcriptions", vec![
+                json!({"fieldFilter":{"field":{"fieldPath":"entryId"},"op":"IN","value":{"arrayValue":{"values":ids.iter().map(|id| json!({"stringValue":id})).collect::<Vec<_>>()}}}}),
+                equal("status", json!({"stringValue":status})),
+            ]).await?;
+        }
+        Ok(counts)
+    }
+    /// Exact per-entry figures require separate aggregations, bounded to four entries.
+    pub async fn page_status_counts(
+        &self,
+        entry_ids: &[String],
+    ) -> Result<std::collections::HashMap<String, crate::model::StatusCounts>> {
+        use futures_util::{StreamExt, TryStreamExt, stream};
+        let ids: std::collections::BTreeSet<_> = entry_ids.iter().cloned().collect();
+        stream::iter(ids)
+            .map(|id| async move {
+                let counts = self.status_counts(std::slice::from_ref(&id)).await?;
+                Ok((id, counts))
+            })
+            .buffered(4)
+            .try_collect()
+            .await
+    }
+}
