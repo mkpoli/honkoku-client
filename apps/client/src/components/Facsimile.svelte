@@ -2,6 +2,7 @@
   import Skeleton from "./Skeleton.svelte";
   import RegionNotice from "./RegionNotice.svelte";
   import type { Region } from "../region.svelte";
+  import type { Snippet } from "svelte";
   import { untrack } from "svelte";
   import type {
     PageLines,
@@ -10,6 +11,7 @@
   import OpenSeadragon from "openseadragon";
   import type { Canvas } from "@honkoku/client-api/types";
   let {
+    children,
     canvas,
     pending = false,
     region,
@@ -21,6 +23,7 @@
     onlinehover,
     onlineselect,
   }: {
+    children?: Snippet<[OpenSeadragon.Viewer | undefined]>;
     canvas?: Canvas;
     pending?: boolean;
     region?: Region<Canvas[]>;
@@ -311,5 +314,6 @@
             >再試行</button
           >
         </p>{/if}{/if}
+    {@render children?.(opened ? viewer : undefined)}
   </div>
 </section>

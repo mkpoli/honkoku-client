@@ -22,8 +22,10 @@
     oncolumnchange,
     highlightedColumn = -1,
     onnote,
+    onglyph,
   }: {
     source: string;
+    onglyph?: (character: string, open: boolean) => void;
     onnote?: (content: string | null, index?: number) => number;
     oncolumnchange?: (index: number) => void;
     highlightedColumn?: number;
@@ -54,6 +56,22 @@
     }
     const selection = editor!.view.state.selection;
     return editor!.view.state.doc.textBetween(selection.from, selection.to);
+  }
+  function notifyGlyph(open = false) {
+    if (!onglyph || composing || !editor) return;
+    let selected: string, tail: string;
+    if (raw && rawInput) {
+      captureRaw();
+      selected = rawInput.value.slice(rawRange.from, rawRange.to);
+      tail = rawInput.value.slice(rawRange.from);
+    } else {
+      const { selection, doc } = editor.view.state;
+      selected = doc.textBetween(selection.from, selection.to);
+      tail = selection.$head.parent.textBetween(selection.$head.parentOffset, selection.$head.parent.content.size);
+    }
+    const parts = [...new Intl.Segmenter("ja", { granularity: "grapheme" }).segment(selected || tail)];
+    const character = selected && parts.length !== 1 ? "" : parts[0]?.segment ?? "";
+    onglyph(/^\s+$/.test(character) ? "" : character, open);
   }
   async function insertRaw(text: string, focus = true, offset = text.length) {
     const value = rawInput.value;
@@ -173,6 +191,7 @@
     oncolumnchange?.(index);
   }
   function rawSelection(element: HTMLTextAreaElement) {
+    notifyGlyph();
     const sourceIndex =
       element.value.slice(0, element.selectionStart).split("\n").length - 1;
     notifyColumn(
@@ -195,6 +214,7 @@
           canRedo = redo(editor.view.state);
         }
         onupdate?.(update);
+        notifyGlyph();
       },
       (index) => {
         if (ready) notifyColumn(index);
@@ -254,6 +274,7 @@
   </div>
   {#if status}<p class="editor-status" role="status">{status}</p>{/if}
   <section class="editor-palette" aria-label="特殊記号">
+    {#if onglyph}<button class="palette-chip" disabled={composing} onmousedown={event => event.preventDefault()} onclick={() => notifyGlyph(true)}>集字</button>{/if}
     {#each palette as group}
       <div
         class="palette-category"

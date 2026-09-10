@@ -906,3 +906,175 @@ pub async fn region_refresh(
     };
     Ok(value.map_err(honkoku_core::Error::from)?)
 }
+
+#[tauri::command]
+pub async fn glyph_attestations(
+    character: String,
+    project: Option<String>,
+    limit: usize,
+    state: State<'_, AppState>,
+    search: State<'_, Arc<crate::search::SearchState>>,
+) -> Result<honkoku_core::glyphs::Attestations, AppError> {
+    if !(1..=200).contains(&limit) || character.is_empty() {
+        return Err(honkoku_core::Error::Invalid("invalid glyph query".into()).into());
+    }
+    let hits = crate::search::search_query(
+        honkoku_search::Query {
+            text: character.clone(),
+            mode: honkoku_search::Mode::Strict,
+            project,
+            entry: None,
+            limit,
+            cursor: None,
+        },
+        search,
+    )
+    .await?;
+    Ok(state
+        .connection
+        .read()
+        .await
+        .client
+        .glyph_attestations(&character, hits)
+        .await?)
+}
+#[tauri::command]
+pub async fn clips_list(
+    state: State<'_, AppState>,
+) -> Result<Vec<honkoku_core::clips::Clip>, AppError> {
+    Ok(state.connection.read().await.client.clips().await?)
+}
+#[tauri::command]
+pub async fn clip_create(
+    input: honkoku_core::clips::ClipInput,
+    state: State<'_, AppState>,
+) -> Result<honkoku_core::clips::Clip, AppError> {
+    Ok(state
+        .connection
+        .read()
+        .await
+        .client
+        .create_clip(input)
+        .await?)
+}
+#[tauri::command]
+pub async fn clip_delete(id: String, state: State<'_, AppState>) -> Result<(), AppError> {
+    Ok(state
+        .connection
+        .read()
+        .await
+        .client
+        .delete_clip(&id)
+        .await?)
+}
+
+fn glyph_service_url(info: &Value, info_url: &str, requested: &str) -> Result<String, AppError> {
+    use honkoku_iiif::{ImageService, ImageVersion};
+    let invalid = || AppError {
+        kind: "iiif".into(),
+        message: "切り抜き画像のURLを確認できません。".into(),
+    };
+    let base = info_url.strip_suffix("/info.json").ok_or_else(invalid)?;
+    let tail = requested
+        .strip_prefix(&format!("{base}/"))
+        .ok_or_else(invalid)?;
+    let parts: Vec<_> = tail.split('/').collect();
+    if parts.len() != 4 || parts[2] != "0" || parts[3] != "default.jpg" {
+        return Err(invalid());
+    }
+    let region: Vec<u32> = parts[0]
+        .split(',')
+        .map(str::parse)
+        .collect::<Result<_, _>>()
+        .map_err(|_| invalid())?;
+    if region.len() != 4 || region[2] == 0 || region[3] == 0 {
+        return Err(invalid());
+    }
+    let requested_side: u32 = parts[1].trim_matches(',').parse().map_err(|_| invalid())?;
+    let hint = format!("{} {} {}", info["@context"], info["profile"], info["type"]);
+    let version = if hint.contains("/image/3/") || hint.contains("ImageService3") {
+        ImageVersion::V3
+    } else if hint.contains("/image/1/")
+        || hint.contains("/image-api/1.")
+        || hint.contains("ImageService1")
+    {
+        ImageVersion::V1
+    } else {
+        ImageVersion::V2
+    };
+    let size = if version == ImageVersion::V3 && requested_side > region[2].max(region[3]) {
+        format!("^{}", parts[1])
+    } else {
+        parts[1].into()
+    };
+    let service = ImageService {
+        id: info["id"]
+            .as_str()
+            .or_else(|| info["@id"].as_str())
+            .unwrap_or(base)
+            .into(),
+        version,
+        profile: info["profile"].clone(),
+    };
+    Ok(service.url(parts[0], &size, "0", "default", "jpg"))
+}
+#[tauri::command]
+pub async fn glyph_image_url(
+    info_url: String,
+    url: String,
+    fetcher: State<'_, honkoku_iiif::Fetcher>,
+) -> Result<String, AppError> {
+    let error = |_| AppError {
+        kind: "iiif".into(),
+        message: "切り抜き画像の情報を取得できません。".into(),
+    };
+    fetcher.allow_url(&info_url).map_err(error)?;
+    let cached = fetcher.get(&info_url).await.map_err(error)?;
+    let bytes = cached.read().await.map_err(error)?;
+    let info: Value = serde_json::from_slice(&bytes).map_err(|_| AppError {
+        kind: "iiif".into(),
+        message: "原本の画像情報を読み取れません。".into(),
+    })?;
+    let upstream = glyph_service_url(&info, &info_url, &url)?;
+    fetcher.allow_url(&upstream).map_err(error)?;
+    Ok(honkoku_iiif::local_url(
+        &upstream,
+        cfg!(target_os = "windows"),
+    ))
+}
+#[cfg(test)]
+mod glyph_image_tests {
+    use super::*;
+    #[test]
+    fn image_versions_keep_regions_quality_and_upscaling() {
+        let info = "https://example.org/image/?IIIF=/a%2Fb.tif/info.json";
+        let crop = "https://example.org/image/?IIIF=/a%2Fb.tif/1,2,30,40/,192/0/default.jpg";
+        assert!(
+            glyph_service_url(
+                &json!({"@context":"http://library.stanford.edu/iiif/image-api/1.1/context.json"}),
+                info,
+                crop
+            )
+            .unwrap()
+            .ends_with("/,192/0/native.jpg")
+        );
+        assert!(
+            glyph_service_url(
+                &json!({"@context":"http://iiif.io/api/image/3/context.json"}),
+                info,
+                crop
+            )
+            .unwrap()
+            .ends_with("/^,192/0/default.jpg")
+        );
+        assert_eq!(
+            glyph_service_url(
+                &json!({"@context":"http://iiif.io/api/image/2/context.json"}),
+                info,
+                crop
+            )
+            .unwrap(),
+            crop
+        );
+    }
+}

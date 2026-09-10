@@ -1,6 +1,11 @@
 fn main() {
     tauri_build::try_build(tauri_build::Attributes::new().app_manifest(
         tauri_build::AppManifest::new().commands(&[
+            "glyph_attestations",
+            "glyph_image_url",
+            "clips_list",
+            "clip_create",
+            "clip_delete",
             "search_status",
             "search_choose_dump",
             "search_build",

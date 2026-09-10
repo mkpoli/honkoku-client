@@ -197,3 +197,12 @@ export async function onSearchError(handler: (error: import("./types").AppError)
   const { listen } = await import("@tauri-apps/api/event");
   return listen<import("./types").AppError>("search-error", (event) => handler(event.payload));
 }
+
+export const glyphAttestations = (character: string, project: string | null = null, limit = 100) =>
+  invoke<import("./types").GlyphAttestations>("glyph_attestations", { character, project, limit });
+export const clipsList = () => invoke<import("./types").Clip[]>("clips_list");
+export const clipCreate = (input: import("./types").ClipInput) =>
+  invoke<import("./types").Clip>("clip_create", { input });
+export const clipDelete = (id: string) => invoke<void>("clip_delete", { id });
+export const glyphImageUrl = (infoUrl: string, url: string) =>
+  invoke<string>("glyph_image_url", { infoUrl, url });

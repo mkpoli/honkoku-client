@@ -418,3 +418,48 @@ export interface SearchProgress {
   total: number;
   indexed: number;
 }
+
+export interface GlyphOccurrence {
+  column: number;
+  plain: string;
+  offset: number;
+  before: string;
+  matched: string;
+  after: string;
+}
+export interface GlyphAttestation {
+  pageId: string;
+  entryId: string;
+  projectId: string;
+  index: number;
+  entryLabel: string;
+  projectTitle: string;
+  canvas: Canvas | null;
+  text: string;
+  ocr: Page["ocr"];
+  occurrences: GlyphOccurrence[];
+  error: string | null;
+}
+export interface GlyphAttestations {
+  total: number;
+  facets: [string, number][];
+  pages: GlyphAttestation[];
+  firestoreReads: number;
+}
+export interface ClipInput {
+  entryId: string;
+  index: number;
+  reading: string;
+  tags: string[];
+  comment: string;
+  isPrivate: boolean;
+  xywh: [number, number, number, number];
+}
+export interface Clip extends ClipInput {
+  id: string;
+  uid: string;
+  uri: string;
+  transcriptionId: string;
+  projectId: string;
+  createdAt: string;
+}

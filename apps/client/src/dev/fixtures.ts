@@ -1,3 +1,6 @@
+import glyphFixture from "../../../../fixtures/glyphs/attestations-候.json";
+import clipFixture from "../../../../fixtures/glyphs/clips.json";
+import type { Clip, ClipInput } from "@honkoku/client-api/types";
 import pageStatuses from "../../../../fixtures/home/page-statuses.json";
 import historyFixture from "../../../../fixtures/home/history.json";
 import type { RecentWork } from "@honkoku/client-api/types";
@@ -145,6 +148,7 @@ function recordHistory(
     JSON.stringify(recentHistory),
   );
 }
+let fixtureClips = structuredClone(clipFixture) as Clip[];
 let signedIn = sessionStorage.getItem("honkoku.fixture.signedOut") !== "true";
 function required<T>(value: T | undefined): T {
   if (!value)
@@ -203,6 +207,30 @@ export async function fixtureInvoke(
     return result;
   }
   switch (command) {
+    case "glyph_attestations": {
+      const result = structuredClone(glyphFixture);
+      result.pages = result.pages.filter(p => !args.project || p.projectId===args.project).slice(0,Number(args.limit));
+      if (args.character !== "候") result.pages=[];
+      result.total=result.pages.length;
+      return result;
+    }
+    case "clips_list":
+      if (!signedIn) throw {kind:"signed_out",message:"ログインしてください。"};
+      return fixtureClips;
+    case "clip_create": {
+      if (!signedIn) throw {kind:"signed_out",message:"ログインしてください。"};
+      const input=args.input as ClipInput;
+      const canvas = entries.find(e => e.id===input.entryId)?.canvases?.[input.index];
+      if (!canvas?.infoJsonUrl) throw Error("IIIF画像がありません。");
+      const clip: Clip = {...input,id:crypto.randomUUID(),uid:whoami.uid,createdAt:new Date().toISOString(),
+        projectId:entry.projectId,transcriptionId:`${input.entryId}_${input.index}`,
+        uri:`${canvas.infoJsonUrl.slice(0,-10)}/${input.xywh.join(",")}/full/0/default.jpg`};
+      fixtureClips = [clip,...fixtureClips]; return clip;
+    }
+    case "clip_delete":
+      if (!signedIn) throw {kind:"signed_out",message:"ログインしてください。"};
+      fixtureClips=fixtureClips.filter(c => c.id !== args.id); return;
+
     case "history_recent":
       return recentHistory.slice(0, Math.max(0, limit)).map((row) => {
         const e = entries.find((e) => e.id === row.entryId);
@@ -335,6 +363,7 @@ export async function fixtureInvoke(
       return (
         required(entries.find((e) => e.id === args.entryId)).canvases ?? []
       );
+    case "glyph_image_url":
     case "iiif_local_url":
       return args.url;
     case "session_import":

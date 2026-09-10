@@ -1,0 +1,69 @@
+[
+  {
+    "id": "fixture-clip-0",
+    "entryId": "0916dafb80cdc48ca7687afcad4a4f35",
+    "index": 7,
+    "uid": "fixture-account",
+    "reading": "御座候",
+    "tags": [
+      "候文",
+      "書簡"
+    ],
+    "comment": "文末のくずし方を比較する。",
+    "isPrivate": true,
+    "xywh": [
+      969,
+      491,
+      65,
+      56
+    ],
+    "uri": "https://da2.library.ryukoku.ac.jp/image/?IIIF=/17%2F170161%2F170161-0008.tif/969,491,65,56/full/0/default.jpg",
+    "transcriptionId": "0916dafb80cdc48ca7687afcad4a4f35_7",
+    "projectId": "ainu",
+    "createdAt": "2026-09-10T03:00:00Z"
+  },
+  {
+    "id": "fixture-clip-1",
+    "entryId": "0916dafb80cdc48ca7687afcad4a4f35",
+    "index": 7,
+    "uid": "fixture-account",
+    "reading": "候文",
+    "tags": [
+      "字形"
+    ],
+    "comment": "筆順の参考。",
+    "isPrivate": false,
+    "xywh": [
+      239,
+      648,
+      65,
+      50
+    ],
+    "uri": "https://da2.library.ryukoku.ac.jp/image/?IIIF=/17%2F170161%2F170161-0008.tif/239,648,65,50/full/0/default.jpg",
+    "transcriptionId": "0916dafb80cdc48ca7687afcad4a4f35_7",
+    "projectId": "ainu",
+    "createdAt": "2026-09-10T02:00:00Z"
+  },
+  {
+    "id": "fixture-clip-2",
+    "entryId": "0916dafb80cdc48ca7687afcad4a4f35",
+    "index": 8,
+    "uid": "fixture-account",
+    "reading": "蝦夷",
+    "tags": [
+      "地名"
+    ],
+    "comment": "資料の地名。",
+    "isPrivate": true,
+    "xywh": [
+      455,
+      287,
+      60,
+      52
+    ],
+    "uri": "https://da2.library.ryukoku.ac.jp/image/?IIIF=/17%2F170161%2F170161-0009.tif/455,287,60,52/full/0/default.jpg",
+    "transcriptionId": "0916dafb80cdc48ca7687afcad4a4f35_8",
+    "projectId": "ainu",
+    "createdAt": "2026-09-10T01:00:00Z"
+  }
+]
