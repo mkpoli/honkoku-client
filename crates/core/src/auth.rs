@@ -281,3 +281,131 @@ impl TokenManager {
         .map_err(|e| Error::Worker(e.to_string()))?
     }
 }
+
+pub const FIREBASE_API_KEY: &str = "AIzaSyB-n5klhtxCtVmJqcsnhIc7-bWj5Ou--GY";
+pub const FIREBASE_SDK_VERSION: &str = "10.14.1";
+pub const SIGN_IN_ORIGIN: &str = "https://app.honkoku.org";
+
+#[derive(Clone, Copy, Deserialize, Serialize)]
+pub enum SignInProvider {
+    #[serde(rename = "google.com")]
+    Google,
+    #[serde(rename = "twitter.com")]
+    Twitter,
+}
+impl SignInProvider {
+    pub fn id(self) -> &'static str {
+        match self {
+            Self::Google => "google.com",
+            Self::Twitter => "twitter.com",
+        }
+    }
+}
+
+pub fn sign_in_url(provider: SignInProvider, event_id: &str) -> Result<reqwest::Url> {
+    let mut url = reqwest::Url::parse("https://honkoku3-c466c.firebaseapp.com/__/auth/handler")
+        .map_err(|_| Error::Invalid("invalid sign-in URL".into()))?;
+    url.query_pairs_mut().extend_pairs([
+        ("apiKey", FIREBASE_API_KEY),
+        ("appName", "[DEFAULT]"),
+        ("authType", "signInViaRedirect"),
+        ("redirectUrl", "https://app.honkoku.org/"),
+        ("v", FIREBASE_SDK_VERSION),
+        ("providerId", provider.id()),
+        ("eventId", event_id),
+    ]);
+    if matches!(provider, SignInProvider::Google) {
+        url.query_pairs_mut().append_pair("scopes", "profile");
+    }
+    Ok(url)
+}
+
+// Deliberately excludes Debug, like Session.
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct CapturedSession {
+    uid: String,
+    email: Option<String>,
+    display_name: Option<String>,
+    providers: Vec<String>,
+    refresh_token: String,
+    id_token: String,
+    expires_at: Timestamp,
+}
+impl CapturedSession {
+    pub fn into_session(self, provider: SignInProvider) -> Result<Session> {
+        if self.uid.is_empty()
+            || self.refresh_token.is_empty()
+            || self.id_token.is_empty()
+            || self.expires_at.0 <= OffsetDateTime::now_utc()
+            || !self.providers.iter().any(|id| id == provider.id())
+        {
+            return Err(Error::Invalid("invalid captured session".into()));
+        }
+        Ok(Session {
+            api_key: FIREBASE_API_KEY.into(),
+            uid: self.uid,
+            email: self.email,
+            display_name: self.display_name,
+            providers: self.providers,
+            refresh_token: self.refresh_token,
+            id_token: self.id_token,
+            expires_at: self.expires_at,
+        })
+    }
+}
+
+#[cfg(test)]
+mod sign_in_tests {
+    use super::*;
+
+    #[test]
+    fn redirect_parameters_match_the_site_sdk() {
+        for provider in [SignInProvider::Google, SignInProvider::Twitter] {
+            let url = sign_in_url(provider, "random-event").unwrap();
+            assert_eq!(url.host_str(), Some("honkoku3-c466c.firebaseapp.com"));
+            let params = url
+                .query_pairs()
+                .collect::<std::collections::HashMap<_, _>>();
+            assert_eq!(params["apiKey"], FIREBASE_API_KEY);
+            assert_eq!(params["appName"], "[DEFAULT]");
+            assert_eq!(params["authType"], "signInViaRedirect");
+            assert_eq!(params["redirectUrl"], "https://app.honkoku.org/");
+            assert_eq!(params["v"], "10.14.1");
+            assert_eq!(params["providerId"], provider.id());
+            assert_eq!(params["eventId"], "random-event");
+            assert_eq!(
+                params.get("scopes").map(|v| v.as_ref()),
+                matches!(provider, SignInProvider::Google).then_some("profile")
+            );
+        }
+        assert!(serde_json::from_str::<SignInProvider>("\"github.com\"").is_err());
+    }
+
+    #[test]
+    fn captured_credentials_are_validated() {
+        let valid = serde_json::json!({"uid":"user", "email":null, "displayName":null,
+            "providers":["google.com"], "refreshToken":"refresh", "idToken":"id",
+            "expiresAt":"2099-01-01T00:00:00Z"});
+        let capture: CapturedSession = serde_json::from_value(valid.clone()).unwrap();
+        assert_eq!(
+            capture
+                .into_session(SignInProvider::Google)
+                .unwrap()
+                .api_key,
+            FIREBASE_API_KEY
+        );
+        for (key, value) in [
+            ("uid", serde_json::json!("")),
+            ("refreshToken", serde_json::json!("")),
+            ("idToken", serde_json::json!("")),
+            ("expiresAt", serde_json::json!("2000-01-01T00:00:00Z")),
+            ("providers", serde_json::json!(["twitter.com"])),
+        ] {
+            let mut invalid = valid.clone();
+            invalid[key] = value;
+            let capture: CapturedSession = serde_json::from_value(invalid).unwrap();
+            assert!(capture.into_session(SignInProvider::Google).is_err());
+        }
+    }
+}
