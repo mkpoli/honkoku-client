@@ -1,4 +1,5 @@
 import unreadCount from "../../../../fixtures/home/unread-notification-count.json";
+import { fixtureEdit } from "./editing";
 import pagesJson from "../../../../fixtures/home/pages.json";
 import { normalizeCanvas } from "../../../../packages/client-api/canvas";
 import projectsJson from "../../../../fixtures/api/projects.json";
@@ -78,6 +79,7 @@ for (const row of firestorePages)
 const extraPages = normalize(pagesJson) as Record<string, Page[]>;
 const timeline = normalize(timelineJson) as TimelineItem[];
 const projectTimeline = normalize(projectTimelineJson) as TimelineItem[];
+const editingEvents: TimelineItem[] = [];
 const ranking = normalize(rankingJson) as User[];
 const users = new Map(
   [...catalog.users, ...ranking, whoami].map((u) => [u.uid, u]),
@@ -97,6 +99,42 @@ export async function fixtureInvoke(
 ): Promise<unknown> {
   if (!import.meta.env.DEV) throw new Error("閲覧データを利用できません。");
   const limit = Number(args.limit ?? 20);
+  if (
+    [
+      "page_lock",
+      "page_draft",
+      "page_save",
+      "page_discard",
+      "page_lock_state",
+    ].includes(command)
+  ) {
+    const e = required(entries.find((e) => e.id === args.entryId));
+    const index = Number(args.index);
+    let p =
+      args.entryId === entry.id
+        ? pages.get(index)
+        : extraPages[e.id]?.find((p) => p.index === index);
+    if (!p && index >= 0 && index < (e.size ?? 0)) {
+      p = {
+        id: `${e.id}_${index}`,
+        entryId: e.id,
+        index,
+        status: "default",
+        text: "",
+        notes: [],
+      };
+      if (e.id === entry.id) pages.set(index, p);
+      else (extraPages[e.id] ??= []).push(p);
+    }
+    return fixtureEdit(
+      command,
+      args,
+      required(p),
+      signedIn ? whoami : null,
+      e,
+      editingEvents,
+    );
+  }
   switch (command) {
     case "list_projects":
       return structuredClone(projects);
@@ -162,7 +200,10 @@ export async function fixtureInvoke(
             p.members?.includes(whoami.uid) || p.admins?.includes(whoami.uid),
         )
         .map((p) => p.id);
-      return (filter.project_id === "ainu" ? projectTimeline : timeline)
+      return [
+        ...editingEvents,
+        ...(filter.project_id === "ainu" ? projectTimeline : timeline),
+      ]
         .filter(
           (i) =>
             (!filter.project_id || i.event.projectId === filter.project_id) &&

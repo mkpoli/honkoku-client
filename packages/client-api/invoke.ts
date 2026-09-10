@@ -94,3 +94,11 @@ export const pageDiscard = (entryId: string, index: number) =>
   invoke<void>("page_discard", { entryId, index });
 export const pageLockState = (entryId: string, index: number) =>
   invoke<import("./types").PageLockState>("page_lock_state", { entryId, index });
+
+export async function onWindowClose(
+  handler: (event: { preventDefault: () => void }, close: () => Promise<void>) => void | Promise<void>,
+) {
+  const { getCurrentWindow } = await import("@tauri-apps/api/window");
+  const appWindow = getCurrentWindow();
+  return appWindow.onCloseRequested((event) => handler(event, () => appWindow.close()));
+}
