@@ -1,0 +1,1210 @@
+{
+  "total": 4,
+  "facets": [
+    [
+      "ainu",
+      4
+    ]
+  ],
+  "pages": [
+    {
+      "pageId": "0916dafb80cdc48ca7687afcad4a4f35_7",
+      "entryId": "0916dafb80cdc48ca7687afcad4a4f35",
+      "projectId": "ainu",
+      "index": 7,
+      "entryLabel": "蝦夷紀行上",
+      "projectTitle": "アイヌ関連資料",
+      "canvas": {
+        "id": "https://da.library.ryukoku.ac.jp/iiif/170161/1/canvas/8",
+        "width": 1350,
+        "height": 1000,
+        "infoJsonUrl": "https://da2.library.ryukoku.ac.jp/image/?IIIF=/17%2F170161%2F170161-0008.tif/info.json",
+        "imageUrl": "https://da2.library.ryukoku.ac.jp/image/?IIIF=/17%2F170161%2F170161-0008.tif/full/1350,/0/default.jpg",
+        "thumbnailUrl": "https://da2.library.ryukoku.ac.jp/image/?IIIF=/17%2F170161%2F170161-0008.tif/full/200,/0/default.jpg"
+      },
+      "text": "尽さすして帰り来らんも再見を命せられし其詮あ\nるましく思ひ何卒東韃入貢の時に至て伴ひ行ん事を\n約せんと思ひ日頃媚置し女夷等に語りて其事を説せ\nけれは男夷事故なくうけがい幸近き内彼地に趣く\n事成れは船の事を挟候て行へしと約しける故\n書を作りて従夷に渡し其外是迄訊置し此後の\n事ともつゝりたる書物は悉く是に託し我万一彼\n地にして死亡の事もはかりかたく旦は異域に入\n事なれは如何なる事ありて帰り来たる事を得さ\nらむもはかりかたし其時ハ汝是を持帰りシラヌシの\n府に捧くへしと命し置ノテトの土夷四人《割書：男夷｜のみ》ウヤ\nクトウの夷三人《割書：男一人女一人｜児夷壱人》林蔵を会して八人山旦\n船《割書：長凡五尋余｜巾凡四尺計》一艘に乗組六月廿六日ノテトの崎を発\nして東韃地方に赴しに其日風が為あしく潮路又\nつよく起り軽軟の夷船是を凌行事あたはす終に\n船を返してラツカの崎に至りぬるに日々風波あしく\n日数五日の間此所に繋泊す時三伏の候といへとも風\n殊に冷に烟霧日々濃朦として衣裳の潤湿する事\n雨中に蓑笠をつけさるか如し此所産魚少く大\n抵滞泊中万実を食となすゆへに腹中痞痛して",
+      "ocr": {
+        "ndl": {
+          "text": "尽さすして帰り来らんも再見を命せられし其詮あ\nるましく思ひ何卒東韃入貢の時に至て伴ひ行ん事を\n約せんと思ひ日頃娼置し女夷等に語りて其事を説せ\nけれは男夷事故なくうけがい幸近き内彼地に趣く\n事成れは船の事を挟候て行へしと約しける故\n書を作りて従夷に渡し其外是迄説置し此後の\n事ともつゝりたる書物は悉く是に託し我万一彼\n地にして死亡の事もはかりかたく旦は異域に入\n事なれは如何なる事ありて帰り来たる事下得さ\nらむらもはかりかたし其時ハ汝是を持帰りシラヌシの\n其時ハ汝是を持帰\n一府に捧くへしと命し置ノテトの土夷四人増後ウヤ\nの土夷四人男女四人の女四人の\n田力太夫\nのみ\n一クトウの夷三人男一人男女一人林蔵を会して八人山旦\nクトウの夷三人四\n男一人女一人\n児夷壱人\n林蔵を会して八人山且\n一身巾凡四尺斗\n公長凡五尋余\n一艘小乗組六月廿六日ゟテトの崎を発\nして東就地方に赴しに其日風が為あしく潮路又\nつよく起り軽軟の夷船是を凌行事あたはす終に\n船を返してラツカの崎に至りぬるに日々風破あしく\n日数五日の間此所に繋泊す時三伏の候といへとも風\n殊に冷に烟霧日〻濃像として衣裳の間温する事\n雨中に蓑笠をつけさるか如し此所産魚如く大\n抵滞泊中万実を食となすゆへに腹中瘡痛して",
+          "createdAt": {
+            "_seconds": 1776403670,
+            "_nanoseconds": 392000000
+          },
+          "textBlocks": [
+            {
+              "x": 1185,
+              "y": 182,
+              "width": 46,
+              "height": 706,
+              "confidence": 0.8473411202430725,
+              "classId": 0,
+              "text": {
+                "text": "尽さすして帰り来らんも再見を命せられし其詮あ",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 1
+            },
+            {
+              "x": 1133,
+              "y": 186,
+              "width": 41,
+              "height": 704,
+              "confidence": 0.7355764508247375,
+              "classId": 0,
+              "text": {
+                "text": "るましく思ひ何卒東韃入貢の時に至て伴ひ行ん事を",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 2
+            },
+            {
+              "x": 1083,
+              "y": 185,
+              "width": 39,
+              "height": 701,
+              "confidence": 0.868071973323822,
+              "classId": 0,
+              "text": {
+                "text": "約せんと思ひ日頃娼置し女夷等に語りて其事を説せ",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 3
+            },
+            {
+              "x": 1033,
+              "y": 188,
+              "width": 38,
+              "height": 698,
+              "confidence": 0.8975509405136108,
+              "classId": 0,
+              "text": {
+                "text": "けれは男夷事故なくうけがい幸近き内彼地に趣く",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 4
+            },
+            {
+              "x": 981,
+              "y": 186,
+              "width": 41,
+              "height": 700,
+              "confidence": 0.9008644819259644,
+              "classId": 0,
+              "text": {
+                "text": "事成れは船の事を挟候て行へしと約しける故",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 5
+            },
+            {
+              "x": 930,
+              "y": 185,
+              "width": 41,
+              "height": 695,
+              "confidence": 0.8929849863052368,
+              "classId": 0,
+              "text": {
+                "text": "書を作りて従夷に渡し其外是迄説置し此後の",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 6
+            },
+            {
+              "x": 875,
+              "y": 183,
+              "width": 41,
+              "height": 702,
+              "confidence": 0.8550046682357788,
+              "classId": 0,
+              "text": {
+                "text": "事ともつゝりたる書物は悉く是に託し我万一彼",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 7
+            },
+            {
+              "x": 824,
+              "y": 180,
+              "width": 41,
+              "height": 705,
+              "confidence": 0.8952782154083252,
+              "classId": 0,
+              "text": {
+                "text": "地にして死亡の事もはかりかたく旦は異域に入",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 8
+            },
+            {
+              "x": 772,
+              "y": 183,
+              "width": 40,
+              "height": 693,
+              "confidence": 0.879396378993988,
+              "classId": 0,
+              "text": {
+                "text": "事なれは如何なる事ありて帰り来たる事下得さ",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 9
+            },
+            {
+              "x": 722,
+              "y": 175,
+              "width": 42,
+              "height": 710,
+              "confidence": 0.693036675453186,
+              "classId": 0,
+              "text": {
+                "text": "らむらもはかりかたし其時ハ汝是を持帰りシラヌシの",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 10
+            },
+            {
+              "x": 721,
+              "y": 467,
+              "width": 40,
+              "height": 258,
+              "confidence": 0.31383201479911804,
+              "classId": 0,
+              "text": {
+                "text": "其時ハ汝是を持帰",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 11
+            },
+            {
+              "x": 567,
+              "y": 156,
+              "width": 45,
+              "height": 717,
+              "confidence": 0.7614058256149292,
+              "classId": 0,
+              "text": {
+                "text": "一府に捧くへしと命し置ノテトの土夷四人増後ウヤ",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 12
+            },
+            {
+              "x": 566,
+              "y": 620,
+              "width": 39,
+              "height": 257,
+              "confidence": 0.33956649899482727,
+              "classId": 0,
+              "text": {
+                "text": "の土夷四人男女四人の女四人の",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 13
+            },
+            {
+              "x": 583,
+              "y": 758,
+              "width": 21,
+              "height": 59,
+              "confidence": 0.318539023399353,
+              "classId": 0,
+              "text": {
+                "text": "田力太夫",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 14
+            },
+            {
+              "x": 566,
+              "y": 759,
+              "width": 20,
+              "height": 55,
+              "confidence": 0.34224000573158264,
+              "classId": 0,
+              "text": {
+                "text": "のみ",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 15
+            },
+            {
+              "x": 509,
+              "y": 152,
+              "width": 50,
+              "height": 736,
+              "confidence": 0.6862855553627014,
+              "classId": 0,
+              "text": {
+                "text": "一クトウの夷三人男一人男女一人林蔵を会して八人山旦",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 16
+            },
+            {
+              "x": 513,
+              "y": 165,
+              "width": 46,
+              "height": 253,
+              "confidence": 0.3595503568649292,
+              "classId": 0,
+              "text": {
+                "text": "クトウの夷三人四",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 17
+            },
+            {
+              "x": 527,
+              "y": 402,
+              "width": 35,
+              "height": 150,
+              "confidence": 0.5710793733596802,
+              "classId": 0,
+              "text": {
+                "text": "男一人女一人",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 18
+            },
+            {
+              "x": 507,
+              "y": 407,
+              "width": 28,
+              "height": 140,
+              "confidence": 0.6424446105957031,
+              "classId": 0,
+              "text": {
+                "text": "児夷壱人",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 19
+            },
+            {
+              "x": 513,
+              "y": 548,
+              "width": 39,
+              "height": 332,
+              "confidence": 0.6353952288627625,
+              "classId": 0,
+              "text": {
+                "text": "林蔵を会して八人山且",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 20
+            },
+            {
+              "x": 458,
+              "y": 162,
+              "width": 25,
+              "height": 191,
+              "confidence": 0.5480271577835083,
+              "classId": 0,
+              "text": {
+                "text": "一身巾凡四尺斗",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 21
+            },
+            {
+              "x": 475,
+              "y": 176,
+              "width": 31,
+              "height": 186,
+              "confidence": 0.601564884185791,
+              "classId": 0,
+              "text": {
+                "text": "公長凡五尋余",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 22
+            },
+            {
+              "x": 459,
+              "y": 366,
+              "width": 34,
+              "height": 507,
+              "confidence": 0.7863587141036987,
+              "classId": 0,
+              "text": {
+                "text": "一艘小乗組六月廿六日ゟテトの崎を発",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 23
+            },
+            {
+              "x": 410,
+              "y": 159,
+              "width": 38,
+              "height": 721,
+              "confidence": 0.8585982322692871,
+              "classId": 0,
+              "text": {
+                "text": "して東就地方に赴しに其日風が為あしく潮路又",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 24
+            },
+            {
+              "x": 353,
+              "y": 162,
+              "width": 38,
+              "height": 710,
+              "confidence": 0.8693362474441528,
+              "classId": 0,
+              "text": {
+                "text": "つよく起り軽軟の夷船是を凌行事あたはす終に",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 25
+            },
+            {
+              "x": 302,
+              "y": 156,
+              "width": 40,
+              "height": 717,
+              "confidence": 0.873088002204895,
+              "classId": 0,
+              "text": {
+                "text": "船を返してラツカの崎に至りぬるに日々風破あしく",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 26
+            },
+            {
+              "x": 251,
+              "y": 156,
+              "width": 41,
+              "height": 721,
+              "confidence": 0.8991477489471436,
+              "classId": 0,
+              "text": {
+                "text": "日数五日の間此所に繋泊す時三伏の候といへとも風",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 27
+            },
+            {
+              "x": 202,
+              "y": 158,
+              "width": 37,
+              "height": 720,
+              "confidence": 0.8899209499359131,
+              "classId": 0,
+              "text": {
+                "text": "殊に冷に烟霧日〻濃像として衣裳の間温する事",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 28
+            },
+            {
+              "x": 149,
+              "y": 159,
+              "width": 34,
+              "height": 718,
+              "confidence": 0.8904496431350708,
+              "classId": 0,
+              "text": {
+                "text": "雨中に蓑笠をつけさるか如し此所産魚如く大",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 29
+            },
+            {
+              "x": 95,
+              "y": 158,
+              "width": 41,
+              "height": 715,
+              "confidence": 0.8536515235900879,
+              "classId": 0,
+              "text": {
+                "text": "抵滞泊中万実を食となすゆへに腹中瘡痛して",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 30
+            }
+          ]
+        }
+      },
+      "occurrences": [
+        {
+          "column": 4,
+          "plain": "事成れは船の事を挟候て行へしと約しける故",
+          "offset": 9,
+          "before": "事成れは船の事を挟",
+          "matched": "候",
+          "after": "て行へしと約しける故"
+        },
+        {
+          "column": 16,
+          "plain": "日数五日の間此所に繋泊す時三伏の候といへとも風",
+          "offset": 16,
+          "before": "日数五日の間此所に繋泊す時三伏の",
+          "matched": "候",
+          "after": "といへとも風"
+        }
+      ],
+      "error": null
+    },
+    {
+      "pageId": "0916dafb80cdc48ca7687afcad4a4f35_8",
+      "entryId": "0916dafb80cdc48ca7687afcad4a4f35",
+      "projectId": "ainu",
+      "index": 8,
+      "entryLabel": "蝦夷紀行上",
+      "projectTitle": "アイヌ関連資料",
+      "canvas": {
+        "id": "https://da.library.ryukoku.ac.jp/iiif/170161/1/canvas/9",
+        "width": 1350,
+        "height": 1000,
+        "infoJsonUrl": "https://da2.library.ryukoku.ac.jp/image/?IIIF=/17%2F170161%2F170161-0009.tif/info.json",
+        "imageUrl": "https://da2.library.ryukoku.ac.jp/image/?IIIF=/17%2F170161%2F170161-0009.tif/full/1350,/0/default.jpg",
+        "thumbnailUrl": "https://da2.library.ryukoku.ac.jp/image/?IIIF=/17%2F170161%2F170161-0009.tif/full/200,/0/default.jpg"
+      },
+      "text": "心気亦難得といふ漸七月二日に至て風波穏なる\n事を得て船を出すといへ共烟霧は猶濃〱とし\nて東西を弁知しかたし洋中を行事凡三里半余り\nにして初て東韃の地方モトマルと名付たる崎を見\nかけ夫より地方に添ふて南流しカムカタと称せる\n崎に至りけるに此所湖瀬ありて怒涛の激沸する\n事実に急何の如くなれハ夷船既にたえさらんと\nする事数度なりしを漸凌行て路の程凡十丁半\n南の方口ヽカマチーと称する所に至り入湾の内に\n船をつなきて和潮を待の間炎等驚魚を釣て水\n煮し是を喰しむ草根不満の腹中僅に偏る事を\n得て痛気も亦返く事を覚ふ其日も雨に傾きぬるに\n漸減潮の候にむかゆ波濤も漸に静なれは其所を出\nて一里半斗行其夜はアルコヱと称する所に泊しぬ\n一往道中の泊所何れの所といへ共夷船に寓するに\n　有されは悉く海濱河岸に仮屋を造り是\n　に泊す下是に倣ふ\n一仮屋の製前篇中ヲロツコの部に載する如き椛木皮\n　を以屋を覆ふ其状図の如し其同ねハ大抵柳\n　枝の直なりを切来りて地上に立是を造る其中",
+      "ocr": {
+        "ndl": {
+          "text": "心気亦難得といふ漸七月二日に至て風波穏なる\n事を得て船を出すといへ取烟霧は猶濃くとし\nて東西を弁知しかたし洋中を行れ凡三里半余り\nにして初て東韃の地方モトマルと名付たる崎を見\nかけ夫より地方に添ふて南流しカムカタと称世後\n崎に至りけるに此所湖浜ありて怒激沸する\n事実に急何の如くなれハ夷船既にたえさしんと\nする事数度なりしを漸凌行て路の程凡十丁半\n南の方口ゝカマチしく称する所に至り入漢の内に\n船をつなきて和朝を待の間炎等驚魚を約く水\n一煮し是を喰しむ草根不満の腹中侯に偏る事を\n得て痛気も亦返く事を覚ふ其日も雨に傾きぬるに\n漸磯潮の候にむかゆ波濤も漸に静なれは其所を出\nて一里半斗行其夜はアルコヱと称する所に泊しぬ\n一往道中の泊所何れの所といへ共夷船に寓するに\n有されは悉く海濱河岸に仮屋を造り是\nに泊す下是に倣に\n一仮屋の製前扇中を印￣口に載する如き椀木皮\n一仮屋の制名前篇中\nヲロツコ\nノ部\nに載する如き杭木皮\nを以屋を覆ふ其状図の如し其同ねハ大抵柳\n枝の直なりを切来りて地上に立是を造る其中",
+          "createdAt": {
+            "_seconds": 1776736917,
+            "_nanoseconds": 504000000
+          },
+          "textBlocks": [
+            {
+              "x": 1197,
+              "y": 154,
+              "width": 42,
+              "height": 718,
+              "confidence": 0.8968223333358765,
+              "classId": 0,
+              "text": {
+                "text": "心気亦難得といふ漸七月二日に至て風波穏なる",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 1
+            },
+            {
+              "x": 1145,
+              "y": 153,
+              "width": 39,
+              "height": 717,
+              "confidence": 0.8873502016067505,
+              "classId": 0,
+              "text": {
+                "text": "事を得て船を出すといへ取烟霧は猶濃くとし",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 2
+            },
+            {
+              "x": 1094,
+              "y": 147,
+              "width": 40,
+              "height": 719,
+              "confidence": 0.9029656648635864,
+              "classId": 0,
+              "text": {
+                "text": "て東西を弁知しかたし洋中を行れ凡三里半余り",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 3
+            },
+            {
+              "x": 1041,
+              "y": 148,
+              "width": 40,
+              "height": 718,
+              "confidence": 0.8831993341445923,
+              "classId": 0,
+              "text": {
+                "text": "にして初て東韃の地方モトマルと名付たる崎を見",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 4
+            },
+            {
+              "x": 990,
+              "y": 142,
+              "width": 40,
+              "height": 718,
+              "confidence": 0.8970571160316467,
+              "classId": 0,
+              "text": {
+                "text": "かけ夫より地方に添ふて南流しカムカタと称世後",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 5
+            },
+            {
+              "x": 939,
+              "y": 139,
+              "width": 40,
+              "height": 715,
+              "confidence": 0.8653696775436401,
+              "classId": 0,
+              "text": {
+                "text": "崎に至りけるに此所湖浜ありて怒激沸する",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 6
+            },
+            {
+              "x": 885,
+              "y": 135,
+              "width": 39,
+              "height": 721,
+              "confidence": 0.8904361724853516,
+              "classId": 0,
+              "text": {
+                "text": "事実に急何の如くなれハ夷船既にたえさしんと",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 7
+            },
+            {
+              "x": 837,
+              "y": 138,
+              "width": 35,
+              "height": 712,
+              "confidence": 0.8525398969650269,
+              "classId": 0,
+              "text": {
+                "text": "する事数度なりしを漸凌行て路の程凡十丁半",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 8
+            },
+            {
+              "x": 781,
+              "y": 135,
+              "width": 37,
+              "height": 717,
+              "confidence": 0.8665202856063843,
+              "classId": 0,
+              "text": {
+                "text": "南の方口ゝカマチしく称する所に至り入漢の内に",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 9
+            },
+            {
+              "x": 732,
+              "y": 140,
+              "width": 37,
+              "height": 708,
+              "confidence": 0.8734408617019653,
+              "classId": 0,
+              "text": {
+                "text": "船をつなきて和朝を待の間炎等驚魚を約く水",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 10
+            },
+            {
+              "x": 573,
+              "y": 156,
+              "width": 44,
+              "height": 724,
+              "confidence": 0.862460732460022,
+              "classId": 0,
+              "text": {
+                "text": "一煮し是を喰しむ草根不満の腹中侯に偏る事を",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 11
+            },
+            {
+              "x": 519,
+              "y": 157,
+              "width": 37,
+              "height": 726,
+              "confidence": 0.8854358196258545,
+              "classId": 0,
+              "text": {
+                "text": "得て痛気も亦返く事を覚ふ其日も雨に傾きぬるに",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 12
+            },
+            {
+              "x": 466,
+              "y": 167,
+              "width": 38,
+              "height": 715,
+              "confidence": 0.8821948170661926,
+              "classId": 0,
+              "text": {
+                "text": "漸磯潮の候にむかゆ波濤も漸に静なれは其所を出",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 13
+            },
+            {
+              "x": 417,
+              "y": 166,
+              "width": 37,
+              "height": 681,
+              "confidence": 0.8799514770507812,
+              "classId": 0,
+              "text": {
+                "text": "て一里半斗行其夜はアルコヱと称する所に泊しぬ",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 14
+            },
+            {
+              "x": 364,
+              "y": 192,
+              "width": 37,
+              "height": 691,
+              "confidence": 0.8708694577217102,
+              "classId": 0,
+              "text": {
+                "text": "一往道中の泊所何れの所といへ共夷船に寓するに",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 15
+            },
+            {
+              "x": 317,
+              "y": 223,
+              "width": 34,
+              "height": 664,
+              "confidence": 0.8784951567649841,
+              "classId": 0,
+              "text": {
+                "text": "有されは悉く海濱河岸に仮屋を造り是",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 16
+            },
+            {
+              "x": 267,
+              "y": 237,
+              "width": 30,
+              "height": 296,
+              "confidence": 0.8217397928237915,
+              "classId": 0,
+              "text": {
+                "text": "に泊す下是に倣に",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 17
+            },
+            {
+              "x": 213,
+              "y": 190,
+              "width": 37,
+              "height": 699,
+              "confidence": 0.6198444962501526,
+              "classId": 0,
+              "text": {
+                "text": "一仮屋の製前扇中を印￣口に載する如き椀木皮",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 18
+            },
+            {
+              "x": 217,
+              "y": 192,
+              "width": 30,
+              "height": 309,
+              "confidence": 0.5476853251457214,
+              "classId": 0,
+              "text": {
+                "text": "一仮屋の制名前篇中",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 19
+            },
+            {
+              "x": 236,
+              "y": 505,
+              "width": 14,
+              "height": 97,
+              "confidence": 0.566855251789093,
+              "classId": 0,
+              "text": {
+                "text": "ヲロツコ",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 20
+            },
+            {
+              "x": 213,
+              "y": 507,
+              "width": 22,
+              "height": 58,
+              "confidence": 0.5067031979560852,
+              "classId": 0,
+              "text": {
+                "text": "ノ部",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 21
+            },
+            {
+              "x": 216,
+              "y": 599,
+              "width": 34,
+              "height": 285,
+              "confidence": 0.6172617673873901,
+              "classId": 0,
+              "text": {
+                "text": "に載する如き杭木皮",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 22
+            },
+            {
+              "x": 162,
+              "y": 239,
+              "width": 35,
+              "height": 636,
+              "confidence": 0.8541521430015564,
+              "classId": 0,
+              "text": {
+                "text": "を以屋を覆ふ其状図の如し其同ねハ大抵柳",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 23
+            },
+            {
+              "x": 106,
+              "y": 232,
+              "width": 43,
+              "height": 640,
+              "confidence": 0.886121392250061,
+              "classId": 0,
+              "text": {
+                "text": "枝の直なりを切来りて地上に立是を造る其中",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 24
+            }
+          ]
+        }
+      },
+      "occurrences": [
+        {
+          "column": 12,
+          "plain": "漸減潮の候にむかゆ波濤も漸に静なれは其所を出",
+          "offset": 4,
+          "before": "漸減潮の",
+          "matched": "候",
+          "after": "にむかゆ波濤も漸に静なれは其所を出"
+        }
+      ],
+      "error": null
+    },
+    {
+      "pageId": "0916dafb80cdc48ca7687afcad4a4f35_14",
+      "entryId": "0916dafb80cdc48ca7687afcad4a4f35",
+      "projectId": "ainu",
+      "index": 14,
+      "entryLabel": "蝦夷紀行上",
+      "projectTitle": "アイヌ関連資料",
+      "canvas": {
+        "id": "https://da.library.ryukoku.ac.jp/iiif/170161/1/canvas/15",
+        "width": 1350,
+        "height": 1000,
+        "infoJsonUrl": "https://da2.library.ryukoku.ac.jp/image/?IIIF=/17%2F170161%2F170161-0015.tif/info.json",
+        "imageUrl": "https://da2.library.ryukoku.ac.jp/image/?IIIF=/17%2F170161%2F170161-0015.tif/full/1350,/0/default.jpg",
+        "thumbnailUrl": "https://da2.library.ryukoku.ac.jp/image/?IIIF=/17%2F170161%2F170161-0015.tif/full/200,/0/default.jpg"
+      },
+      "text": "船を距み漸く日暮て後岩崖に船を繋き仮\n屋をいとなみ泊しける其地名を問にコルヘしと名\n付たる山旦夷五六戸の部落なりと答ふ\n同十日又船を出して二里半許に流しウルケーと\nいふ処に至りしに此所コルデツケと名付たる異族\n夷の部落船夷等船を買の事ありて其日は此\n処に滞泊す\n一地夷の容貌理髪其他衣類に至るまて山旦\n　夷に異る事なし其言語は小異ありといへ共\n　一日の滞泊中其詳なる事を知らす\n一此夷種総て海松の大材を以船を造る事を\n業とす南方諸夷の用る処皆此地の造り出す\n所なり故に船夷も此処に至りて齎し行処の\n獣皮を以船一艘を易へ得是より諸雑器を\n二艘に分積しテレンに趣くといふ\n一此辺よりして奥地は気候少しく実して\n　温暖なる事と覚ゆ故に草木の形状また\n　カラフト奥地山旦地の多きにあらす青々蒼々\n　として繁茂する故に南方諸夷地に見さる\n　大材を産す天度にさまて隔絶なくして",
+      "ocr": {
+        "ndl": {
+          "text": "船を距み漸く日暮て後岩崖に船を繋き仮\n屋をいとなみ泊し参る其地名を問ふコルヘしと名\n付たる山旦夷五六戸の部落なりと答ふ\n同十日又船を出して二里半許に流しウルケーと\nいふ処に至りしに此所コルデツケと名付たる異族\n夷の部落船夷等船を買の事ありて其日は此\n処に滞泊す\n一地夷の容貌理髪其他衣類に至るまて山旦\n一夷に異る事なし其言語は小異ありといへ共\n一日の滞治中其詳なる事を知らす\n一此夷種総て海松の大村を以船を造る事を\n業とす南方諸夷の用る処皆此地の造り出す\n所なり故に船夷も此処に至りて斉し行処の\n獣皮を以船一艘を易へ得是より諸雑器を\n二艘に分積しテレンに趣〳〵といふ\n一此辺よりして奥地は気候少しく実して\n一温暖なる事と覚ゆ故に草木の形状また\nカラフト奥地山旦地の多きにあらす青々蒼々\nとして繁茂する故に南方諸夷地に見さる\n大材を産す天度にさまて隔絶なくして",
+          "createdAt": {
+            "_seconds": 1776745699,
+            "_nanoseconds": 419000000
+          },
+          "textBlocks": [
+            {
+              "x": 1192,
+              "y": 163,
+              "width": 43,
+              "height": 714,
+              "confidence": 0.8864753246307373,
+              "classId": 0,
+              "text": {
+                "text": "船を距み漸く日暮て後岩崖に船を繋き仮",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 1
+            },
+            {
+              "x": 1143,
+              "y": 161,
+              "width": 38,
+              "height": 723,
+              "confidence": 0.9102665185928345,
+              "classId": 0,
+              "text": {
+                "text": "屋をいとなみ泊し参る其地名を問ふコルヘしと名",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 2
+            },
+            {
+              "x": 1090,
+              "y": 163,
+              "width": 36,
+              "height": 614,
+              "confidence": 0.868876039981842,
+              "classId": 0,
+              "text": {
+                "text": "付たる山旦夷五六戸の部落なりと答ふ",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 3
+            },
+            {
+              "x": 1039,
+              "y": 162,
+              "width": 41,
+              "height": 718,
+              "confidence": 0.907004177570343,
+              "classId": 0,
+              "text": {
+                "text": "同十日又船を出して二里半許に流しウルケーと",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 4
+            },
+            {
+              "x": 991,
+              "y": 161,
+              "width": 35,
+              "height": 722,
+              "confidence": 0.9188471436500549,
+              "classId": 0,
+              "text": {
+                "text": "いふ処に至りしに此所コルデツケと名付たる異族",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 5
+            },
+            {
+              "x": 935,
+              "y": 160,
+              "width": 39,
+              "height": 718,
+              "confidence": 0.8864694833755493,
+              "classId": 0,
+              "text": {
+                "text": "夷の部落船夷等船を買の事ありて其日は此",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 6
+            },
+            {
+              "x": 893,
+              "y": 159,
+              "width": 26,
+              "height": 206,
+              "confidence": 0.8611023426055908,
+              "classId": 0,
+              "text": {
+                "text": "処に滞泊す",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 7
+            },
+            {
+              "x": 834,
+              "y": 189,
+              "width": 37,
+              "height": 696,
+              "confidence": 0.8768215179443359,
+              "classId": 0,
+              "text": {
+                "text": "一地夷の容貌理髪其他衣類に至るまて山旦",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 8
+            },
+            {
+              "x": 782,
+              "y": 225,
+              "width": 35,
+              "height": 662,
+              "confidence": 0.8866423964500427,
+              "classId": 0,
+              "text": {
+                "text": "一夷に異る事なし其言語は小異ありといへ共",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 9
+            },
+            {
+              "x": 730,
+              "y": 230,
+              "width": 37,
+              "height": 556,
+              "confidence": 0.8300406336784363,
+              "classId": 0,
+              "text": {
+                "text": "一日の滞治中其詳なる事を知らす",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 10
+            },
+            {
+              "x": 570,
+              "y": 191,
+              "width": 41,
+              "height": 684,
+              "confidence": 0.8569267988204956,
+              "classId": 0,
+              "text": {
+                "text": "一此夷種総て海松の大村を以船を造る事を",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 11
+            },
+            {
+              "x": 521,
+              "y": 225,
+              "width": 39,
+              "height": 648,
+              "confidence": 0.8684089183807373,
+              "classId": 0,
+              "text": {
+                "text": "業とす南方諸夷の用る処皆此地の造り出す",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 12
+            },
+            {
+              "x": 466,
+              "y": 219,
+              "width": 42,
+              "height": 652,
+              "confidence": 0.8751214146614075,
+              "classId": 0,
+              "text": {
+                "text": "所なり故に船夷も此処に至りて斉し行処の",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 13
+            },
+            {
+              "x": 415,
+              "y": 222,
+              "width": 40,
+              "height": 653,
+              "confidence": 0.8834940195083618,
+              "classId": 0,
+              "text": {
+                "text": "獣皮を以船一艘を易へ得是より諸雑器を",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 14
+            },
+            {
+              "x": 362,
+              "y": 225,
+              "width": 37,
+              "height": 499,
+              "confidence": 0.8259963989257812,
+              "classId": 0,
+              "text": {
+                "text": "二艘に分積しテレンに趣〳〵といふ",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 15
+            },
+            {
+              "x": 313,
+              "y": 187,
+              "width": 37,
+              "height": 693,
+              "confidence": 0.808146595954895,
+              "classId": 0,
+              "text": {
+                "text": "一此辺よりして奥地は気候少しく実して",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 16
+            },
+            {
+              "x": 263,
+              "y": 222,
+              "width": 43,
+              "height": 660,
+              "confidence": 0.8705180287361145,
+              "classId": 0,
+              "text": {
+                "text": "一温暖なる事と覚ゆ故に草木の形状また",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 17
+            },
+            {
+              "x": 213,
+              "y": 223,
+              "width": 40,
+              "height": 656,
+              "confidence": 0.9007579684257507,
+              "classId": 0,
+              "text": {
+                "text": "カラフト奥地山旦地の多きにあらす青々蒼々",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 18
+            },
+            {
+              "x": 162,
+              "y": 234,
+              "width": 38,
+              "height": 638,
+              "confidence": 0.8831223249435425,
+              "classId": 0,
+              "text": {
+                "text": "として繁茂する故に南方諸夷地に見さる",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 19
+            },
+            {
+              "x": 107,
+              "y": 234,
+              "width": 36,
+              "height": 640,
+              "confidence": 0.8983503580093384,
+              "classId": 0,
+              "text": {
+                "text": "大材を産す天度にさまて隔絶なくして",
+                "confidence": 0.9,
+                "rawPredictions": []
+              },
+              "readingOrder": 20
+            }
+          ]
+        }
+      },
+      "occurrences": [
+        {
+          "column": 15,
+          "plain": "一此辺よりして奥地は気候少しく実して",
+          "offset": 11,
+          "before": "一此辺よりして奥地は気",
+          "matched": "候",
+          "after": "少しく実して"
+        }
+      ],
+      "error": null
+    },
+    {
+      "pageId": "a21e410013af91efa21fc7a97617a119_2",
+      "entryId": "a21e410013af91efa21fc7a97617a119",
+      "projectId": "ainu",
+      "index": 2,
+      "entryLabel": "ゑとろふ漂流記",
+      "projectTitle": "アイヌ関連資料",
+      "canvas": {
+        "id": "https://kokusho.nijl.ac.jp/biblio/100348741/canvas/3",
+        "width": 6468,
+        "height": 4565,
+        "infoJsonUrl": "https://kokusho.nijl.ac.jp/api/iiif/100348741/v4/HOKU/HOKU-70074/HOKU-70074-0003.tif/info.json",
+        "imageUrl": "https://kokusho.nijl.ac.jp/api/iiif/100348741/v4/HOKU/HOKU-70074/HOKU-70074-0003.tif/full/6468,/0/default.jpg",
+        "thumbnailUrl": "https://kokusho.nijl.ac.jp/api/iiif/100348741/v4/HOKU/HOKU-70074/HOKU-70074-0003.tif/full/200,/0/default.jpg"
+      },
+      "text": "【左丁】\n　　　大隅国国分の内濱の市舩奥ゑそゑとろふに漂着之記\n　　　　正徳元辛卯十月廿三日出船翌年辰十一月四日武州江戸\n　　　　芝御屋敷￣え帰着仕候\n一濱之市舩頭、次郎左衛門舩、《割書：但船￣は五年舟￣に而新敷｜　堅く御座候十五端帆》\n　　沖船頭　雇小根古　長右衛門　　五十一歳\n　　梶取　　大根古鳥居戸ノ三五郎　四十一才\n　　水主　　大根古鳥居戸ノ覚兵衛　三十二才　太兵衛　卅五才\n　　庄五郎　廿二才　長右衛門　十九才　甚七　十七才",
+      "ocr": null,
+      "occurrences": [
+        {
+          "column": 2,
+          "plain": "　　　　芝御屋敷え帰着仕候",
+          "offset": 12,
+          "before": "　　　　芝御屋敷え帰着仕",
+          "matched": "候",
+          "after": ""
+        },
+        {
+          "column": 3,
+          "plain": "一濱之市舩頭、次郎左衛門舩、但船は五年舟に而新敷　堅く御座候十五端帆",
+          "offset": 29,
+          "before": "左衛門舩、但船は五年舟に而新敷　堅く御座",
+          "matched": "候",
+          "after": "十五端帆"
+        }
+      ],
+      "error": null
+    }
+  ],
+  "firestoreReads": 0
+}
