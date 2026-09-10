@@ -35,8 +35,7 @@ impl HonkokuClient {
     pub async fn clips(&self) -> Result<Vec<Clip>> {
         let uid = self.signed_in_uid().await?;
         let query = json!({"from":[{"collectionId":"imageCollectionEntries"}],
-            "where":firestore::equal("uid",json!({"stringValue":uid})),
-            "orderBy":[{"field":{"fieldPath":"createdAt"},"direction":"DESCENDING"}]});
+            "where":firestore::equal("uid",json!({"stringValue":uid}))});
         let response = self
             .request_response(
                 Method::POST,
@@ -52,14 +51,11 @@ impl HonkokuClient {
             let message = failure["error"]["message"]
                 .as_str()
                 .unwrap_or("クリップを取得できません。");
-            return Err(Error::Invalid(if message.contains("requires an index") {
-                "クリップの表示に必要な索引がサーバーにありません。管理者にお問い合わせください。"
-                    .into()
-            } else {
-                message.into()
-            }));
+            return Err(Error::Invalid(message.into()));
         }
-        firestore::decode_query(&value)
+        let mut clips: Vec<Clip> = firestore::decode_query(&value)?;
+        clips.sort_by_key(|clip| std::cmp::Reverse(clip.created_at.0));
+        Ok(clips)
     }
     pub async fn create_clip(&self, mut input: ClipInput) -> Result<Clip> {
         let uid = self.signed_in_uid().await?;
@@ -262,8 +258,15 @@ mod contract_tests {
         assert_eq!(clip.input.tags, vec!["tag"]);
         let document = json!({"name":client.document_name(&format!("imageCollectionEntries/{}",clip.id))?,"updateTime":"2026-09-10T00:00:00Z","fields":{
             "entryId":{"stringValue":"e"},"index":{"integerValue":"0"},"reading":{"stringValue":"候"},"tags":{"arrayValue":{"values":[]}},"comment":{"stringValue":"注"},"isPrivate":{"booleanValue":true},"xywh":{"arrayValue":{"values":[{"integerValue":"1"},{"integerValue":"2"},{"integerValue":"30"},{"integerValue":"40"}]}},"uid":{"stringValue":"me"},"uri":{"stringValue":clip.uri},"transcriptionId":{"stringValue":"e_0"},"projectId":{"stringValue":"p"},"createdAt":{"timestampValue":"2026-09-10T00:00:00Z"}}});
-        Mock::given(method("POST")).and(path("/documents:runQuery")).and(body_partial_json(json!({"structuredQuery":{"where":{"fieldFilter":{"field":{"fieldPath":"uid"},"op":"EQUAL","value":{"stringValue":"me"}}},"orderBy":[{"field":{"fieldPath":"createdAt"},"direction":"DESCENDING"}]}}))).respond_with(ResponseTemplate::new(200).set_body_json(json!([{"document":document}]))).expect(1).mount(&server).await;
-        assert_eq!(client.clips().await?[0].id, clip.id);
+        let mut older = document.clone();
+        older["name"] = json!(client.document_name("imageCollectionEntries/older")?);
+        older["fields"]["createdAt"] = json!({"timestampValue":"2026-09-01T00:00:00Z"});
+        Mock::given(method("POST")).and(path("/documents:runQuery")).and(body_partial_json(json!({"structuredQuery":{"where":{"fieldFilter":{"field":{"fieldPath":"uid"},"op":"EQUAL","value":{"stringValue":"me"}}}}}))).respond_with(ResponseTemplate::new(200).set_body_json(json!([{"document":older},{"document":document}]))).expect(1).mount(&server).await;
+        let listed = client.clips().await?;
+        assert_eq!(
+            listed.iter().map(|c| c.id.as_str()).collect::<Vec<_>>(),
+            vec![clip.id.as_str(), "older"]
+        );
         Mock::given(method("POST"))
             .and(path("/documents:batchGet"))
             .respond_with(ResponseTemplate::new(200).set_body_json(json!([{"found":document}])))
@@ -283,17 +286,16 @@ mod contract_tests {
         Ok(())
     }
     #[tokio::test]
-    async fn refuses_other_accounts_and_explains_missing_index() -> Result<()> {
+    async fn refuses_other_accounts_and_surfaces_query_errors() -> Result<()> {
         let server = MockServer::start().await;
         let client = client(&server).await?;
         Mock::given(method("POST")).and(path("/documents:batchGet")).respond_with(ResponseTemplate::new(200).set_body_json(json!([{"found":{"name":client.document_name("imageCollectionEntries/other")?,"updateTime":"2026-09-10T00:00:00Z","fields":{"uid":{"stringValue":"someone-else"}}}}]))).mount(&server).await;
         assert!(client.delete_clip("other").await.is_err());
         Mock::given(method("POST"))
             .and(path("/documents:runQuery"))
-            .respond_with(
-                ResponseTemplate::new(400)
-                    .set_body_json(json!([{"error":{"message":"The query requires an index."}}])),
-            )
+            .respond_with(ResponseTemplate::new(400).set_body_json(
+                json!([{"error":{"message":"Missing or insufficient permissions."}}]),
+            ))
             .mount(&server)
             .await;
         assert!(
@@ -303,7 +305,7 @@ mod contract_tests {
                 .err()
                 .unwrap()
                 .to_string()
-                .contains("索引がサーバーにありません")
+                .contains("insufficient permissions")
         );
         assert!(
             server
