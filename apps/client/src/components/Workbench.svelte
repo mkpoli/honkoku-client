@@ -672,6 +672,17 @@
       )
         return;
       const current = parseRoute(location.hash).pageIndex ?? index;
+      if (e.key.toLowerCase() === "n") {
+        const next = [
+          ...pages.filter((p) => p.index > current),
+          ...pages.filter((p) => p.index < current),
+        ].find((p) => p.status === "default" || p.status === "initiated");
+        if (next) {
+          e.preventDefault();
+          go(next.index);
+        }
+        return;
+      }
       const next = (
         {
           ArrowLeft: current - 1,
@@ -920,7 +931,7 @@
       <strong>コマ</strong><span class="status completed caption">✓完了</span
       ><span class="status initiated caption">◐翻刻中</span><span
         class="status default caption">○未着手</span
-      ><span class="caption muted">←→で移動</span>
+      ><span class="caption muted">←→で移動・Nで次の未着手へ</span>
     </div>
     <div class="status-strip">
       {#each pages as p (p.id)}<a
@@ -934,6 +945,7 @@
     <div class="filmstrip-thumbnails" bind:this={strip} inert={!expanded}>
       {#each pages as p (p.id)}<a
           href={href({ entryId: entry.id, pageIndex: p.index })}
+          class={statusClass(p.status)}
           class:current={p.index === index}
           aria-current={p.index === index ? "page" : undefined}
           ><Thumbnail

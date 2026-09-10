@@ -1,3 +1,4 @@
+import pageStatuses from "../../../../fixtures/home/page-statuses.json";
 import historyFixture from "../../../../fixtures/home/history.json";
 import type { RecentWork } from "@honkoku/client-api/types";
 import localOcr from "../../../../fixtures/api/ocr-local-0916dafb-3.json";
@@ -86,6 +87,10 @@ for (const row of firestorePages)
     const p = fields(row.document.fields) as unknown as Page;
     pages.set(p.index, p);
   }
+for (const override of pageStatuses) {
+  const page = pages.get(override.index);
+  if (page) Object.assign(page, override);
+}
 const extraPages = normalize(pagesJson) as Record<string, Page[]>;
 extraPages[alignmentEntry.id] = alignmentEntry.canvases.map((canvas, index) =>
   index === alignmentFixture.page.index

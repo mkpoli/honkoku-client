@@ -1833,6 +1833,114 @@ button.line-overlay.line-hidden {
   border-bottom: 0;
 }
 
+.sort-control {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 8px 0 12px;
+  flex-shrink: 0;
+}
+.sort-control button {
+  padding: 4px 8px;
+  font-size: 13px;
+  border-color: transparent;
+  background: transparent;
+  color: var(--text-muted);
+}
+.sort-control button[aria-pressed="true"] {
+  color: var(--text);
+  border-color: var(--border-strong);
+  background: var(--surface-inset);
+}
+.page-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin-bottom: 16px;
+}
+.page-filters {
+  margin: 0;
+  flex-wrap: wrap;
+}
+.page-filters button {
+  flex: initial;
+  padding: 6px 12px;
+}
+.page-filters .count {
+  margin-left: 4px;
+  padding: 0 4px;
+}
+.page-card {
+  position: relative;
+  border-width: 2px;
+}
+.page-card.default,
+.page-card.initiated {
+  border-color: var(--accent);
+}
+.page-card.completed > .thumbnail,
+.filmstrip-thumbnails > a.completed .thumbnail {
+  opacity: 0.55;
+}
+.page-card.completed:hover > .thumbnail,
+.page-card.completed:focus-visible > .thumbnail,
+.filmstrip-thumbnails > a.completed:hover .thumbnail,
+.filmstrip-thumbnails > a.completed:focus-visible .thumbnail {
+  opacity: 1;
+}
+.page-card.completed strong,
+.filmstrip-thumbnails > a.completed {
+  color: var(--text-muted);
+}
+.page-tag,
+.page-check {
+  position: absolute;
+  top: 12px;
+  z-index: 1;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font: 500 13px/20px var(--font-sans);
+}
+.page-tag {
+  left: 12px;
+  color: var(--accent-text);
+  background: var(--accent);
+}
+.page-check {
+  right: 12px;
+  color: var(--gold);
+  background: var(--surface);
+  border: 1px solid var(--gold);
+}
+.page-card .locked-editor {
+  padding: 4px;
+  color: var(--status-editing);
+  overflow-wrap: anywhere;
+}
+.status-strip .default,
+.status-strip .initiated {
+  background: var(--accent);
+}
+.status-strip .initiated {
+  background: linear-gradient(
+    to top,
+    var(--accent) 50%,
+    var(--accent-soft) 50%
+  );
+  border-color: var(--accent);
+}
+.status-strip .completed {
+  background: color-mix(in srgb, var(--gold) 35%, var(--surface-inset));
+}
+.filmstrip .status.default {
+  color: var(--accent);
+}
+.filmstrip-thumbnails > a.default,
+.filmstrip-thumbnails > a.initiated {
+  border-color: var(--accent);
+}
 .home-centre {
   display: flex;
   flex-direction: column;
