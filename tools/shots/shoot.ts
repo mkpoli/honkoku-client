@@ -1,3 +1,4 @@
+import { checkInlineEditor } from "./editor-checks";
 import {
   checkBrowsePolish,
   checkInteractions,
@@ -160,6 +161,8 @@ try {
   }
   browser = await chromium.launch({ headless: true });
   for (const theme of ["light", "dark"] as const)
+    await checkInlineEditor(browser, origin, theme);
+  for (const theme of ["light", "dark"] as const)
     await checkBrowsePolish(browser, origin, theme);
   for (const theme of ["light", "dark"] as const)
     await checkQuietWorkbench(browser, origin, theme);
@@ -167,6 +170,7 @@ try {
     await checkAlignment(browser, origin, theme);
   const webkitBrowser = await webkit.launch({ headless: true });
   try {
+    await checkInlineEditor(webkitBrowser, origin, "light", "-webkit");
     await checkQuietWorkbench(webkitBrowser, origin, "light", "-webkit");
     await checkAlignment(webkitBrowser, origin, "light", "-webkit");
     await checkEditing(webkitBrowser, origin, "light", "-webkit");
@@ -177,7 +181,7 @@ try {
   for (const theme of ["light", "dark"] as const) {
     const context = await browser.newContext({
       viewport: { width: 1600, height: 1000 },
-      deviceScaleFactor: 1,
+      deviceScaleFactor: 2,
       colorScheme: theme,
       locale: "ja-JP",
       timezoneId: "Asia/Tokyo",

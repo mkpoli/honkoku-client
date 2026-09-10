@@ -522,16 +522,13 @@ export async function checkEditing(
               tempText: string;
               syncMode: boolean;
             }[];
-            Object.assign(
-              pages.find((p) => p.index === 3)!,
-              {
-                status: "editing",
-                prevStatus: "completed",
-                tempEditedBy: actor.uid,
-                tempText: "共有前の下書き",
-                syncMode,
-              },
-            );
+            Object.assign(pages.find((p) => p.index === 3)!, {
+              status: "editing",
+              prevStatus: "completed",
+              tempEditedBy: actor.uid,
+              tempText: "共有前の下書き",
+              syncMode,
+            });
             location.hash = "#/";
             return actor.displayName;
           },
@@ -1029,27 +1026,8 @@ export async function checkQuietWorkbench(
       element.setSelectionRange(2, 3),
     );
     await button("振り仮名").click();
-    assert.equal(
-      await page.getByLabel("親文字", { exact: true }).inputValue(),
-      "後",
-    );
-    await page.getByLabel("読み", { exact: true }).fill("あと");
-    await button("挿入").click();
-    assert.equal(await raw.inputValue(), "前ゟ《振り仮名：後｜あと》\n別列");
-    await raw.fill("前後");
-    await raw.evaluate((element: HTMLTextAreaElement) =>
-      element.setSelectionRange(1, 1),
-    );
-    await button("割書").click();
-    await page.getByLabel("1行目", { exact: true }).fill("一");
-    await page.getByLabel("2行目", { exact: true }).fill("二");
-    await button("行を追加").click();
-    await page.getByLabel("3行目", { exact: true }).fill("三");
-    await button("行を追加").click();
-    await page.getByLabel("4行目", { exact: true }).fill("四");
-    assert.equal(await button("行を追加").count(), 0);
-    await button("挿入").click();
-    assert.equal(await raw.inputValue(), "前《割書：一｜二｜三｜四》後");
+    assert.equal(await raw.inputValue(), "前ゟ《振り仮名：後｜》\n別列");
+    await raw.fill("前《割書：一｜二｜三｜四》後");
     await button("原文表示").click();
     await page
       .locator(".editor-warigaki > .editor-segment")
@@ -1067,7 +1045,7 @@ export async function checkQuietWorkbench(
     await page
       .getByLabel("注記の内容", { exact: true })
       .fill("合字は「より」を表す。");
-    await button("追加").click();
+    await page.keyboard.press("Escape");
     assert.equal(await raw.inputValue(), "前＃1後");
     await button("原文表示").click();
     await button("注記1").hover();
@@ -1095,7 +1073,7 @@ export async function checkQuietWorkbench(
     );
     await button("注記").click();
     await page.getByLabel("注記の内容", { exact: true }).fill("二つ目の注記");
-    await button("追加").click();
+    await page.keyboard.press("Escape");
     assert.equal(await raw.inputValue(), "前＃1後＃2");
     await button("原文表示").click();
     await button("注記1").click();
