@@ -224,7 +224,8 @@
   font-family: var(--editor-font);
 }
 
-.vertical-editor:focus .editor-active-column {
+.vertical-editor .editor-active-column,
+.vertical-editor .alignment-active-column {
   background: var(--selection);
   border-block-end: 1px solid var(--focus);
 }

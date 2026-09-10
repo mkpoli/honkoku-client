@@ -15,7 +15,7 @@ import { Decoration, DecorationSet, EditorView } from "prosemirror-view";
 import { history, undo, redo, closeHistory } from "prosemirror-history";
 import { keymap } from "prosemirror-keymap";
 import { baseKeymap } from "prosemirror-commands";
-import { parse, type SyntaxNode } from "@honkoku/markup";
+import { transcriptionColumns, parse, type SyntaxNode } from "@honkoku/markup";
 export { undo, redo, TextSelection };
 
 const annotationNames: Record<string, string> = {
@@ -450,6 +450,7 @@ export function createEditor(
   element: HTMLElement,
   source: string,
   onUpdate: (update: EditorUpdate) => void = () => {},
+  oncolumnchange: (index: number) => void = () => {},
 ) {
   let current = source;
   let composing = false;
@@ -468,11 +469,36 @@ export function createEditor(
     },
     props: { decorations: (state) => decorationPlugin.getState(state) },
   });
+  const alignmentPlugin: Plugin<number> = new Plugin<number>({
+    state: {
+      init: () => -1,
+      apply: (tr, previous) => tr.getMeta("alignmentColumn") ?? previous,
+    },
+    props: {
+      decorations(state) {
+        const columns = transcriptionColumns(toMarkup(state.doc));
+        const active = alignmentPlugin.getState(state);
+        const values: Decoration[] = [];
+        state.doc.forEach((node, pos, sourceIndex) => {
+          const index = columns.findIndex((c) => c.sourceIndex === sourceIndex);
+          if (index >= 0)
+            values.push(
+              Decoration.node(pos, pos + node.nodeSize, {
+                "data-column-index": String(index),
+                class: index === active ? "alignment-active-column" : "",
+              }),
+            );
+        });
+        return DecorationSet.create(state.doc, values);
+      },
+    },
+  });
   const view = new EditorView(element, {
     state: EditorState.create({
       doc: fromMarkup(source),
       plugins: [
         decorationPlugin,
+        alignmentPlugin,
         new Plugin({
           props: {
             decorations(state) {
@@ -597,7 +623,15 @@ export function createEditor(
       publish(patches);
     },
   });
+  let lastColumn: number | undefined;
   function publish(patches: SourcePatch[] = []) {
+    const column = transcriptionColumns(current).findIndex(
+      (c) => c.sourceIndex === view.state.selection.$head.index(0),
+    );
+    if (column !== lastColumn) {
+      lastColumn = column;
+      oncolumnchange(column);
+    }
     onUpdate({
       source: current,
       serialized: toMarkup(view.state.doc),
@@ -620,8 +654,40 @@ export function createEditor(
     if (focus) view.focus();
     return command(view.state, view.dispatch, view);
   }
+  function focusColumn(index: number) {
+    const column = transcriptionColumns(current)[index];
+    if (!column || composing || view.composing) return;
+    let position = 1;
+    for (let i = 0; i < column.sourceIndex; i++)
+      position += view.state.doc.child(i).nodeSize;
+    view.dispatch(
+      view.state.tr
+        .setSelection(TextSelection.create(view.state.doc, position))
+        .scrollIntoView(),
+    );
+    view.focus();
+    (view.nodeDOM(position - 1) as HTMLElement | null)?.scrollIntoView({
+      block: "nearest",
+      inline: "nearest",
+    });
+  }
+  function setHighlightedColumn(index: number) {
+    if (alignmentPlugin.getState(view.state) !== index)
+      view.dispatch(
+        view.state.tr
+          .setMeta("alignmentColumn", index)
+          .setMeta("addToHistory", false),
+      );
+  }
   publish();
-  return { view, run, setSource, destroy: () => view.destroy() };
+  return {
+    view,
+    run,
+    setSource,
+    focusColumn,
+    setHighlightedColumn,
+    destroy: () => view.destroy(),
+  };
 }
 
 export function textareaSource(previous: string, value: string): string {

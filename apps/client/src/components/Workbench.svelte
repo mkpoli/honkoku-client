@@ -7,7 +7,9 @@
     SessionInfo,
     SaveOptions,
   } from "@honkoku/client-api/types";
-  import { parseGroups as parse, renderInline } from "@honkoku/markup";
+  import { alignColumns, transcriptionColumns } from "@honkoku/markup";
+  import { pageLines } from "../../../../packages/client-api/ocr";
+  import Transcription from "./Transcription.svelte";
   import { date, notes, status, statusClass, user } from "../lib";
   import { href, parseRoute } from "../routes";
   import VerticalEditor from "@honkoku/editor/VerticalEditor.svelte";
@@ -44,13 +46,6 @@
     registerLeave: (guard: (() => Promise<void>) | undefined) => void;
   } = $props();
   let page = $derived(pages.find((p) => p.index === index)!);
-  let groups = $derived(
-    parse(
-      page.status === "editing" && page.syncMode
-        ? (page.tempText ?? page.text)
-        : page.text,
-    ),
-  );
   let pageNotes = $derived(notes(page));
   let swapped = $state(false),
     horizontal = $state(false),
@@ -64,6 +59,40 @@
   let source = $state(""),
     saveState = $state(""),
     notice = $state("");
+  let displayedSource = $derived(
+    page.status === "editing" && page.syncMode
+      ? (page.tempText ?? page.text)
+      : page.text,
+  );
+  let lineModel = $derived(pageLines(page, canvases[index]));
+  let columns = $derived(
+    transcriptionColumns(editing ? source : displayedSource),
+  );
+  let alignment = $derived(
+    alignColumns(
+      columns.map((c) => c.text),
+      lineModel.lines,
+    ),
+  );
+  let currentColumn = $state(-1);
+  let hoveredLine = $state<number | null>(null);
+  let selectedLine = $derived(hoveredLine ?? alignment[currentColumn] ?? null);
+  let highlightedColumn = $derived(
+    hoveredLine === null ? currentColumn : alignment.indexOf(hoveredLine),
+  );
+  let editor = $state<VerticalEditor>();
+  let transcription = $state<Transcription>();
+  function columnChange(index: number) {
+    currentColumn = index;
+    hoveredLine = null;
+  }
+  function selectLine(lineIndex: number) {
+    const column = alignment.indexOf(lineIndex);
+    if (column < 0) return;
+    columnChange(column);
+    if (editing) editor?.focusColumn(column);
+    else transcription?.focusColumn(column);
+  }
   let savePopover = $state(false),
     discardPopover = $state(false);
   let completed = $state(false),
@@ -337,6 +366,8 @@
     index;
     untrack(() => {
       editing = false;
+      currentColumn = -1;
+      hoveredLine = null;
       source = "";
       recovered = "";
       saveState = "";
@@ -438,18 +469,6 @@
     };
     element.addEventListener("click", click);
     return { destroy: () => element.removeEventListener("click", click) };
-  }
-  function measureColumns(element: HTMLElement) {
-    const apply = () => {
-      const available = element.clientHeight;
-      if (available > 0)
-        element.style.setProperty("--column-height", `${available}px`);
-    };
-    const observer = new ResizeObserver(apply);
-    observer.observe(element);
-    if (element.parentElement) observer.observe(element.parentElement);
-    apply();
-    return { destroy: () => observer.disconnect() };
   }
   onMount(() => {
     const unload = () => {
@@ -639,30 +658,35 @@
         >
       </div>
       {#if editing}<div class="workbench-editor" inert={busy}>
-          <VerticalEditor bind:source onupdate={update} />
+          <VerticalEditor
+            bind:this={editor}
+            bind:source
+            onupdate={update}
+            oncolumnchange={columnChange}
+            {highlightedColumn}
+          />
         </div>{:else}
-        <div class="transcription" class:horizontal use:references>
-          {#each groups as g, i}<section
-              class="column-group"
-              class:half-selected={half === g.label && !!g.label}
-              aria-label={g.label || `本文${i + 1}`}
-            >
-              {#if g.label}<button
-                  class="column-label"
-                  class:active={half === g.label}
-                  onclick={() => (half = half === g.label ? "" : g.label)}
-                  >{g.label}</button
-                >{/if}
-              <div class="columns" use:measureColumns>
-                {#each g.columns as column}<div class="transcription-column">
-                    {@html renderInline(column)}
-                  </div>{/each}
-              </div>
-            </section>{:else}<p class="empty">本文はありません。</p>{/each}
+        <div class="transcription-reader" use:references>
+          <Transcription
+            bind:this={transcription}
+            source={displayedSource}
+            {horizontal}
+            bind:half
+            {highlightedColumn}
+            oncolumnchange={columnChange}
+          />
         </div>
       {/if}
     </section>
-    <Facsimile canvas={canvases[index]} pageNumber={index + 1} bind:half />
+    <Facsimile
+      canvas={canvases[index]}
+      pageNumber={index + 1}
+      bind:half
+      {lineModel}
+      highlightedLine={selectedLine}
+      onlineselect={selectLine}
+      onlinehover={(line) => (hoveredLine = line)}
+    />
   </div>
   <div class="workbench-supplement">
     <section class="panel ocr-panel">

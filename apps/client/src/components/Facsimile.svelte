@@ -1,13 +1,30 @@
 <script lang="ts">
+  import { untrack } from "svelte";
+  import type { PageLines } from "../../../../packages/client-api/ocr";
   import OpenSeadragon from "openseadragon";
   import type { Canvas } from "@honkoku/client-api/types";
   let {
     canvas,
     pageNumber,
     half = $bindable(""),
-  }: { canvas?: Canvas; pageNumber: number; half?: string } = $props();
+    lineModel = { engine: null, lines: [], estimated: false },
+    highlightedLine = null,
+    onlinehover,
+    onlineselect,
+  }: {
+    canvas?: Canvas;
+    pageNumber: number;
+    half?: string;
+    lineModel?: PageLines;
+    highlightedLine?: number | null;
+    onlinehover?: (index: number | null) => void;
+    onlineselect?: (index: number) => void;
+  } = $props();
   let host: HTMLDivElement;
-  let viewer: OpenSeadragon.Viewer | undefined;
+  let viewer = $state<OpenSeadragon.Viewer>();
+  let opened = $state(false);
+  let showLines = $state(false);
+  let overlayElements = $state<HTMLButtonElement[]>([]);
   let fallback = $state(false),
     imageFailed = $state(false),
     scale = $state(100),
@@ -26,15 +43,21 @@
   }
   $effect(() => {
     const current = canvas;
-    fallback = !current?.infoJsonUrl;
+    fallback = !current?.infoJsonUrl && !current?.imageUrl;
+    opened = false;
+    showLines = false;
     imageFailed = false;
     plainScale = 1;
     scale = 100;
     half = "";
-    if (!host || !current?.infoJsonUrl) return;
+    if (!host || !current || (!current.infoJsonUrl && !current.imageUrl))
+      return;
     const v = OpenSeadragon({
       element: host,
-      tileSources: current.infoJsonUrl,
+      tileSources: current.infoJsonUrl ?? {
+        type: "image",
+        url: current.imageUrl!,
+      },
       showNavigationControl: false,
       showNavigator: false,
       crossOriginPolicy: "Anonymous",
@@ -52,6 +75,7 @@
     });
     viewer = v;
     v.addHandler("open-failed", () => (fallback = true));
+    v.addHandler("open", () => (opened = true));
     v.addHandler("canvas-click", (event) => {
       if (!event.quick || !v.world.getItemCount()) return;
       const point = v.viewport.viewportToImageCoordinates(
@@ -74,12 +98,12 @@
     });
     return () => {
       v.destroy();
-      if (viewer === v) viewer = undefined;
+      if (untrack(() => viewer) === v) viewer = undefined;
     };
   });
   $effect(() => {
     const region = half;
-    if (!viewer?.world.getItemCount()) return;
+    if (!opened || !viewer?.world.getItemCount()) return;
     if (!region) {
       viewer.viewport.goHome();
       return;
@@ -94,12 +118,121 @@
       ),
     );
   });
+  $effect(() => {
+    const v = viewer,
+      ready = opened,
+      lines = lineModel.lines;
+    if (!v || !ready || !v.world.getItemCount()) return;
+    const trackers: OpenSeadragon.MouseTracker[] = [];
+    const elements = lines.map((line) => {
+      const element = document.createElement("button");
+      element.type = "button";
+      element.className = "line-overlay";
+      element.dataset.lineIndex = String(line.index);
+      element.setAttribute(
+        "aria-label",
+        `原本の行${line.index + 1}：${line.text}`,
+      );
+      const tracker = new OpenSeadragon.MouseTracker({
+        element,
+        enterHandler: () => onlinehover?.(line.index),
+        leaveHandler: () => onlinehover?.(null),
+        clickHandler: (event) => {
+          if (event.quick) onlineselect?.(line.index);
+        },
+      });
+      trackers.push(tracker);
+      element.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onlineselect?.(line.index);
+        }
+      });
+      v.addOverlay({
+        element,
+        location: v.world
+          .getItemAt(0)
+          .imageToViewportRectangle(line.x, line.y, line.width, line.height),
+        checkResize: false,
+        rotationMode: OpenSeadragon.OverlayRotationMode.EXACT,
+      });
+      return element;
+    });
+    overlayElements = elements;
+    return () => {
+      trackers.forEach((tracker) => tracker.destroy());
+      elements.forEach((element) => {
+        v.removeOverlay(element);
+        element.remove();
+      });
+    };
+  });
+  $effect(() => {
+    for (const element of overlayElements) {
+      const active = Number(element.dataset.lineIndex) === highlightedLine;
+      element.classList.toggle("highlighted", active);
+      element.classList.toggle("line-hidden", !showLines && !active);
+      element.setAttribute("aria-pressed", String(active));
+      element.tabIndex = showLines || active ? 0 : -1;
+    }
+  });
+  $effect(() => {
+    const v = viewer,
+      line = lineModel.lines.find((line) => line.index === highlightedLine);
+    if (!v || !opened || !line || !v.world.getItemCount()) return;
+    const rect = v.world
+      .getItemAt(0)
+      .imageToViewportRectangle(line.x, line.y, line.width, line.height);
+    const points = [
+      rect.getTopLeft(),
+      rect.getTopRight(),
+      rect.getBottomLeft(),
+      rect.getBottomRight(),
+    ].map((p) => v.viewport.pixelFromPoint(p, true));
+    const size = v.viewport.getContainerSize();
+    if (
+      points.every(
+        (p) => p.x >= 0 && p.x <= size.x && p.y >= 0 && p.y <= size.y,
+      )
+    )
+      return;
+    const lowX = Math.min(...points.map((p) => p.x)),
+      highX = Math.max(...points.map((p) => p.x));
+    const lowY = Math.min(...points.map((p) => p.y)),
+      highY = Math.max(...points.map((p) => p.y));
+    const offset = (low: number, high: number, extent: number) =>
+      high - low > extent
+        ? (low + high - extent) / 2
+        : low < 0
+          ? low
+          : high > extent
+            ? high - extent
+            : 0;
+    const delta = v.viewport.deltaPointsFromPixels(
+      new OpenSeadragon.Point(
+        offset(lowX, highX, size.x),
+        offset(lowY, highY, size.y),
+      ),
+      true,
+    );
+    v.viewport.panTo(v.viewport.getCenter(true).plus(delta));
+  });
 </script>
 
 <section class="panel facsimile-panel">
   <div class="pane-toolbar">
     <h2>原本</h2>
+    {#if (showLines || highlightedLine !== null) && lineModel.lines.length}<span
+        class="caption muted"
+        >{lineModel.engine === "minna"
+          ? "みんなで翻刻"
+          : "国立国会図書館"}{lineModel.estimated ? "・推定" : ""}</span
+      >{/if}
     <div class="zoom-controls">
+      {#if lineModel.lines.length}<button
+          aria-pressed={showLines}
+          onclick={() => (showLines = !showLines)}>行枠</button
+        >{/if}
       <button aria-label="縮小" onclick={() => zoom(1 / 1.25)}>−</button><span
         class="numeric">{scale}%</span
       ><button aria-label="拡大" onclick={() => zoom(1.25)}>＋</button><button
