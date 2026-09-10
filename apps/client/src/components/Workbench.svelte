@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount, tick } from "svelte";
   import type { Canvas, Entry, Page } from "@honkoku/client-api/types";
-  import { parse, renderInline } from "@honkoku/markup";
+  import { parseGroups as parse, renderInline } from "@honkoku/markup";
   import { date, notes, status, statusClass, user } from "../lib";
   import { href, parseRoute } from "../routes";
   import Facsimile from "./Facsimile.svelte";

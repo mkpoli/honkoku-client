@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { parse, parseInline, renderInline } from "./index";
+import { parseGroups as parse, parseInline, renderInline } from "./index";
 describe("transcription projection", () => {
   test("page halves and line breaks retain reading order", () => {
     const groups = parse("【右丁】\r\n一\r\n二\r\n【左丁】\n三");
