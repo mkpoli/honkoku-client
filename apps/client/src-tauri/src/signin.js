@@ -98,6 +98,13 @@
       return;
     }
     show("ログイン結果を確認しています…");
+    // The SDK only consults the auth iframe when its pending-redirect flag is
+    // present in session storage, and the round trip through the provider
+    // loses session storage in WebView2. The flag is restored here so the
+    // result stored by the handler on this origin is actually collected.
+    const pendingKey = `firebase:pendingRedirect:${config.apiKey}:honkoku-client`;
+    note(`pending flag before: ${sessionStorage.getItem(pendingKey) ?? "(none)"}`);
+    sessionStorage.setItem(pendingKey, JSON.stringify("true"));
     const result = await withTimeout(auth.getRedirectResult(instance), 30, "getRedirectResult");
     note(`redirect result: ${result ? "user " + result.user?.uid : "null"}; current user: ${instance.currentUser?.uid ?? "none"}`);
     const user = result?.user ?? instance.currentUser;
