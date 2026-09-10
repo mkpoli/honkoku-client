@@ -1,8 +1,10 @@
+import { checkEditor } from "./editor-checks";
 import assert from "node:assert/strict";
 import type { Browser, Page } from "playwright";
 const entry = "0916dafb80cdc48ca7687afcad4a4f35";
 const collection = "3R4VhlBfvOYeqPY13cJm";
 export async function checkInteractions(browser: Browser, origin: string) {
+  await checkEditor(browser, origin);
   const context = await browser.newContext({
     viewport: { width: 1600, height: 1000 },
     locale: "ja-JP",
@@ -140,13 +142,14 @@ export async function checkInteractions(browser: Browser, origin: string) {
   assert.equal(metrics.whiteSpace, "pre-wrap");
   assert.ok(Math.round(metrics.width) >= 44);
   assert.ok(metrics.height > 0);
-  const panel = await page
-    .locator(".transcription")
-    .evaluate((e) => ({
-      scrollHeight: e.scrollHeight,
-      clientHeight: e.clientHeight,
-    }));
-  assert.ok(panel.scrollHeight <= panel.clientHeight + 1, "columns wrap instead of overflowing downward");
+  const panel = await page.locator(".transcription").evaluate((e) => ({
+    scrollHeight: e.scrollHeight,
+    clientHeight: e.clientHeight,
+  }));
+  assert.ok(
+    panel.scrollHeight <= panel.clientHeight + 1,
+    "columns wrap instead of overflowing downward",
+  );
   await page.getByRole("combobox", { name: "表示テーマ" }).selectOption("dark");
   assert.equal(await page.locator("html").getAttribute("data-theme"), "dark");
   assert.equal(

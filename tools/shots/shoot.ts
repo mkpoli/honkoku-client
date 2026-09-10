@@ -11,6 +11,7 @@ const routes = [
   ["03-collection", "#/projects/ainu/collections/3R4VhlBfvOYeqPY13cJm"],
   ["04-entry", "#/entries/0916dafb80cdc48ca7687afcad4a4f35"],
   ["05-workbench", "#/entries/0916dafb80cdc48ca7687afcad4a4f35/pages/3"],
+  ["06-editor", "#/spike/editor"],
 ] as const;
 async function available() {
   try {
@@ -118,6 +119,20 @@ try {
       const file = `${name}-${theme}.png`;
       await page.screenshot({ path: resolve(output, file) });
       console.log(`.local/shots/${file}`);
+      if (name === "06-editor") {
+        await page.evaluate(() => {
+          const editor = window.editorSpike!;
+          editor.setSource(
+            "【右丁】\n《振り仮名：峰｜みね》　シリキタイ\n《割書：原本の小字｜二行目｜三行目｜四行目》\n《見せ消ち：旧字｜新字》　■□〓＃１２\n【左丁】\n未（いまだ｜ズ）　讀＿レ￣ム\n《圏点：燃ゆる天河｜﹅》《右線：川の道》\n《題：蝦夷語箋》《箱：字》《場所：松前》\nゟ　ヿ　𛀂　𬼂\n※欄外の書入れ\n《未知：原文を保持》",
+          );
+          editor.view.focus();
+        });
+        await page.evaluate(() => document.fonts.ready);
+        await page.screenshot({
+          path: resolve(output, `06-editor-annotations-${theme}.png`),
+        });
+        console.log(`.local/shots/06-editor-annotations-${theme}.png`);
+      }
     }
     if (failures.length) throw Error(failures.join("\n"));
     await context.close();
