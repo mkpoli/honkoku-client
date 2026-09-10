@@ -160,6 +160,16 @@ fn normalize_canvas(canvas: &mut serde_json::Value) {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    install_early_diagnostics();
+    let result = run();
+    if let Err(error) = &result {
+        early_diagnostic(&format!("exit with error: {error}"));
+    }
+    result
+}
+
+fn run() -> Result<(), Box<dyn std::error::Error>> {
+    early_diagnostic(&format!("start {}", env!("CARGO_PKG_VERSION")));
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .register_asynchronous_uri_scheme_protocol("honkoku-iiif", iiif_protocol::handle)
@@ -290,6 +300,36 @@ fn diagnostics_path(app: &tauri::App) -> Option<std::path::PathBuf> {
     let dir = app.path().app_log_dir().ok()?;
     std::fs::create_dir_all(&dir).ok()?;
     Some(dir.join("startup.log"))
+}
+/// The same log file, located without Tauri so that failures before setup
+/// are recorded as well: `%LOCALAPPDATA%\<identifier>\logs` on Windows,
+/// `$XDG_DATA_HOME/<identifier>/logs` elsewhere.
+fn early_diagnostics_path() -> Option<std::path::PathBuf> {
+    let base = if cfg!(target_os = "windows") {
+        std::env::var_os("LOCALAPPDATA").map(std::path::PathBuf::from)?
+    } else if let Some(dir) = std::env::var_os("XDG_DATA_HOME") {
+        std::path::PathBuf::from(dir)
+    } else {
+        std::path::PathBuf::from(std::env::var_os("HOME")?).join(".local/share")
+    };
+    let dir = base.join("li.mkpo.honkoku-client").join("logs");
+    std::fs::create_dir_all(&dir).ok()?;
+    Some(dir.join("startup.log"))
+}
+fn early_diagnostic(message: &str) {
+    if let Some(path) = early_diagnostics_path() {
+        append_line(&path, message);
+    }
+}
+fn install_early_diagnostics() {
+    let Some(path) = early_diagnostics_path() else {
+        return;
+    };
+    let previous = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |info| {
+        append_line(&path, &format!("panic: {info}"));
+        previous(info);
+    }));
 }
 fn diagnostic(app: &tauri::App, message: &str) {
     if let Some(path) = diagnostics_path(app) {
