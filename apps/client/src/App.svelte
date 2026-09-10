@@ -10,6 +10,8 @@
     User,
   } from "@honkoku/client-api/types";
   import {
+    isTauri,
+    onWindowClose,
     getCollection,
     getProject,
     homeDailyProgress,
@@ -27,6 +29,7 @@
   import { parseRoute, href } from "./routes";
   import type { Route } from "./routes";
   import { savedTheme, setTheme } from "./theme";
+  import { soundEnabled, setSound } from "./sound";
   import Home from "./components/Home.svelte";
   import ProjectScreen from "./components/Project.svelte";
   import EntryScreen from "./components/Entry.svelte";
@@ -53,7 +56,13 @@
     signingIn = $state(false),
     direction = $state("forward");
   let generation = 0;
-  let isHome = $derived(!route.projectId && !route.entryId && !route.invalid && !route.editorSpike);
+  let sound = $state(soundEnabled());
+  let leaveWorkbench = $state<() => Promise<void>>();
+  let navigation = 0;
+  let acceptedHash = location.hash;
+  let isHome = $derived(
+    !route.projectId && !route.entryId && !route.invalid && !route.editorSpike,
+  );
   let workbench = $derived(route.pageIndex !== undefined);
   async function identity() {
     session = await sessionCurrent();
@@ -80,6 +89,7 @@
   }
   async function logout() {
     try {
+      await leaveWorkbench?.();
       await sessionClear();
       session = null;
       profile = null;
@@ -156,8 +166,22 @@
       await load(route);
       void homeDailyProgress().catch(() => {});
     })();
-    const navigate = () => {
-      const next = parseRoute(location.hash);
+    const navigate = async () => {
+      const hash = location.hash;
+      if (hash === acceptedHash) return;
+      const attempt = ++navigation;
+      try {
+        await leaveWorkbench?.();
+      } catch (error) {
+        if (attempt === navigation) {
+          loginError = errorMessage(error);
+          history.replaceState(null, "", acceptedHash || "#/");
+        }
+        return;
+      }
+      if (attempt !== navigation) return;
+      acceptedHash = hash;
+      const next = parseRoute(hash);
       direction =
         (!next.entryId && route.entryId) ||
         (!next.collectionId && route.collectionId) ||
@@ -181,6 +205,37 @@
       window.removeEventListener("honkoku:connection", connection);
     };
   });
+  $effect(() => {
+    const guard = leaveWorkbench;
+    if (!guard || !isTauri()) return;
+    let disposed = false;
+    let unlisten: (() => void) | undefined;
+    void onWindowClose(async (event, close) => {
+      event.preventDefault();
+      if (disposed) return;
+      try {
+        await guard();
+        unlisten?.();
+        await close().catch(() => {
+          loginError =
+            "下書きを保存しました。もう一度ウィンドウを閉じてください。";
+        });
+      } catch (error) {
+        loginError = errorMessage(error);
+      }
+    })
+      .then((stop) => {
+        if (disposed) stop();
+        else unlisten = stop;
+      })
+      .catch((error) => {
+        loginError = errorMessage(error);
+      });
+    return () => {
+      disposed = true;
+      unlisten?.();
+    };
+  });
 </script>
 
 <div class="app-shell" class:reading={workbench}>
@@ -194,16 +249,28 @@
       /></label
     >
     <div class="top-controls">
-      <label class="theme-control"
-        ><span class="caption muted">テーマ</span><select
-          aria-label="表示テーマ"
-          bind:value={theme}
-          onchange={() => setTheme(theme)}
-          ><option value="system">システム</option><option value="light"
-            >ライト</option
-          ><option value="dark">ダーク</option></select
-        ></label
-      >{#if session}<div class="signed-user">
+      <details class="theme-menu">
+        <summary>テーマ</summary>
+        <div class="theme-options">
+          <label class="theme-control"
+            ><span class="caption muted">テーマ</span><select
+              aria-label="表示テーマ"
+              bind:value={theme}
+              onchange={() => setTheme(theme)}
+              ><option value="system">システム</option><option value="light"
+                >ライト</option
+              ><option value="dark">ダーク</option></select
+            ></label
+          ><label class="sound-control"
+            ><input
+              type="checkbox"
+              bind:checked={sound}
+              onchange={() => setSound(sound)}
+            />効果音</label
+          >
+        </div>
+      </details>
+      {#if session}<div class="signed-user">
           <Avatar
             user={profile ?? {
               uid: session.uid,
@@ -246,10 +313,11 @@
         >
       </div>{:else if loading}<div class="panel empty" role="status">
         読み込み中…
-      </div>{:else}{#key route.editorSpike ? "editor" : route.entryId ?? route.projectId ?? "home"}<div
+      </div>{:else}{#key route.editorSpike ? "editor" : (route.entryId ?? route.projectId ?? "home")}<div
           class="route-screen"
         >
-          {#if route.editorSpike && EditorSpike}<EditorSpike />{:else if isHome}<Home
+          {#if route.editorSpike && EditorSpike}<EditorSpike
+            />{:else if isHome}<Home
               {projects}
               {session}
               {profile}
@@ -258,6 +326,13 @@
                 {entry}
                 {pages}
                 {canvases}
+                {session}
+                onpage={(updated) => {
+                  pages = pages.map((p) => (p.id === updated.id ? updated : p));
+                }}
+                registerLeave={(guard) => {
+                  leaveWorkbench = guard;
+                }}
                 index={route.pageIndex!}
               />{:else}<EntryScreen
                 {entry}
@@ -272,6 +347,7 @@
         </div>{/key}{/if}
   </main>
   <footer class="statusbar">
+    {#if !isTauri()}<span>閲覧データ</span>{/if}
     <span
       ><i class:online={connected}></i>{connected
         ? "接続済み"

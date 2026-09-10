@@ -1569,3 +1569,138 @@ main {
 .markup-left-ruby {
   font-size: 13px;
 }
+
+.workbench {
+  position: relative;
+}
+.workbench-toolbar {
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+.toolbar-actions {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.edit-status {
+  white-space: nowrap;
+}
+.workbench-editor {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+}
+.save-control {
+  position: relative;
+}
+.save-popover {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  z-index: 8;
+  width: 280px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 7px;
+}
+.save-popover label,
+.sound-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.save-popover input[type="checkbox"],
+.sound-control input {
+  accent-color: var(--accent);
+}
+.save-popover .save-comment {
+  align-items: stretch;
+  flex-direction: column;
+}
+.save-popover > div {
+  display: flex;
+  gap: 8px;
+}
+.sound-control {
+  font-size: 13px;
+  white-space: nowrap;
+}
+.edit-notice {
+  color: var(--accent);
+  overflow-wrap: anywhere;
+}
+.edit-recovery textarea {
+  width: 100%;
+  height: 100px;
+  white-space: pre-wrap;
+}
+.status-strip > a {
+  transition: background-color 300ms ease;
+}
+.completion-toast {
+  position: absolute;
+  left: 50%;
+  bottom: 80px;
+  transform: translateX(-50%);
+  z-index: 9;
+  background: var(--surface);
+  color: var(--gold);
+  border: 1px solid var(--gold);
+  border-radius: 7px;
+  padding: 12px 24px;
+  pointer-events: none;
+  animation: completion-fade 2s ease both;
+}
+@keyframes completion-fade {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  15%,
+  80% {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .status-strip > a {
+    transition: none;
+  }
+  .completion-toast {
+    animation: none;
+  }
+}
+
+.theme-menu {
+  position: relative;
+}
+.theme-menu > summary {
+  cursor: pointer;
+  padding: 6px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+}
+.theme-options {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  z-index: 20;
+  padding: 16px;
+  width: 250px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 7px;
+}
+.theme-options .theme-control {
+  justify-content: space-between;
+}
+.ocr-columns button {
+  margin-bottom: 8px;
+  font-size: 13px;
+}

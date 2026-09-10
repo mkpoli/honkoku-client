@@ -259,3 +259,8 @@ export interface PageLockState {
   syncMode: boolean;
   updateTime: string;
 }
+
+export interface SavedPage {
+  /** Character count from the save's timeline event, when supplied by the backend. */
+  count?: number;
+}

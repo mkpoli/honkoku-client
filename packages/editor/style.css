@@ -203,7 +203,8 @@
   font: 400 16px/28px var(--font-serif);
   background: var(--surface-inset);
   color: var(--text);
-  white-space: pre;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 @font-face {
   font-family: "Noto Serif Hentaigana";
@@ -226,4 +227,13 @@
 .vertical-editor:focus .editor-active-column {
   background: var(--selection);
   border-block-end: 1px solid var(--focus);
+}
+
+.editor-workspace,
+.editor-body {
+  min-width: 0;
+}
+.transcription.editor-scroll {
+  min-width: 0;
+  width: 100%;
 }
