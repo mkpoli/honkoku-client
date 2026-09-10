@@ -62,6 +62,11 @@
     "allow-ocr-run-page",
     "allow-ocr-cancel",
     "allow-ocr-result",
-    "allow-ocr-publish-page"
+    "allow-ocr-publish-page",
+    "allow-search-status",
+    "allow-search-choose-dump",
+    "allow-search-build",
+    "allow-search-query",
+    "allow-search-sync"
   ]
 }

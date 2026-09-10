@@ -1,3 +1,4 @@
+mod search;
 use clap::{Parser, Subcommand, ValueEnum};
 use honkoku_core::{
     HonkokuClient,
@@ -26,6 +27,7 @@ struct Args {
 }
 #[derive(Subcommand)]
 enum Command {
+    Search(search::SearchArgs),
     Ocr {
         #[command(subcommand)]
         command: OcrCommand,
@@ -188,6 +190,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     let cache = dirs.cache_dir().join("honkoku-client");
     std::fs::create_dir_all(&cache)?;
+    if let Command::Search(search) = args.command {
+        return write_output(search::run(search, &cache, args.json)?);
+    }
     let storage: SharedStorage = Arc::new(Mutex::new(Storage::open(cache.join("cache.sqlite"))?));
     let mut client = HonkokuClient::new()?.with_storage(storage.clone());
     if let Some(session) = store.load()? {
@@ -220,6 +225,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 )
             }
         }
+        Command::Search(_) => unreachable!("search handled before authentication"),
         Command::Ocr { command } => {
             use honkoku_ocr::{OcrEngine, OcrEnvironment, OcrSidecar};
             let engine = OcrSidecar::new(OcrEnvironment::new(data_dir.join("honkoku-client")));

@@ -42,6 +42,7 @@ impl Storage {
             (3, include_str!("../migrations/003_progress.sql")),
             (4, include_str!("../migrations/004_ocr.sql")),
             (5, include_str!("../migrations/005_history.sql")),
+            (6, include_str!("../migrations/006_search.sql")),
         ];
         if version > migrations.len() as u32 {
             return Err(Error::Invalid(
@@ -411,7 +412,7 @@ mod tests {
         let versions: i64 =
             db.connection
                 .query_row("SELECT COUNT(*) FROM schema_version", [], |row| row.get(0))?;
-        assert_eq!(versions, 5);
+        assert_eq!(versions, 6);
         Ok(())
     }
     #[test]
@@ -492,6 +493,95 @@ impl Storage {
     }
     pub fn history_clear(&self) -> Result<()> {
         self.connection.execute("DELETE FROM history", [])?;
+        Ok(())
+    }
+}
+
+#[derive(Debug)]
+pub struct SearchChange {
+    pub sequence: i64,
+    pub page_id: String,
+    pub page: Option<serde_json::Value>,
+    pub entry: Option<serde_json::Value>,
+    pub project: Option<serde_json::Value>,
+}
+impl Storage {
+    pub fn search_setting(&self, key: &str) -> Result<Option<String>> {
+        Ok(self
+            .connection
+            .query_row(
+                "SELECT value FROM search_settings WHERE key=?",
+                [key],
+                |r| r.get(0),
+            )
+            .optional()?)
+    }
+    pub fn set_search_setting(&self, key: &str, value: &str) -> Result<()> {
+        self.connection.execute(
+            "INSERT OR REPLACE INTO search_settings VALUES(?1,?2)",
+            params![key, value],
+        )?;
+        Ok(())
+    }
+    /// Durable queue entries are acknowledged only after the search index commits.
+    pub fn search_changes(&self, limit: u32) -> Result<Vec<SearchChange>> {
+        let mut statement = self.connection.prepare("SELECT q.sequence,q.page_id,p.payload,e.payload,j.payload FROM search_queue q LEFT JOIN pages p ON p.id=q.page_id LEFT JOIN entries e ON e.id=p.entry_id LEFT JOIN projects j ON j.id=json_extract(e.payload,'$.projectId') WHERE q.deleted=1 OR (p.id IS NOT NULL AND json_extract(e.payload,'$.projectId') IS NOT NULL) ORDER BY q.sequence LIMIT ?")?;
+        let rows = statement.query_map([limit], |r| {
+            Ok((
+                r.get::<_, i64>(0)?,
+                r.get::<_, String>(1)?,
+                r.get::<_, Option<String>>(2)?,
+                r.get::<_, Option<String>>(3)?,
+                r.get::<_, Option<String>>(4)?,
+            ))
+        })?;
+        rows.map(|row| {
+            let (sequence, page_id, page, entry, project) = row?;
+            let parse = |s: Option<String>| s.map(|v| serde_json::from_str(&v)).transpose();
+            Ok(SearchChange {
+                sequence,
+                page_id,
+                page: parse(page)?,
+                entry: parse(entry)?,
+                project: parse(project)?,
+            })
+        })
+        .collect()
+    }
+    pub fn acknowledge_search(&self, sequences: &[i64]) -> Result<()> {
+        for sequence in sequences {
+            self.connection
+                .execute("DELETE FROM search_queue WHERE sequence=?", [sequence])?;
+        }
+        Ok(())
+    }
+}
+#[cfg(test)]
+mod search_tests {
+    use super::*;
+    use serde_json::json;
+    #[test]
+    fn queue_survives_replacement_and_acknowledges_only_observed_versions() -> Result<()> {
+        let db = Storage::in_memory()?;
+        let page = json!({"id":"e_1","entryId":"e","index":1,"status":"completed","text":"蝦夷"});
+        db.put_page(&page)?;
+        assert!(db.search_changes(20)?.is_empty());
+        db.put_entry(&json!({"id":"e","collectionId":"c","projectId":"p","label":"資料"}))?;
+        let first = db.search_changes(20)?;
+        assert_eq!(first.len(), 1);
+        db.put_page(&page)?;
+        db.acknowledge_search(&[first[0].sequence])?;
+        let second = db.search_changes(20)?;
+        assert_eq!(second.len(), 1);
+        db.replace_pages::<serde_json::Value>("e", &[])?;
+        assert!(db.search_changes(20)?[0].page.is_none());
+        db.replace_pages("e", &[page])?;
+        assert!(db.search_changes(20)?[0].page.is_some());
+        db.set_search_setting("dump_path", "/tmp/dump")?;
+        assert_eq!(
+            db.search_setting("dump_path")?.as_deref(),
+            Some("/tmp/dump")
+        );
         Ok(())
     }
 }

@@ -1,0 +1,18 @@
+[package]
+name = "honkoku-search"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+honkoku-text.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tantivy = "=0.26.2"
+blake3 = "1"
+rusqlite = { version = "=0.40.2", features = ["bundled"] }
+walkdir = "2"
+csv = "1"
+
+[dev-dependencies]
+tempfile = "3"

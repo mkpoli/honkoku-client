@@ -32,7 +32,7 @@ export async function checkInteractions(browser: Browser, origin: string) {
   const projects = page.locator(".project-list");
   await projects.getByRole("button", { name: "ユーザー", exact: true }).click();
   await page
-    .getByRole("textbox", { name: "全プロジェクトを検索", exact: true })
+    .getByRole("textbox", { name: "翻刻を検索", exact: true })
     .fill("アイヌ");
   await page
     .getByRole("link", { name: "アイヌ関連資料", exact: false })
@@ -74,7 +74,7 @@ export async function checkInteractions(browser: Browser, origin: string) {
     .click();
   await page.locator(".own-record").waitFor();
   await page
-    .getByRole("textbox", { name: "全プロジェクトを検索", exact: true })
+    .getByRole("textbox", { name: "翻刻を検索", exact: true })
     .fill("");
   const feed = page.locator(".home-centre>.timeline-panel");
   await page.waitForFunction(
@@ -181,9 +181,9 @@ export async function checkInteractions(browser: Browser, origin: string) {
   );
   assert.equal(
     await page
-      .getByRole("textbox", { name: "全プロジェクトを検索", exact: true })
+      .getByRole("textbox", { name: "翻刻を検索", exact: true })
       .isDisabled(),
-    true,
+    false,
   );
   await page
     .locator(".project-tabs")
@@ -979,8 +979,8 @@ export async function checkQuietWorkbench(
     await button("編集開始").waitFor();
     await page.waitForLoadState("networkidle");
     assert.equal(
-      await page.locator(".topbar input, .topbar .brand").count(),
-      0,
+      await page.locator(".topbar input").count(),
+      1,
     );
     assert.ok(
       !(await page.locator(".topbar").innerText()).includes("みんなで翻刻"),
@@ -1668,6 +1668,127 @@ export async function checkRegionTimeout(browser: Browser, origin: string) {
     console.log(
       "Region timeout checks passed: 15-second retry, isolated refresh.",
     );
+  } finally {
+    await context.close();
+  }
+}
+
+export async function checkSearch(
+  browser: Browser,
+  origin: string,
+  theme: "light" | "dark",
+) {
+  const context = await browser.newContext({
+    viewport: { width: 1600, height: 1000 },
+    locale: "ja-JP",
+    reducedMotion: "reduce",
+    colorScheme: theme,
+  });
+  await context.addInitScript(
+    (theme) => localStorage.setItem("honkoku.theme", theme),
+    theme,
+  );
+  const page = await context.newPage();
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  try {
+    await page.goto(`${origin}/#/`, { waitUntil: "domcontentloaded" });
+    const globalSearch = page.getByRole("textbox", {
+      name: "翻刻を検索",
+      exact: true,
+    });
+    await globalSearch.fill("蝦夷");
+    await globalSearch.press("Enter");
+    await page.waitForURL(/#\/search\?q=/);
+    await page.locator(".kwic-row").first().waitFor();
+    await page.evaluate(() => document.fonts.ready);
+    assert.equal(
+      await page
+        .getByRole("textbox", { name: "検索語句", exact: true })
+        .inputValue(),
+      "蝦夷",
+    );
+    const starts = await page
+      .locator(".kwic-match")
+      .evaluateAll((elements) =>
+        elements.slice(0, 10).map((e) => e.getBoundingClientRect().left),
+      );
+    assert.ok(
+      Math.max(...starts) - Math.min(...starts) < 1,
+      "horizontal matches align",
+    );
+    await page.screenshot({
+      path: resolve(
+        import.meta.dir,
+        `../../.local/shots/09-search-${theme}.png`,
+      ),
+    });
+    await page.getByRole("button", { name: "縦組み", exact: true }).click();
+    const verticalStarts = await page
+      .locator(".kwic-match")
+      .evaluateAll((elements) =>
+        elements.slice(0, 10).map((e) => e.getBoundingClientRect().top),
+      );
+    assert.ok(
+      Math.max(...verticalStarts) - Math.min(...verticalStarts) < 1,
+      "vertical matches align",
+    );
+    await page.screenshot({
+      path: resolve(
+        import.meta.dir,
+        `../../.local/shots/10-search-vertical-${theme}.png`,
+      ),
+    });
+    await page.getByRole("button", { name: "縦組み", exact: true }).click();
+    await page
+      .getByRole("button", { name: "表記ゆれを含む", exact: true })
+      .click();
+    await page.locator('.search-results[aria-busy="false"]').waitFor();
+    await page
+      .locator(".search-facets button")
+      .filter({ hasText: "会津若松" })
+      .click();
+    await page.locator('.search-results[aria-busy="false"]').waitFor();
+    assert.ok(await page.locator(".kwic-row").count());
+    await page.locator(".kwic-row").evaluateAll((rows) => {
+      if (rows.some((row) => !row.textContent?.includes("会津若松")))
+        throw Error("project filter leaked a result");
+    });
+    const hit = page.locator(".kwic-row").first();
+    const target = (await hit.getAttribute("href"))!;
+    assert.match(target, /column=\d+/);
+    await hit.click();
+    await page.waitForURL((url) => url.hash === target);
+    await page.goto(`${origin}/#/entries/${entry}/pages/3?column=2`, {
+      waitUntil: "domcontentloaded",
+    });
+    await page
+      .locator(
+        '.transcription-reader [data-column-index="2"].alignment-active-column',
+      )
+      .waitFor();
+    await page
+      .getByRole("textbox", { name: "翻刻を検索", exact: true })
+      .fill("蝦夷");
+    await page
+      .getByRole("textbox", { name: "翻刻を検索", exact: true })
+      .press("Enter");
+    await page.locator(".kwic-row").first().waitFor();
+    await page
+      .getByRole("textbox", { name: "検索語句", exact: true })
+      .fill("存在しない語句");
+    await page.getByRole("button", { name: "検索", exact: true }).click();
+    await page.locator('.concordance [role="alert"]').waitFor();
+    assert.match(
+      await page.locator('.concordance [role="alert"]').innerText(),
+      /ブラウザー/,
+    );
+    assert.equal(errors.length, 0, errors.join("\n"));
+  } catch (error) {
+    await page.screenshot({
+      path: resolve(import.meta.dir, "../../.local/shots/search-failure.png"),
+    });
+    throw error;
   } finally {
     await context.close();
   }

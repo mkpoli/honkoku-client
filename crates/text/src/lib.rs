@@ -1,85 +1,11 @@
 //! Excerpt-only markup reduction; the original source remains authoritative.
 /// Strip inline display markup, including nested constructs and malformed delimiters.
+pub mod normalize;
 pub fn plain_text(markup: &str) -> String {
-    let mut stack: Vec<(char, String)> = Vec::new();
-    let mut output = String::new();
-    let mut chars = markup.chars().peekable();
-    while let Some(ch) = chars.next() {
-        let text = match ch {
-            '《' | '【' => {
-                stack.push((ch, String::new()));
-                continue;
-            }
-            '》' | '】' => {
-                let opening = if ch == '》' { '《' } else { '【' };
-                if stack.last().is_some_and(|(kind, _)| *kind == opening) {
-                    if let Some((kind, body)) = stack.pop() {
-                        reduce(kind, &body)
-                    } else {
-                        String::new()
-                    }
-                } else {
-                    String::new()
-                }
-            }
-            '※' => {
-                while chars.peek().is_some_and(|ch| *ch != '\n' && *ch != '\r') {
-                    chars.next();
-                }
-                continue;
-            }
-            '＃' => {
-                let mut removed = false;
-                while chars
-                    .peek()
-                    .is_some_and(|ch| ch.is_ascii_digit() || ('０'..='９').contains(ch))
-                {
-                    chars.next();
-                    removed = true;
-                }
-                if removed {
-                    continue;
-                }
-                ch.to_string()
-            }
-            _ => ch.to_string(),
-        };
-        if let Some((_, body)) = stack.last_mut() {
-            body.push_str(&text);
-        } else {
-            output.push_str(&text);
-        }
-    }
-    while let Some((kind, body)) = stack.pop() {
-        let text = reduce(kind, &body);
-        if let Some((_, parent)) = stack.last_mut() {
-            parent.push_str(&text);
-        } else {
-            output.push_str(&text);
-        }
-    }
-    output
-}
-fn reduce(kind: char, body: &str) -> String {
-    if kind == '【' {
-        return if body == "右丁" || body == "左丁" {
-            "\n".into()
-        } else {
-            String::new()
-        };
-    }
-    let Some((name, text)) = body.split_once('：') else {
-        return body.into();
-    };
-    match name {
-        "振り仮名" | "圏点" => text.split('｜').next().unwrap_or_default().into(),
-        "見せ消ち" => text
-            .split_once('｜')
-            .map(|(_, after)| after)
-            .unwrap_or_default()
-            .into(),
-        _ => text.into(),
-    }
+    normalize::stripped(markup, true)
+        .into_iter()
+        .map(|(ch, _)| ch)
+        .collect()
 }
 /// Limit to Unicode scalar values, then append an ellipsis only when truncated.
 pub fn excerpt(markup: &str, max_chars: usize) -> String {
@@ -98,14 +24,14 @@ mod tests {
     #[test]
     fn syntax_and_unicode() {
         for (source, want) in [
-            ("《割書：a｜b》", "a｜b"),
+            ("《割書：a｜b》", "ab"),
             ("《振り仮名：base｜ruby》", "base"),
             ("《見せ消ち：a｜b》", "b"),
             ("《圏点：x｜m》", "x"),
             ("《右線：x》", "x"),
             ("【注】a【右丁】b【左丁】", "a\nb\n"),
             ("字※注釈\n文＃１０■□〓＃2", "字\n文■□〓"),
-            ("《割書：a｜《圏点：b｜﹅》》", "a｜b"),
+            ("《割書：a｜《圏点：b｜﹅》》", "ab"),
         ] {
             assert_eq!(plain_text(source), want);
         }

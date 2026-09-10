@@ -371,3 +371,50 @@ export interface OcrDiagnostics {
   last_error: string | null;
   log_path: string;
 }
+
+export type SearchMode = "Strict" | "Folded";
+export interface SearchQuery {
+  text: string;
+  mode: SearchMode;
+  project: string | null;
+  entry: string | null;
+  limit: number;
+  cursor: string | null;
+}
+export interface SearchOccurrence {
+  original_start: number;
+  original_end: number;
+  before: string;
+  matched: string;
+  after: string;
+  column: number;
+}
+export interface SearchHit {
+  page_id: string;
+  project_id: string;
+  entry_id: string;
+  index: number;
+  entry_label: string;
+  project_title: string;
+  occurrences: SearchOccurrence[];
+}
+export interface SearchResults {
+  total: number;
+  hits: SearchHit[];
+  facets: [string, number][];
+  next_cursor: string | null;
+}
+export interface SearchStatus {
+  present: boolean;
+  commit: string | null;
+  page_count: number;
+  last_build: number | null;
+  size: number;
+  git_available?: boolean;
+  configured?: boolean;
+}
+export interface SearchProgress {
+  done: number;
+  total: number;
+  indexed: number;
+}

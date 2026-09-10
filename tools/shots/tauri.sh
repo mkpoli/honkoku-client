@@ -35,22 +35,11 @@ cleanup() {
   fi
 }
 trap cleanup EXIT
-devrun bash -c '
-  set -euo pipefail
-  export CHOKIDAR_USEPOLLING=1 CHOKIDAR_INTERVAL=1500
-  bun run --cwd apps/client dev --port "$HONKOKU_SHOT_PORT" &
-  ready=false
-  for _ in $(seq 1 100); do
-    if curl --silent --fail "http://127.0.0.1:$HONKOKU_SHOT_PORT/" >/dev/null; then ready=true; break; fi
-    sleep 0.2
-  done
-  if [ "$ready" != true ]; then echo "Vite did not become ready" >&2; exit 1; fi
-  exec target/debug/honkoku-client
-'  > >(sed -u -E 's@/home/[^/[:space:]]+@~@g' > .local/logs/tauri-shot.log) 2>&1 &
+devrun bun tools/shots/desktop.ts > >(sed -u -E 's@/home/[^/[:space:]]+@~@g' > .local/logs/tauri-shot.log) 2>&1 &
 runner=$!
 ready=false
 for _ in $(seq 1 90); do
-  if xwininfo -root -tree 2>/dev/null | rg -q 'みんなで翻刻'; then ready=true; break; fi
+  if timeout 3 xwininfo -root -tree 2>/dev/null | rg -q 'みんなで翻刻'; then ready=true; break; fi
   if ! kill -0 "$runner" 2>/dev/null; then tail -8 .local/logs/tauri-shot.log; exit 1; fi
   sleep 2
 done

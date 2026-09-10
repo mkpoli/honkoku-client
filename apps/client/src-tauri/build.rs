@@ -1,6 +1,11 @@
 fn main() {
     tauri_build::try_build(tauri_build::Attributes::new().app_manifest(
         tauri_build::AppManifest::new().commands(&[
+            "search_status",
+            "search_choose_dump",
+            "search_build",
+            "search_query",
+            "search_sync",
             "ocr_status",
             "editing_pages",
             "project_page_activity",

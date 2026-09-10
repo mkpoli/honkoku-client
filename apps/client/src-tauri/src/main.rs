@@ -2,6 +2,7 @@
 mod commands;
 mod iiif_protocol;
 mod ocr;
+mod search;
 mod signin;
 use honkoku_core::{
     HonkokuClient,
@@ -119,7 +120,10 @@ async fn read_entry(state: &AppState, client: &HonkokuClient, id: &str) -> Resul
                     normalize_canvas(canvas);
                 }
             }
-            serde_json::from_value(value).map_err(|e| honkoku_core::Error::Json(e).into())
+            let entry: Entry = serde_json::from_value(value).map_err(honkoku_core::Error::Json)?;
+            let copy = entry.clone();
+            honkoku_core::cache::blocking(&state.storage, move |db| db.put_entry(&copy)).await?;
+            Ok(entry)
         }
         Err(error) => Err(error.into()),
     }
@@ -172,6 +176,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     early_diagnostic(&format!("start {}", env!("CARGO_PKG_VERSION")));
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_dialog::init())
         .register_asynchronous_uri_scheme_protocol("honkoku-iiif", iiif_protocol::handle)
         .setup(|app| {
             install_diagnostics(app);
@@ -211,6 +216,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
                 if let Some(stored) = stored {
                     client = client.with_session(TokenManager::new(stored, store.clone())?);
                 }
+                search::initialize(app, cache.clone(), storage.clone());
                 app.manage(AppState {
                     connection: tokio::sync::RwLock::new(Connection { client, session }),
                     storage,
@@ -240,6 +246,11 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             result
         })
         .invoke_handler(tauri::generate_handler![
+            search::search_status,
+            search::search_choose_dump,
+            search::search_build,
+            search::search_query,
+            search::search_sync,
             ocr::ocr_status,
             ocr::ocr_diagnostics,
             ocr::ocr_doctor,

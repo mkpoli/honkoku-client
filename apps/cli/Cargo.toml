@@ -8,6 +8,7 @@ name = "honkoku"
 path = "src/main.rs"
 
 [dependencies]
+honkoku-search = { path = "../../crates/search" }
 honkoku-ocr = { path = "../../crates/ocr" }
 honkoku-core.workspace = true
 honkoku-storage.workspace = true
