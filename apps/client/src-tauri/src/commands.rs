@@ -460,6 +460,7 @@ pub async fn page_lock(
             saved: Mutex::new(None),
         }),
     );
+    crate::search::cache_page(&state, &page).await?;
     Ok(page)
 }
 #[tauri::command]
@@ -493,6 +494,7 @@ pub async fn page_save(
         .session(&connection.client, &entry_id, index)
         .await?;
     let result = live.save(&connection.client, options).await?;
+    crate::search::cache_page(&state, &result.page).await?;
     editing.remove(&result.page.id, &live).await;
     Ok(result)
 }
@@ -573,6 +575,7 @@ pub async fn page_lock_state(
 ) -> Result<PageLockState, AppError> {
     let connection = state.connection.read().await;
     let lock = connection.client.page_lock_state(&entry_id, index).await?;
+    crate::search::cache_page(&state, &lock.page).await?;
     if lock.is_mine {
         editing
             .session(&connection.client, &entry_id, index)
@@ -881,6 +884,9 @@ pub async fn region_refresh(
                 if let Some(canvases) = value["canvases"].as_array_mut() {
                     canvases.iter_mut().for_each(crate::normalize_canvas);
                 }
+                let copy = value.clone();
+                honkoku_core::cache::blocking(&state.storage, move |db| db.put_entry(&copy))
+                    .await?;
                 Ok(value)
             }
             Err(error) => return Err(error.into()),

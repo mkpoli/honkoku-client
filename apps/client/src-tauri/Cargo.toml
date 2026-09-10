@@ -7,6 +7,9 @@ edition.workspace = true
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
+time.workspace = true
+tauri-plugin-dialog = "2"
+honkoku-search = { path = "../../../crates/search" }
 honkoku-ocr = { path = "../../../crates/ocr" }
 tauri = { version = "=2.11.5", features = [] }
 serde.workspace = true
