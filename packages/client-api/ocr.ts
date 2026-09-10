@@ -11,7 +11,7 @@ export interface CanvasLine {
   half: "right" | "left" | null;
 }
 export interface PageLines {
-  engine: "minna" | "ndl" | "local" | null;
+  engine: "minna" | "ndl" | null;
   lines: CanvasLine[];
   estimated: boolean;
 }
@@ -53,11 +53,6 @@ export function pageLines(
   page: Pick<Page, "ocr">,
   canvas?: Pick<Canvas, "width" | "height">,
 ): PageLines {
-  if (page.ocr?.local && canvas)
-    return localPageLines(
-      page.ocr.local as import("./types").LocalOcrPage,
-      canvas,
-    );
   const engine =
     page.ocr?.minna != null ? "minna" : page.ocr?.ndl != null ? "ndl" : null;
   const result: PageLines = { engine, lines: [], estimated: false };
@@ -139,10 +134,23 @@ export function pageLines(
   return result;
 }
 
+export interface LocalPageLines extends Omit<PageLines, "engine"> {
+  engine: "local";
+}
+
+export function pageLinesWithLocal(
+  page: Pick<Page, "ocr">,
+  canvas?: Pick<Canvas, "width" | "height">,
+): PageLines | LocalPageLines {
+  if (page.ocr?.local && canvas)
+    return localPageLines(page.ocr.local as import("./types").LocalOcrPage, canvas);
+  return pageLines(page, canvas);
+}
+
 export function localPageLines(
   local: import("./types").LocalOcrPage,
   canvas: Pick<Canvas, "width" | "height">,
-): PageLines {
+): LocalPageLines {
   if (
     ![local.width, local.height, canvas.width, canvas.height].every(
       (n) => Number.isFinite(n) && n > 0,

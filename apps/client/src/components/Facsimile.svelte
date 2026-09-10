@@ -1,6 +1,6 @@
 <script lang="ts">
   import { untrack } from "svelte";
-  import type { PageLines } from "../../../../packages/client-api/ocr";
+  import type { PageLines, LocalPageLines } from "../../../../packages/client-api/ocr";
   import OpenSeadragon from "openseadragon";
   import type { Canvas } from "@honkoku/client-api/types";
   let {
@@ -15,7 +15,7 @@
     canvas?: Canvas;
     pageNumber: number;
     half?: string;
-    lineModel?: PageLines;
+    lineModel?: PageLines | LocalPageLines;
     highlightedLine?: number | null;
     onlinehover?: (index: number | null) => void;
     onlineselect?: (index: number) => void;

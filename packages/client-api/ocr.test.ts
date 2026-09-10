@@ -62,8 +62,10 @@ test("minna takes precedence, does not enlarge small images, and estimates overf
   ).toEqual([]);
 });
 
+import { pageLinesWithLocal } from "./ocr";
+
 test("local OCR takes precedence in canvas coordinates and preserves reading order", () => {
-  const result = pageLines(
+  const result = pageLinesWithLocal(
     {
       ocr: {
         minna: { lines: [{ x: 1, y: 1, width: 2, height: 2, raw: "site" }] },

@@ -8,7 +8,7 @@
     SaveOptions,
   } from "@honkoku/client-api/types";
   import { alignColumns, transcriptionColumns } from "@honkoku/markup";
-  import { pageLines } from "../../../../packages/client-api/ocr";
+  import { pageLinesWithLocal as pageLines } from "../../../../packages/client-api/ocr";
   import OcrPanel from "./OcrPanel.svelte";
   import type { LocalOcrPage } from "@honkoku/client-api/types";
   import {
