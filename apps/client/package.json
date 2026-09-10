@@ -17,7 +17,8 @@
     "marked": "18.0.12",
     "openseadragon": "6.1.1",
     "svelte": "5.57.0",
-    "@honkoku/markup": "workspace:*"
+    "@honkoku/markup": "workspace:*",
+    "@honkoku/editor": "workspace:*"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^7.0.0",
