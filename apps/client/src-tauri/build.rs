@@ -2,6 +2,7 @@ fn main() {
     tauri_build::try_build(tauri_build::Attributes::new().app_manifest(
         tauri_build::AppManifest::new().commands(&[
             "ocr_status",
+            "editing_pages",
             "ocr_setup",
             "ocr_run_page",
             "ocr_cancel",

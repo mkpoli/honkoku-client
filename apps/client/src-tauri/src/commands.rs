@@ -569,14 +569,18 @@ pub async fn page_lock_state(
     entry_id: String,
     index: u32,
     state: State<'_, AppState>,
+    editing: State<'_, EditingState>,
 ) -> Result<PageLockState, AppError> {
-    Ok(state
-        .connection
-        .read()
-        .await
-        .client
-        .page_lock_state(&entry_id, index)
-        .await?)
+    let connection = state.connection.read().await;
+    let lock = connection.client.page_lock_state(&entry_id, index).await?;
+    if lock.is_mine {
+        editing
+            .session(&connection.client, &entry_id, index)
+            .await?;
+    } else {
+        editing.pages.lock().await.remove(&lock.page_id);
+    }
+    Ok(lock)
 }
 
 #[cfg(test)]
@@ -730,4 +734,29 @@ pub async fn history_recent(
 #[tauri::command]
 pub async fn history_clear(state: State<'_, AppState>) -> Result<(), AppError> {
     Ok(state.connection.read().await.client.history_clear().await?)
+}
+
+#[tauri::command]
+pub async fn editing_pages(
+    state: State<'_, AppState>,
+    editing: State<'_, EditingState>,
+) -> Result<Vec<Page>, AppError> {
+    let connection = state.connection.read().await;
+    let uid = connection.client.signed_in_uid().await?;
+    let sessions: Vec<_> = editing
+        .pages
+        .lock()
+        .await
+        .values()
+        .filter(|live| live.uid == uid)
+        .cloned()
+        .collect();
+    let mut pages = Vec::new();
+    for live in sessions {
+        if let Some(session) = live.session.lock().await.as_ref() {
+            pages.push(session.page().clone());
+        }
+    }
+    pages.sort_by(|a, b| a.entry_id.cmp(&b.entry_id).then(a.index.cmp(&b.index)));
+    Ok(pages)
 }

@@ -51,6 +51,7 @@
     "allow-iiif-prepare-entry",
     "allow-iiif-local-url",
     "allow-ocr-status",
+    "allow-editing-pages",
     "allow-ocr-setup",
     "allow-ocr-run-page",
     "allow-ocr-cancel",

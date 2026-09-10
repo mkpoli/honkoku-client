@@ -27,6 +27,7 @@ pub struct SavedPage {
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PageLockState {
+    pub page: Page,
     pub page_id: String,
     pub status: PageStatus,
     pub temp_edited_by: Option<String>,
@@ -189,6 +190,7 @@ impl HonkokuClient {
         let document = self.read_edit_page(entry_id, index).await?;
         let page = document.page()?;
         Ok(PageLockState {
+            page: page.clone(),
             page_id: page.id,
             is_mine: page.status == PageStatus::Editing
                 && page.temp_edited_by.as_deref() == Some(&uid),

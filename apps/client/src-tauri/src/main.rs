@@ -266,6 +266,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             commands::page_save,
             commands::page_discard,
             commands::page_lock_state,
+            commands::editing_pages,
             list_projects,
             get_project,
             list_collections,
