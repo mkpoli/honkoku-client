@@ -39,7 +39,7 @@ pub trait SessionStore: Send + Sync {
 
 pub struct KeyringStore {
     entry: keyring::Entry,
-    uid: String,
+    uid: Option<String>,
 }
 impl KeyringStore {
     /// One credential per uid. Probes the platform store so callers can choose a fallback.
@@ -51,16 +51,25 @@ impl KeyringStore {
         }
         Ok(Self {
             entry,
-            uid: uid.into(),
+            uid: Some(uid.into()),
         })
     }
 }
+impl KeyringStore {
+    /// Stable desktop slot allows startup to find the session without a uid on disk.
+    pub fn desktop() -> Result<Self> {
+        let mut store = Self::new("desktop-session")?;
+        store.uid = None;
+        Ok(store)
+    }
+}
+
 impl SessionStore for KeyringStore {
     fn load(&self) -> Result<Option<Session>> {
         match self.entry.get_password() {
             Ok(json) => {
                 let session: Session = serde_json::from_str(&json)?;
-                if session.uid != self.uid {
+                if self.uid.as_ref().is_some_and(|uid| uid != &session.uid) {
                     return Err(Error::Invalid("credential uid mismatch".into()));
                 }
                 Ok(Some(session))
@@ -70,7 +79,7 @@ impl SessionStore for KeyringStore {
         }
     }
     fn save(&self, session: &Session) -> Result<()> {
-        if session.uid != self.uid {
+        if self.uid.as_ref().is_some_and(|uid| uid != &session.uid) {
             return Err(Error::Invalid("credential uid mismatch".into()));
         }
         Ok(self.entry.set_password(&serde_json::to_string(session)?)?)
@@ -125,6 +134,76 @@ impl SessionStore for FileStore {
             Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
             Err(error) => Err(error.into()),
         }
+    }
+}
+
+#[derive(Clone, Copy, Serialize, PartialEq, Eq, Debug)]
+#[serde(rename_all = "snake_case")]
+pub enum CredentialStore {
+    Os,
+    File,
+}
+
+/// Select the OS store at startup, migrating an existing file session when possible.
+/// Malformed or ambiguous credentials are errors, never a reason to use plaintext.
+pub struct DesktopStore {
+    store: Arc<dyn SessionStore>,
+    kind: CredentialStore,
+}
+impl DesktopStore {
+    pub fn new(path: impl Into<PathBuf>) -> Result<Self> {
+        Self::select(
+            KeyringStore::desktop().map(|s| Arc::new(s) as Arc<dyn SessionStore>),
+            FileStore::new(path),
+        )
+    }
+    fn select(keyring: Result<Arc<dyn SessionStore>>, file: FileStore) -> Result<Self> {
+        let unavailable = |error: &Error| {
+            matches!(
+                error,
+                Error::Keyring(
+                    keyring::Error::NoDefaultStore
+                        | keyring::Error::NoStorageAccess(_)
+                        | keyring::Error::PlatformFailure(_)
+                )
+            )
+        };
+        let selected = keyring.and_then(|store| {
+            if store.load()?.is_none()
+                && let Some(session) = file.load()?
+            {
+                store.save(&session)?;
+            }
+            Ok(store)
+        });
+        match selected {
+            Ok(store) => {
+                file.clear()?;
+                Ok(Self {
+                    store,
+                    kind: CredentialStore::Os,
+                })
+            }
+            Err(error) if unavailable(&error) => Ok(Self {
+                store: Arc::new(file),
+                kind: CredentialStore::File,
+            }),
+            Err(error) => Err(error),
+        }
+    }
+    pub fn kind(&self) -> CredentialStore {
+        self.kind
+    }
+}
+impl SessionStore for DesktopStore {
+    fn load(&self) -> Result<Option<Session>> {
+        self.store.load()
+    }
+    fn save(&self, session: &Session) -> Result<()> {
+        self.store.save(session)
+    }
+    fn clear(&self) -> Result<()> {
+        self.store.clear()
     }
 }
 

@@ -338,3 +338,8 @@ export interface OcrProgress {
   total: number;
   message: string;
 }
+
+export type CredentialStore = "os" | "file";
+export interface SessionInfo {
+  credential_store?: CredentialStore;
+}

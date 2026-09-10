@@ -14,13 +14,18 @@ pub struct SessionInfo {
     uid: String,
     display_name: Option<String>,
     providers: Vec<String>,
+    credential_store: honkoku_core::auth::CredentialStore,
 }
-impl From<&Session> for SessionInfo {
-    fn from(value: &Session) -> Self {
+impl SessionInfo {
+    pub(crate) fn new(
+        value: &Session,
+        credential_store: honkoku_core::auth::CredentialStore,
+    ) -> Self {
         Self {
             uid: value.uid.clone(),
             display_name: value.display_name.clone(),
             providers: value.providers.clone(),
+            credential_store,
         }
     }
 }
@@ -49,7 +54,7 @@ pub(crate) async fn attach_session(
     session: Session,
 ) -> Result<SessionInfo, AppError> {
     let mut connection = state.connection.write().await;
-    let info = SessionInfo::from(&session);
+    let info = SessionInfo::new(&session, state.store.kind());
     let client = state
         .anonymous()?
         .with_session(TokenManager::new(session.clone(), state.store.clone())?);

@@ -15,7 +15,7 @@ use tauri::{Manager, State};
 struct AppState {
     connection: tokio::sync::RwLock<Connection>,
     storage: SharedStorage,
-    store: Arc<honkoku_core::auth::FileStore>,
+    store: Arc<honkoku_core::auth::DesktopStore>,
 }
 struct Connection {
     client: HonkokuClient,
@@ -172,13 +172,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             app.manage(signin::SignInState::default());
             let cache = app.path().cache_dir()?.join("honkoku-client");
             std::fs::create_dir_all(&cache)?;
-            use honkoku_core::auth::{FileStore, SessionStore, TokenManager};
+            use honkoku_core::auth::{DesktopStore, SessionStore, TokenManager};
             let storage = Arc::new(Mutex::new(Storage::open(cache.join("cache.sqlite"))?));
-            let store = Arc::new(FileStore::new(
+            let store = Arc::new(DesktopStore::new(
                 app.path().app_data_dir()?.join("session.json"),
-            ));
+            )?);
             let stored = store.load()?;
-            let session = stored.as_ref().map(commands::SessionInfo::from);
+            let session = stored
+                .as_ref()
+                .map(|session| commands::SessionInfo::new(session, store.kind()));
             let mut client = HonkokuClient::new()?.with_storage(storage.clone());
             if let Some(stored) = stored {
                 client = client.with_session(TokenManager::new(stored, store.clone())?);
