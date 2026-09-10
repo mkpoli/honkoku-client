@@ -1,5 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
-  <rect width="128" height="128" rx="24" fill="#245da8"/>
-  <path d="M26 28h33v73H26zM69 28h33v73H69z" fill="#f7f5ef"/>
-  <path d="M38 41v45m11-45v45m32-45v45m11-45v45" stroke="#245da8" stroke-width="4"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <clipPath id="r"><rect x="0" y="0" width="1024" height="1024" rx="224" ry="224"/></clipPath>
+  </defs>
+  <g clip-path="url(#r)">
+    <rect width="1024" height="1024" fill="#F4F2EE"/>
+    <rect x="96" y="96" width="832" height="832" rx="40" fill="#FFFFFF" stroke="#DDDCD6" stroke-width="8"/>
+    <rect x="128" y="128" width="768" height="6" fill="#D95936"/>
+    <text x="512" y="646" text-anchor="middle" font-family="Noto Serif CJK JP, Noto Serif JP, serif" font-size="520" font-weight="700" fill="#202632">翻</text>
+    <circle cx="768" cy="768" r="72" fill="#D95936"/>
+  </g>
 </svg>
