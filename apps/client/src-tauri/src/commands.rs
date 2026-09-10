@@ -26,6 +26,7 @@ impl From<&Session> for SessionInfo {
 }
 #[tauri::command]
 pub async fn session_import(
+    signin: State<'_, crate::signin::SignInState>,
     app: tauri::AppHandle,
     state: State<'_, AppState>,
     editing: State<'_, EditingState>,
@@ -38,8 +39,16 @@ pub async fn session_import(
             message: "ホームフォルダーを取得できません。".into(),
         })?
         .join(".local/share/honkoku-client/session.json");
-    let mut connection = state.connection.write().await;
+    let _gate = signin.gate.lock().await;
     let session = import_dev_session(path)?;
+    attach_session(&state, &editing, session).await
+}
+pub(crate) async fn attach_session(
+    state: &AppState,
+    editing: &EditingState,
+    session: Session,
+) -> Result<SessionInfo, AppError> {
+    let mut connection = state.connection.write().await;
     let info = SessionInfo::from(&session);
     let client = state
         .anonymous()?
@@ -72,15 +81,23 @@ pub async fn session_current(
 }
 #[tauri::command]
 pub async fn session_clear(
+    app: tauri::AppHandle,
+    signin: State<'_, crate::signin::SignInState>,
+    clear_site_data: Option<bool>,
     state: State<'_, AppState>,
     editing: State<'_, EditingState>,
 ) -> Result<(), AppError> {
+    let _gate = signin.gate.lock().await;
     let mut connection = state.connection.write().await;
     let client = state.anonymous()?;
     state.store.clear()?;
     connection.client = client;
     connection.session = None;
     editing.pages.lock().await.clear();
+    crate::signin::cancel(&app, &signin)?;
+    if clear_site_data.unwrap_or(false) {
+        crate::signin::clear_profile(&app).await?;
+    }
     Ok(())
 }
 #[derive(Default, Deserialize)]
