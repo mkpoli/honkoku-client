@@ -1,0 +1,20 @@
+[workspace]
+resolver = "3"
+members = ["crates/*", "apps/cli", "apps/client/src-tauri"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.96"
+license = "MIT"
+
+[workspace.dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "time"] }
+time = { version = "=0.3.47", features = ["formatting", "parsing", "serde"] }
+honkoku-core = { path = "crates/core" }
+honkoku-storage = { path = "crates/storage" }
+honkoku-iiif = { path = "crates/iiif" }
+honkoku-text = { path = "crates/text" }

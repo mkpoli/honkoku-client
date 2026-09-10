@@ -1,0 +1,3298 @@
+[{
+  "document": {
+    "name": "projects/honkoku3-c466c/databases/(default)/documents/transcriptions/0916dafb80cdc48ca7687afcad4a4f35_0",
+    "fields": {
+      "projectId": {
+        "stringValue": "ainu"
+      },
+      "entryId": {
+        "stringValue": "0916dafb80cdc48ca7687afcad4a4f35"
+      },
+      "index": {
+        "integerValue": "0"
+      },
+      "syncMode": {
+        "booleanValue": false
+      },
+      "notes": {
+        "arrayValue": {}
+      },
+      "tempNotes": {
+        "arrayValue": {}
+      },
+      "canvasId": {
+        "stringValue": "https://da.library.ryukoku.ac.jp/iiif/170161/1/canvas/1"
+      },
+      "annotations": {
+        "arrayValue": {}
+      },
+      "tempAnnotations": {
+        "arrayValue": {}
+      },
+      "createdAt": {
+        "timestampValue": "2026-04-15T18:03:02.537Z"
+      },
+      "id": {
+        "stringValue": "0916dafb80cdc48ca7687afcad4a4f35_0"
+      },
+      "tempEditedBy": {
+        "stringValue": "fdixFwL0nRPQRxgn3A9IdzY0Mof1"
+      },
+      "tempText": {
+        "stringValue": "蝦夷紀行　上"
+      },
+      "editedBy": {
+        "stringValue": "fdixFwL0nRPQRxgn3A9IdzY0Mof1"
+      },
+      "requestReview": {
+        "booleanValue": false
+      },
+      "share": {
+        "booleanValue": true
+      },
+      "text": {
+        "stringValue": "蝦夷紀行　上"
+      },
+      "tempTextChanged": {
+        "booleanValue": false
+      },
+      "prevStatus": {
+        "stringValue": "initiated"
+      },
+      "updatedAt": {
+        "timestampValue": "2026-04-16T06:48:03.447Z"
+      },
+      "status": {
+        "stringValue": "completed"
+      }
+    },
+    "createTime": "2026-04-15T18:03:03.257630Z",
+    "updateTime": "2026-04-16T06:48:08.378079Z"
+  },
+  "readTime": "2026-09-09T17:53:42.816217Z"
+}
+,
+{
+  "document": {
+    "name": "projects/honkoku3-c466c/databases/(default)/documents/transcriptions/0916dafb80cdc48ca7687afcad4a4f35_1",
+    "fields": {
+      "projectId": {
+        "stringValue": "ainu"
+      },
+      "entryId": {
+        "stringValue": "0916dafb80cdc48ca7687afcad4a4f35"
+      },
+      "index": {
+        "integerValue": "1"
+      },
+      "syncMode": {
+        "booleanValue": false
+      },
+      "notes": {
+        "arrayValue": {}
+      },
+      "tempNotes": {
+        "arrayValue": {}
+      },
+      "canvasId": {
+        "stringValue": "https://da.library.ryukoku.ac.jp/iiif/170161/1/canvas/2"
+      },
+      "annotations": {
+        "arrayValue": {}
+      },
+      "tempAnnotations": {
+        "arrayValue": {}
+      },
+      "createdAt": {
+        "timestampValue": "2026-04-15T18:03:02.537Z"
+      },
+      "id": {
+        "stringValue": "0916dafb80cdc48ca7687afcad4a4f35_1"
+      },
+      "tempEditedBy": {
+        "stringValue": "fdixFwL0nRPQRxgn3A9IdzY0Mof1"
+      },
+      "ocr": {
+        "mapValue": {
+          "fields": {
+            "ndl": {
+              "mapValue": {
+                "fields": {
+                  "text": {
+                    "stringValue": "となすへき者を撰みやとふといへ共此年の夏\n初見分の時従ひ行し蝦夷等帰り来て後奥地\n異族の夷情帽猫の甚しき又ハ土風の異行路の難苦\nなる事を賜り伝へけれハ碇行へしといふもの\n壱人もなく彼是して日数ハ日の間此所に遅\n滞し種〳〵の謀をなして漸く船子六人を雇ひ\n八月三日此所を発船し日数十三日を経て同十五日リ\nヨナイに泊しぬるに翌十六ゝ山丹夷数十人船六艘ニ\n乗組此所に来り従夷を捕へて種々の誕云妄語をな\nし奥地に至る事成かたしなと罵り且其癒し行\n所の礼酒諸雑器も暴に奪ひ取んとしける故強夷は\n所の糧酒諸雑器も暴く奪\n大さ恐怖のし言語ハ通せす実に施すへき策なく\nよく〳〵後夷を諭して其暴意に逆せさかしめ其程\nをはかりて米酒なと若干分与し其心を慰けれは\n漸にして暴を止り船を照して南方と進み去りぬ\n従夷其始末を祭らて是かり南方に帰り去らんと\n云出し更に奥地に進みへしと云者なかりしかは\n林蔵苦心する事只ならすといへとも漢のいふ所実のいふ所実\nと眼前の所なれは其恐怖する事其理なきとあらす\nさらハとて是ゟ帰り去時ハ何時ニか奥地に至り得へハ"
+                  },
+                  "createdAt": {
+                    "timestampValue": "2026-04-16T06:31:30.410Z"
+                  },
+                  "textBlocks": {
+                    "arrayValue": {
+                      "values": [
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "1190"
+                              },
+                              "y": {
+                                "integerValue": "183"
+                              },
+                              "width": {
+                                "integerValue": "39"
+                              },
+                              "height": {
+                                "integerValue": "701"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.88839423656463623
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "となすへき者を撰みやとふといへ共此年の夏"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "1"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "1137"
+                              },
+                              "y": {
+                                "integerValue": "181"
+                              },
+                              "width": {
+                                "integerValue": "40"
+                              },
+                              "height": {
+                                "integerValue": "705"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.87241905927658081
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "初見分の時従ひ行し蝦夷等帰り来て後奥地"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "2"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "1087"
+                              },
+                              "y": {
+                                "integerValue": "181"
+                              },
+                              "width": {
+                                "integerValue": "40"
+                              },
+                              "height": {
+                                "integerValue": "706"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.850989818572998
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "異族の夷情帽猫の甚しき又ハ土風の異行路の難苦"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "3"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "1037"
+                              },
+                              "y": {
+                                "integerValue": "184"
+                              },
+                              "width": {
+                                "integerValue": "40"
+                              },
+                              "height": {
+                                "integerValue": "698"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.84151589870452881
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "なる事を賜り伝へけれハ碇行へしといふもの"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "4"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "983"
+                              },
+                              "y": {
+                                "integerValue": "180"
+                              },
+                              "width": {
+                                "integerValue": "44"
+                              },
+                              "height": {
+                                "integerValue": "703"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.866517186164856
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "壱人もなく彼是して日数ハ日の間此所に遅"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "5"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "933"
+                              },
+                              "y": {
+                                "integerValue": "181"
+                              },
+                              "width": {
+                                "integerValue": "41"
+                              },
+                              "height": {
+                                "integerValue": "703"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.86844038963317871
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "滞し種〳〵の謀をなして漸く船子六人を雇ひ"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "6"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "882"
+                              },
+                              "y": {
+                                "integerValue": "179"
+                              },
+                              "width": {
+                                "integerValue": "40"
+                              },
+                              "height": {
+                                "integerValue": "701"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.887787938117981
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "八月三日此所を発船し日数十三日を経て同十五日リ"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "7"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "829"
+                              },
+                              "y": {
+                                "integerValue": "177"
+                              },
+                              "width": {
+                                "integerValue": "39"
+                              },
+                              "height": {
+                                "integerValue": "705"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.88126546144485474
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "ヨナイに泊しぬるに翌十六ゝ山丹夷数十人船六艘ニ"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "8"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "779"
+                              },
+                              "y": {
+                                "integerValue": "182"
+                              },
+                              "width": {
+                                "integerValue": "43"
+                              },
+                              "height": {
+                                "integerValue": "697"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.885352611541748
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "乗組此所に来り従夷を捕へて種々の誕云妄語をな"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "9"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "728"
+                              },
+                              "y": {
+                                "integerValue": "207"
+                              },
+                              "width": {
+                                "integerValue": "42"
+                              },
+                              "height": {
+                                "integerValue": "673"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.84315907955169678
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "し奥地に至る事成かたしなと罵り且其癒し行"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "10"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "571"
+                              },
+                              "y": {
+                                "integerValue": "194"
+                              },
+                              "width": {
+                                "integerValue": "38"
+                              },
+                              "height": {
+                                "integerValue": "688"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.8905564546585083
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "所の礼酒諸雑器も暴に奪ひ取んとしける故強夷は"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "11"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "573"
+                              },
+                              "y": {
+                                "integerValue": "196"
+                              },
+                              "width": {
+                                "integerValue": "36"
+                              },
+                              "height": {
+                                "integerValue": "326"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.30314910411834717
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "所の糧酒諸雑器も暴く奪"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "12"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "524"
+                              },
+                              "y": {
+                                "integerValue": "186"
+                              },
+                              "width": {
+                                "integerValue": "36"
+                              },
+                              "height": {
+                                "integerValue": "703"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.89221072196960449
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "大さ恐怖のし言語ハ通せす実に施すへき策なく"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "13"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "474"
+                              },
+                              "y": {
+                                "integerValue": "190"
+                              },
+                              "width": {
+                                "integerValue": "38"
+                              },
+                              "height": {
+                                "integerValue": "695"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.8807680606842041
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "よく〳〵後夷を諭して其暴意に逆せさかしめ其程"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "14"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "419"
+                              },
+                              "y": {
+                                "integerValue": "185"
+                              },
+                              "width": {
+                                "integerValue": "37"
+                              },
+                              "height": {
+                                "integerValue": "705"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.881930947303772
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "をはかりて米酒なと若干分与し其心を慰けれは"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "15"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "370"
+                              },
+                              "y": {
+                                "integerValue": "187"
+                              },
+                              "width": {
+                                "integerValue": "36"
+                              },
+                              "height": {
+                                "integerValue": "701"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.852117657661438
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "漸にして暴を止り船を照して南方と進み去りぬ"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "16"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "318"
+                              },
+                              "y": {
+                                "integerValue": "188"
+                              },
+                              "width": {
+                                "integerValue": "35"
+                              },
+                              "height": {
+                                "integerValue": "692"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.90265488624572754
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "従夷其始末を祭らて是かり南方に帰り去らんと"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "17"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "264"
+                              },
+                              "y": {
+                                "integerValue": "182"
+                              },
+                              "width": {
+                                "integerValue": "37"
+                              },
+                              "height": {
+                                "integerValue": "704"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.76274287700653076
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "云出し更に奥地に進みへしと云者なかりしかは"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "18"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "216"
+                              },
+                              "y": {
+                                "integerValue": "185"
+                              },
+                              "width": {
+                                "integerValue": "38"
+                              },
+                              "height": {
+                                "integerValue": "701"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.92217659950256348
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "林蔵苦心する事只ならすといへとも漢のいふ所実のいふ所実"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "19"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "162"
+                              },
+                              "y": {
+                                "integerValue": "190"
+                              },
+                              "width": {
+                                "integerValue": "42"
+                              },
+                              "height": {
+                                "integerValue": "695"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.87328583002090454
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "と眼前の所なれは其恐怖する事其理なきとあらす"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "20"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "114"
+                              },
+                              "y": {
+                                "integerValue": "184"
+                              },
+                              "width": {
+                                "integerValue": "37"
+                              },
+                              "height": {
+                                "integerValue": "707"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.87630397081375122
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "さらハとて是ゟ帰り去時ハ何時ニか奥地に至り得へハ"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "21"
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "tempText": {
+        "stringValue": "蝦夷紀行巻之上\n文化五辰年の秋再ひ間宮林蔵をして北蝦夷の奥地に\n至らしむるに其年の七月十三日本蝦夷ソウヤを出\n帆して其日シラヌシに至る此所土着の住夷多\nからされハ従行の夷をやとふ事あたはす夷船の\n奥地に趣くものあるを待とかくして日数三日逗\n留し同十七日夷船に乗組此所を發し日数五日を経\nて同廿五（三？）日トンナイ地名に至る此所にまたシラヌシの\n如く番屋ありて番人是に居し地夷を指揮す\n土着の従夷も亦多き所なれハ則番人をして船子"
+      },
+      "editedBy": {
+        "stringValue": "fdixFwL0nRPQRxgn3A9IdzY0Mof1"
+      },
+      "requestReview": {
+        "booleanValue": false
+      },
+      "share": {
+        "booleanValue": true
+      },
+      "text": {
+        "stringValue": "蝦夷紀行巻之上\n文化五辰年の秋再ひ間宮林蔵をして北蝦夷の奥地に\n至らしむるに其年の七月十三日本蝦夷ソウヤを出\n帆して其日シラヌシに至る此所土着の住夷多\nからされハ従行の夷をやとふ事あたはす夷船の\n奥地に趣くものあるを待とかくして日数三日逗\n留し同十七日夷船に乗組此所を發し日数五日を経\nて同廿五（三？）日トンナイ地名に至る此所にまたシラヌシの\n如く番屋ありて番人是に居し地夷を指揮す\n土着の従夷も亦多き所なれハ則番人をして船子"
+      },
+      "tempTextChanged": {
+        "booleanValue": false
+      },
+      "prevStatus": {
+        "stringValue": "initiated"
+      },
+      "updatedAt": {
+        "timestampValue": "2026-04-16T06:48:18.086Z"
+      },
+      "status": {
+        "stringValue": "completed"
+      }
+    },
+    "createTime": "2026-04-15T18:03:03.257630Z",
+    "updateTime": "2026-04-16T06:48:24.010447Z"
+  },
+  "readTime": "2026-09-09T17:53:42.816217Z"
+}
+,
+{
+  "document": {
+    "name": "projects/honkoku3-c466c/databases/(default)/documents/transcriptions/0916dafb80cdc48ca7687afcad4a4f35_2",
+    "fields": {
+      "projectId": {
+        "stringValue": "ainu"
+      },
+      "entryId": {
+        "stringValue": "0916dafb80cdc48ca7687afcad4a4f35"
+      },
+      "index": {
+        "integerValue": "2"
+      },
+      "syncMode": {
+        "booleanValue": false
+      },
+      "notes": {
+        "arrayValue": {}
+      },
+      "tempNotes": {
+        "arrayValue": {}
+      },
+      "canvasId": {
+        "stringValue": "https://da.library.ryukoku.ac.jp/iiif/170161/1/canvas/3"
+      },
+      "annotations": {
+        "arrayValue": {}
+      },
+      "tempAnnotations": {
+        "arrayValue": {}
+      },
+      "createdAt": {
+        "timestampValue": "2026-04-15T18:03:02.537Z"
+      },
+      "id": {
+        "stringValue": "0916dafb80cdc48ca7687afcad4a4f35_2"
+      },
+      "tempEditedBy": {
+        "stringValue": "fdixFwL0nRPQRxgn3A9IdzY0Mof1"
+      },
+      "editedBy": {
+        "stringValue": "fdixFwL0nRPQRxgn3A9IdzY0Mof1"
+      },
+      "requestReview": {
+        "booleanValue": false
+      },
+      "share": {
+        "booleanValue": true
+      },
+      "prevStatus": {
+        "stringValue": "completed"
+      },
+      "tempTextChanged": {
+        "booleanValue": true
+      },
+      "tempText": {
+        "stringValue": "となすへき者を撰みやとふといへ共此年の夏\n初見分の時従ひ行し蝦夷等帰り来て後奥地\n異族の夷情悍猾の甚しき又ハ土風の異行路の難苦\nなる事を語り伝へけれハ従行へしといふもの\n壱人もなく彼是して日数八日の間此所に遅\n滞し種〳〵の謀をなして漸く船子六人を雇ひ\n八月三日此所を発船し日数十三日を経て同十五日リ\nヨナイに泊しぬるに翌十六日山丹夷数十人船六艘ニ\n乗組此所に来り従夷を捕へて種々の謎言妄語をな\nし奥地に至る事成かたしなと罵り且其齎し行\n所の糧酒諸雑器も暴に奪ひ取んとしける故従夷は\n大に恐怖のし言語ハ通せす実に施すへき策なく\nよく〳〵従夷を諭して其暴意に逆せさらしめ其程\nをはかりて米酒なと若干分与し其心を慰けれは\n漸にして暴を止り船を出して南方に進み去りぬ\n従夷其始末を察して是から南方に帰り去らんと\n云出し更に奥地に進むへしと云者なかりしかは\n林蔵苦心する事只ならすといへとも夷のいふ所実\nに眼前の所なれは其恐怖する事其理なきとあらす\nさらハとて是ゟ帰り去時ハ何時ニか奥地に至り得へ"
+      },
+      "updatedAt": {
+        "timestampValue": "2026-04-16T06:49:47.190Z"
+      },
+      "text": {
+        "stringValue": "となすへき者を撰みやとふといへ共此年の夏\n初見分の時従ひ行し蝦夷等帰り来て後奥地\n異族の夷情悍猾の甚しき又ハ土風の異行路の難苦\nなる事を語り伝へけれハ従行へしといふもの\n壱人もなく彼是して日数八日の間此所に遅\n滞し種〳〵の謀をなして漸く船子六人を雇ひ\n八月三日此所を発船し日数十三日を経て同十五日リ\nヨナイに泊しぬるに翌十六日山丹夷数十人船六艘ニ\n乗組此所に来り従夷を捕へて種々の謎言妄語をな\nし奥地に至る事成かたしなと罵り且其齎し行\n所の糧酒諸雑器も暴に奪ひ取んとしける故従夷は\n大に恐怖のし言語ハ通せす実に施すへき策なく\nよく〳〵従夷を諭して其暴意に逆せさらしめ其程\nをはかりて米酒なと若干分与し其心を慰けれは\n漸にして暴を止り船を出して南方に進み去りぬ\n従夷其始末を察して是から南方に帰り去らんと\n云出し更に奥地に進むへしと云者なかりしかは\n林蔵苦心する事只ならすといへとも夷のいふ所実\nに眼前の所なれは其恐怖する事其理なきとあらす\nさらハとて是ゟ帰り去時ハ何時ニか奥地に至り得へ"
+      },
+      "status": {
+        "stringValue": "completed"
+      }
+    },
+    "createTime": "2026-04-15T18:03:03.257630Z",
+    "updateTime": "2026-04-16T06:49:48.556415Z"
+  },
+  "readTime": "2026-09-09T17:53:42.816217Z"
+}
+,
+{
+  "document": {
+    "name": "projects/honkoku3-c466c/databases/(default)/documents/transcriptions/0916dafb80cdc48ca7687afcad4a4f35_3",
+    "fields": {
+      "projectId": {
+        "stringValue": "ainu"
+      },
+      "entryId": {
+        "stringValue": "0916dafb80cdc48ca7687afcad4a4f35"
+      },
+      "index": {
+        "integerValue": "3"
+      },
+      "syncMode": {
+        "booleanValue": false
+      },
+      "notes": {
+        "arrayValue": {}
+      },
+      "tempNotes": {
+        "arrayValue": {}
+      },
+      "canvasId": {
+        "stringValue": "https://da.library.ryukoku.ac.jp/iiif/170161/1/canvas/4"
+      },
+      "annotations": {
+        "arrayValue": {}
+      },
+      "tempAnnotations": {
+        "arrayValue": {}
+      },
+      "createdAt": {
+        "timestampValue": "2026-04-15T18:03:02.537Z"
+      },
+      "id": {
+        "stringValue": "0916dafb80cdc48ca7687afcad4a4f35_3"
+      },
+      "ocr": {
+        "mapValue": {
+          "fields": {
+            "ndl": {
+              "mapValue": {
+                "fields": {
+                  "text": {
+                    "stringValue": "しと夫ゟ酒杯さたへ色〳〵の且云恵教を以て其心を\n慰めけれは漸に翁心して従ひ行へといふに至り大に\n力を得て船洋を窺ふの間日数十一日にして漸風波れ\n穏なれハ同月廿五日此所を出て九月三日トワシヨカウに至り\n付ぬるに是より奥地ハ異俗の夷城く入事既に深く\n且日を追て寒威増劇に強き貯糧し又多からされ\nは強夷しきりに帰りさらんと云てたゆへからさる勢\n一将れは己事を得すらて終に船もゝ返し九月十四日り\nヨナイに帰り着ぬ去にても此志を空して徒に帰り\nさらん事の口惜けれハ如何にもして帰上の凍合する\nさらん事の口惜けれは如何\nを待水上を経歴して奥地に至るへしと思ひ十月十四日\nまて夷家に稟宿しけるに日を追て積雪山をなすと\nいへとも海上更に凍合セされハ如何に思ふ共奥地\nに至るへき術なく旦日々食糧も残少々なり終に\n雑具を約して船と共に夷家に託し置六夷を牽\nひて積雷をおかし陸行して十一月廿六日トンナイ小帰\nり至り夷家に高宿して其年を踰へ巳年正月廿\n八日まて此所に滞留し食料の貯なと問へて廿九\n日此所を書又奥地に向しに二月二日ウシヨロに至る是ゟ\n奥地ハ悉〳〵両州附属の夷感なれハ初島の夷恐怖"
+                  },
+                  "createdAt": {
+                    "timestampValue": "2026-04-16T08:04:02.900Z"
+                  },
+                  "textBlocks": {
+                    "arrayValue": {
+                      "values": [
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "1181"
+                              },
+                              "y": {
+                                "integerValue": "194"
+                              },
+                              "width": {
+                                "integerValue": "46"
+                              },
+                              "height": {
+                                "integerValue": "687"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.86960732936859131
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "しと夫ゟ酒杯さたへ色〳〵の且云恵教を以て其心を"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "1"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "1130"
+                              },
+                              "y": {
+                                "integerValue": "186"
+                              },
+                              "width": {
+                                "integerValue": "42"
+                              },
+                              "height": {
+                                "integerValue": "703"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.88518565893173218
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "慰めけれは漸に翁心して従ひ行へといふに至り大に"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "2"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "1081"
+                              },
+                              "y": {
+                                "integerValue": "190"
+                              },
+                              "width": {
+                                "integerValue": "40"
+                              },
+                              "height": {
+                                "integerValue": "694"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.89516198635101318
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "力を得て船洋を窺ふの間日数十一日にして漸風波れ"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "3"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "1026"
+                              },
+                              "y": {
+                                "integerValue": "186"
+                              },
+                              "width": {
+                                "integerValue": "47"
+                              },
+                              "height": {
+                                "integerValue": "700"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.85311341285705566
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "穏なれハ同月廿五日此所を出て九月三日トワシヨカウに至り"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "4"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "978"
+                              },
+                              "y": {
+                                "integerValue": "183"
+                              },
+                              "width": {
+                                "integerValue": "42"
+                              },
+                              "height": {
+                                "integerValue": "701"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.86316967010498047
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "付ぬるに是より奥地ハ異俗の夷城く入事既に深く"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "5"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "928"
+                              },
+                              "y": {
+                                "integerValue": "181"
+                              },
+                              "width": {
+                                "integerValue": "40"
+                              },
+                              "height": {
+                                "integerValue": "700"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.89119088649749756
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "且日を追て寒威増劇に強き貯糧し又多からされ"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "6"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "874"
+                              },
+                              "y": {
+                                "integerValue": "182"
+                              },
+                              "width": {
+                                "integerValue": "44"
+                              },
+                              "height": {
+                                "integerValue": "701"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.87380576133728027
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "は強夷しきりに帰りさらんと云てたゆへからさる勢"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "7"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "823"
+                              },
+                              "y": {
+                                "integerValue": "176"
+                              },
+                              "width": {
+                                "integerValue": "41"
+                              },
+                              "height": {
+                                "integerValue": "705"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.87753725051879883
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "一将れは己事を得すらて終に船もゝ返し九月十四日り"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "8"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "773"
+                              },
+                              "y": {
+                                "integerValue": "181"
+                              },
+                              "width": {
+                                "integerValue": "38"
+                              },
+                              "height": {
+                                "integerValue": "697"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.8675534725189209
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "ヨナイに帰り着ぬ去にても此志を空して徒に帰り"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "9"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "721"
+                              },
+                              "y": {
+                                "integerValue": "178"
+                              },
+                              "width": {
+                                "integerValue": "43"
+                              },
+                              "height": {
+                                "integerValue": "704"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.868796706199646
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "さらん事の口惜けれハ如何にもして帰上の凍合する"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "10"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "723"
+                              },
+                              "y": {
+                                "integerValue": "180"
+                              },
+                              "width": {
+                                "integerValue": "42"
+                              },
+                              "height": {
+                                "integerValue": "358"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.360289990901947
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "さらん事の口惜けれは如何"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "11"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "572"
+                              },
+                              "y": {
+                                "integerValue": "184"
+                              },
+                              "width": {
+                                "integerValue": "37"
+                              },
+                              "height": {
+                                "integerValue": "694"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.8897777795791626
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "を待水上を経歴して奥地に至るへしと思ひ十月十四日"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "12"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "520"
+                              },
+                              "y": {
+                                "integerValue": "185"
+                              },
+                              "width": {
+                                "integerValue": "39"
+                              },
+                              "height": {
+                                "integerValue": "696"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.88323509693145752
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "まて夷家に稟宿しけるに日を追て積雪山をなすと"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "13"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "467"
+                              },
+                              "y": {
+                                "integerValue": "184"
+                              },
+                              "width": {
+                                "integerValue": "44"
+                              },
+                              "height": {
+                                "integerValue": "692"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.88005524873733521
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "いへとも海上更に凍合セされハ如何に思ふ共奥地"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "14"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "416"
+                              },
+                              "y": {
+                                "integerValue": "185"
+                              },
+                              "width": {
+                                "integerValue": "41"
+                              },
+                              "height": {
+                                "integerValue": "696"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.8644336462020874
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "に至るへき術なく旦日々食糧も残少々なり終に"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "15"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "365"
+                              },
+                              "y": {
+                                "integerValue": "180"
+                              },
+                              "width": {
+                                "integerValue": "39"
+                              },
+                              "height": {
+                                "integerValue": "709"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.8842843770980835
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "雑具を約して船と共に夷家に託し置六夷を牽"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "16"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "311"
+                              },
+                              "y": {
+                                "integerValue": "181"
+                              },
+                              "width": {
+                                "integerValue": "44"
+                              },
+                              "height": {
+                                "integerValue": "707"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.88044887781143188
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "ひて積雷をおかし陸行して十一月廿六日トンナイ小帰"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "17"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "260"
+                              },
+                              "y": {
+                                "integerValue": "184"
+                              },
+                              "width": {
+                                "integerValue": "44"
+                              },
+                              "height": {
+                                "integerValue": "701"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.86774569749832153
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "り至り夷家に高宿して其年を踰へ巳年正月廿"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "18"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "207"
+                              },
+                              "y": {
+                                "integerValue": "196"
+                              },
+                              "width": {
+                                "integerValue": "45"
+                              },
+                              "height": {
+                                "integerValue": "682"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.85960102081298828
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "八日まて此所に滞留し食料の貯なと問へて廿九"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "19"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "160"
+                              },
+                              "y": {
+                                "integerValue": "190"
+                              },
+                              "width": {
+                                "integerValue": "40"
+                              },
+                              "height": {
+                                "integerValue": "693"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.879670262336731
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "日此所を書又奥地に向しに二月二日ウシヨロに至る是ゟ"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "20"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "105"
+                              },
+                              "y": {
+                                "integerValue": "187"
+                              },
+                              "width": {
+                                "integerValue": "45"
+                              },
+                              "height": {
+                                "integerValue": "693"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.87855863571166992
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "奥地ハ悉〳〵両州附属の夷感なれハ初島の夷恐怖"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "21"
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "tempEditedBy": {
+        "stringValue": "fdixFwL0nRPQRxgn3A9IdzY0Mof1"
+      },
+      "tempText": {
+        "stringValue": "しと夫ゟ酒杯あたへ色〳〵の耳言恵教を以て其心を\n慰めけれは漸に解心して従ひ行へしといふに至り大に\n力を得て和洋を窺ふの間日数十一日にして漸風波も\n穏なれハ同月廿五日此所を出て九月三日トツシヨカウに至り\n付ぬるに是より奥地ハ異俗の夷域に入事既に深く\n且日を追て寒威増劇に趣き貯糧も又多からされ\nは従夷しきりに帰りさらんと云て強ゆへからさる勢\nなれは已事を得すして終に船を返し九月十四日リ\nヨナイに帰り着ぬ去にても此志を空して徒に帰り\nさらん事の口惜けれハ如何にもして帰上の凍合する\nを待水上を経歴して奥地に至るへしと思ひ十月十四日\nまて夷家に寓宿しけるに日を追て積雪山をなすと\nいへとも海上更に凍合セされハ如何に思ふ共奥地\nに至るへき術なく旦日々食糧も残少々なり終に\n雑具を約して船と共に夷家に託し置六夷を牽\nひて積雪をおかし陸行して十一月廿六日トンナイに帰\nり至り夷家に寓宿して其年を踰へ巳年正月廿\n八日まて此所に滞留し食料の貯なと調へて廿九\n日此所を出又奥地に向しに二月二日ウシヨロに至る是ゟ\n奥地ハ悉〳〵満州附属の夷域なれハ初島の夷恐怖"
+      },
+      "editedBy": {
+        "stringValue": "fdixFwL0nRPQRxgn3A9IdzY0Mof1"
+      },
+      "requestReview": {
+        "booleanValue": false
+      },
+      "share": {
+        "booleanValue": true
+      },
+      "text": {
+        "stringValue": "しと夫ゟ酒杯あたへ色〳〵の耳言恵教を以て其心を\n慰めけれは漸に解心して従ひ行へしといふに至り大に\n力を得て和洋を窺ふの間日数十一日にして漸風波も\n穏なれハ同月廿五日此所を出て九月三日トツシヨカウに至り\n付ぬるに是より奥地ハ異俗の夷域に入事既に深く\n且日を追て寒威増劇に趣き貯糧も又多からされ\nは従夷しきりに帰りさらんと云て強ゆへからさる勢\nなれは已事を得すして終に船を返し九月十四日リ\nヨナイに帰り着ぬ去にても此志を空して徒に帰り\nさらん事の口惜けれハ如何にもして帰上の凍合する\nを待水上を経歴して奥地に至るへしと思ひ十月十四日\nまて夷家に寓宿しけるに日を追て積雪山をなすと\nいへとも海上更に凍合セされハ如何に思ふ共奥地\nに至るへき術なく旦日々食糧も残少々なり終に\n雑具を約して船と共に夷家に託し置六夷を牽\nひて積雪をおかし陸行して十一月廿六日トンナイに帰\nり至り夷家に寓宿して其年を踰へ巳年正月廿\n八日まて此所に滞留し食料の貯なと調へて廿九\n日此所を出又奥地に向しに二月二日ウシヨロに至る是ゟ\n奥地ハ悉〳〵満州附属の夷域なれハ初島の夷恐怖"
+      },
+      "tempTextChanged": {
+        "booleanValue": false
+      },
+      "prevStatus": {
+        "stringValue": "initiated"
+      },
+      "updatedAt": {
+        "timestampValue": "2026-04-16T08:25:10.997Z"
+      },
+      "status": {
+        "stringValue": "completed"
+      }
+    },
+    "createTime": "2026-04-15T18:03:03.257630Z",
+    "updateTime": "2026-04-16T08:25:15.589231Z"
+  },
+  "readTime": "2026-09-09T17:53:42.816217Z"
+}
+,
+{
+  "document": {
+    "name": "projects/honkoku3-c466c/databases/(default)/documents/transcriptions/0916dafb80cdc48ca7687afcad4a4f35_4",
+    "fields": {
+      "projectId": {
+        "stringValue": "ainu"
+      },
+      "entryId": {
+        "stringValue": "0916dafb80cdc48ca7687afcad4a4f35"
+      },
+      "index": {
+        "integerValue": "4"
+      },
+      "prevStatus": {
+        "stringValue": "default"
+      },
+      "syncMode": {
+        "booleanValue": false
+      },
+      "notes": {
+        "arrayValue": {}
+      },
+      "tempNotes": {
+        "arrayValue": {}
+      },
+      "canvasId": {
+        "stringValue": "https://da.library.ryukoku.ac.jp/iiif/170161/1/canvas/5"
+      },
+      "annotations": {
+        "arrayValue": {}
+      },
+      "tempAnnotations": {
+        "arrayValue": {}
+      },
+      "createdAt": {
+        "timestampValue": "2026-04-15T18:03:02.538Z"
+      },
+      "id": {
+        "stringValue": "0916dafb80cdc48ca7687afcad4a4f35_4"
+      },
+      "ocr": {
+        "mapValue": {
+          "fields": {
+            "ndl": {
+              "mapValue": {
+                "fields": {
+                  "text": {
+                    "stringValue": "する心あるに地夷の流言する処初島の夷奥地に入時\nハ往時より交易の諸品を貸置し続残シ為に質と\nなし奥地の夷是を捕らんといたしなと聞及ひ且は\n去年上丹夷の狼藉を思ひ書し後夷等悉く恐怖し\n更に従ひ行へしといふ者なし故に六夷の内輯骨な\nる者一人を残し余は悉く帰り去しめ漸にして\n地夷五人を雇ひ舟を出して四月九日ノテヽの崎に\n至りしに海上怪染合して船をやる事不能故に五月\n七日迄此所に滞留せしにうシヨロよりの儒夷また是より\n奥地に入事を憚りける故此所にして舟た一夷を備\n先駈の者となしけれは後は皆漸に心を安ふし船を出す\nへきも及ひ山旦船一艘を借て殖船の図前編にあれおこのこのこの足る\nへきに及ひ山旦船一艘を借て砂\n所なり是ゟ奥紀ハ湖頗多くして\n山旦船の図前編にあすコルデツケの送る\n茲に地夷風用る所上且船を備るといふ同八日此所を発し同\n初島歌弱の邪とみて進退する事あたはす\n故に地夷の用る所山旦船を備るといふ\n一同八日此所を発し\n十日イクタマし小至りし小従来亦行事を恐るゝに依て\n止事を得す地夷壱人を備ふてまた先￣ン導となし\n同十二日此所を発し其日十二ヲしに至つきぬ此ところ\n北島極北の地にして夷家わつかに五六屋ある処\nなりノテドより此所に至ルの間嶋と素韃地の\n相対せる迚雷にして潮水悉く南く流れ其間傾\n路ありといへとも波涛激仏の愁も少し小歌の夷船"
+                  },
+                  "createdAt": {
+                    "timestampValue": "2026-04-17T01:00:49.717Z"
+                  },
+                  "textBlocks": {
+                    "arrayValue": {
+                      "values": [
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "1181"
+                              },
+                              "y": {
+                                "integerValue": "187"
+                              },
+                              "width": {
+                                "integerValue": "41"
+                              },
+                              "height": {
+                                "integerValue": "694"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.88039249181747437
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "する心あるに地夷の流言する処初島の夷奥地に入時"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "1"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "1130"
+                              },
+                              "y": {
+                                "integerValue": "182"
+                              },
+                              "width": {
+                                "integerValue": "40"
+                              },
+                              "height": {
+                                "integerValue": "702"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.881401538848877
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "ハ往時より交易の諸品を貸置し続残シ為に質と"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "2"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "1080"
+                              },
+                              "y": {
+                                "integerValue": "186"
+                              },
+                              "width": {
+                                "integerValue": "38"
+                              },
+                              "height": {
+                                "integerValue": "696"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.91891181468963623
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "なし奥地の夷是を捕らんといたしなと聞及ひ且は"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "3"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "1028"
+                              },
+                              "y": {
+                                "integerValue": "180"
+                              },
+                              "width": {
+                                "integerValue": "45"
+                              },
+                              "height": {
+                                "integerValue": "700"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.90004885196685791
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "去年上丹夷の狼藉を思ひ書し後夷等悉く恐怖し"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "4"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "977"
+                              },
+                              "y": {
+                                "integerValue": "184"
+                              },
+                              "width": {
+                                "integerValue": "41"
+                              },
+                              "height": {
+                                "integerValue": "694"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.89100039005279541
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "更に従ひ行へしといふ者なし故に六夷の内輯骨な"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "5"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "926"
+                              },
+                              "y": {
+                                "integerValue": "178"
+                              },
+                              "width": {
+                                "integerValue": "39"
+                              },
+                              "height": {
+                                "integerValue": "711"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.87483882904052734
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "る者一人を残し余は悉く帰り去しめ漸にして"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "6"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "872"
+                              },
+                              "y": {
+                                "integerValue": "179"
+                              },
+                              "width": {
+                                "integerValue": "43"
+                              },
+                              "height": {
+                                "integerValue": "704"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.87119156122207642
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "地夷五人を雇ひ舟を出して四月九日ノテヽの崎に"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "7"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "819"
+                              },
+                              "y": {
+                                "integerValue": "182"
+                              },
+                              "width": {
+                                "integerValue": "44"
+                              },
+                              "height": {
+                                "integerValue": "697"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.86626642942428589
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "至りしに海上怪染合して船をやる事不能故に五月"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "8"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "773"
+                              },
+                              "y": {
+                                "integerValue": "183"
+                              },
+                              "width": {
+                                "integerValue": "37"
+                              },
+                              "height": {
+                                "integerValue": "699"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.87069851160049438
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "七日迄此所に滞留せしにうシヨロよりの儒夷また是より"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "9"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "721"
+                              },
+                              "y": {
+                                "integerValue": "179"
+                              },
+                              "width": {
+                                "integerValue": "39"
+                              },
+                              "height": {
+                                "integerValue": "710"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.84864091873168945
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "奥地に入事を憚りける故此所にして舟た一夷を備"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "10"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "573"
+                              },
+                              "y": {
+                                "integerValue": "187"
+                              },
+                              "width": {
+                                "integerValue": "34"
+                              },
+                              "height": {
+                                "integerValue": "700"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.86445772647857666
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "先駈の者となしけれは後は皆漸に心を安ふし船を出す"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "11"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "523"
+                              },
+                              "y": {
+                                "integerValue": "182"
+                              },
+                              "width": {
+                                "integerValue": "38"
+                              },
+                              "height": {
+                                "integerValue": "706"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.784098207950592
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "へきも及ひ山旦船一艘を借て殖船の図前編にあれおこのこのこの足る"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "12"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "522"
+                              },
+                              "y": {
+                                "integerValue": "188"
+                              },
+                              "width": {
+                                "integerValue": "32"
+                              },
+                              "height": {
+                                "integerValue": "366"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.40269303321838379
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "へきに及ひ山旦船一艘を借て砂"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "13"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "520"
+                              },
+                              "y": {
+                                "integerValue": "543"
+                              },
+                              "width": {
+                                "integerValue": "24"
+                              },
+                              "height": {
+                                "integerValue": "340"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.44041198492050171
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "所なり是ゟ奥紀ハ湖頗多くして"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "14"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "540"
+                              },
+                              "y": {
+                                "integerValue": "544"
+                              },
+                              "width": {
+                                "integerValue": "22"
+                              },
+                              "height": {
+                                "integerValue": "343"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.35952213406562805
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "山旦船の図前編にあすコルデツケの送る"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "15"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "469"
+                              },
+                              "y": {
+                                "integerValue": "185"
+                              },
+                              "width": {
+                                "integerValue": "41"
+                              },
+                              "height": {
+                                "integerValue": "698"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.69218695163726807
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "茲に地夷風用る所上且船を備るといふ同八日此所を発し同"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "16"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "488"
+                              },
+                              "y": {
+                                "integerValue": "188"
+                              },
+                              "width": {
+                                "integerValue": "24"
+                              },
+                              "height": {
+                                "integerValue": "391"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.54350566864013672
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "初島歌弱の邪とみて進退する事あたはす"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "17"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "468"
+                              },
+                              "y": {
+                                "integerValue": "191"
+                              },
+                              "width": {
+                                "integerValue": "25"
+                              },
+                              "height": {
+                                "integerValue": "391"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.5824052095413208
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "故に地夷の用る所山旦船を備るといふ"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "18"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "474"
+                              },
+                              "y": {
+                                "integerValue": "574"
+                              },
+                              "width": {
+                                "integerValue": "33"
+                              },
+                              "height": {
+                                "integerValue": "237"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.34921461343765259
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "一同八日此所を発し"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "19"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "420"
+                              },
+                              "y": {
+                                "integerValue": "182"
+                              },
+                              "width": {
+                                "integerValue": "36"
+                              },
+                              "height": {
+                                "integerValue": "704"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.840487539768219
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "十日イクタマし小至りし小従来亦行事を恐るゝに依て"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "20"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "369"
+                              },
+                              "y": {
+                                "integerValue": "185"
+                              },
+                              "width": {
+                                "integerValue": "35"
+                              },
+                              "height": {
+                                "integerValue": "704"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.84986543655395508
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "止事を得す地夷壱人を備ふてまた先￣ン導となし"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "21"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "314"
+                              },
+                              "y": {
+                                "integerValue": "192"
+                              },
+                              "width": {
+                                "integerValue": "37"
+                              },
+                              "height": {
+                                "integerValue": "689"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.87579250335693359
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "同十二日此所を発し其日十二ヲしに至つきぬ此ところ"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "22"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "264"
+                              },
+                              "y": {
+                                "integerValue": "185"
+                              },
+                              "width": {
+                                "integerValue": "37"
+                              },
+                              "height": {
+                                "integerValue": "701"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.88229572772979736
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "北島極北の地にして夷家わつかに五六屋ある処"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "23"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "213"
+                              },
+                              "y": {
+                                "integerValue": "192"
+                              },
+                              "width": {
+                                "integerValue": "38"
+                              },
+                              "height": {
+                                "integerValue": "658"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.80200409889221191
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "なりノテドより此所に至ルの間嶋と素韃地の"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "24"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "163"
+                              },
+                              "y": {
+                                "integerValue": "186"
+                              },
+                              "width": {
+                                "integerValue": "38"
+                              },
+                              "height": {
+                                "integerValue": "704"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.88169825077056885
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "相対せる迚雷にして潮水悉く南く流れ其間傾"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "25"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "x": {
+                                "integerValue": "112"
+                              },
+                              "y": {
+                                "integerValue": "185"
+                              },
+                              "width": {
+                                "integerValue": "39"
+                              },
+                              "height": {
+                                "integerValue": "710"
+                              },
+                              "confidence": {
+                                "doubleValue": 0.855809211730957
+                              },
+                              "classId": {
+                                "integerValue": "0"
+                              },
+                              "text": {
+                                "mapValue": {
+                                  "fields": {
+                                    "text": {
+                                      "stringValue": "路ありといへとも波涛激仏の愁も少し小歌の夷船"
+                                    },
+                                    "confidence": {
+                                      "doubleValue": 0.9
+                                    },
+                                    "rawPredictions": {
+                                      "arrayValue": {}
+                                    }
+                                  }
+                                }
+                              },
+                              "readingOrder": {
+                                "integerValue": "26"
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "tempEditedBy": {
+        "stringValue": "fdixFwL0nRPQRxgn3A9IdzY0Mof1"
+      },
+      "tempTextChanged": {
+        "booleanValue": true
+      },
+      "tempText": {
+        "stringValue": "する心あるに地夷の流言する処初島の夷奥地に入時\nハ往時より交易の諸品を貸置し続の為に質と\nなし奥地の夷是を捕らんといたしなと聞及ひれは\n去年山丹夷の狼藉を思ひ出し従夷等悉く恐怖し\n更に従ひ行へしといふ者なし故に六夷の内悍骨な\nる者一人を残し余は悉く帰り去しめ漸にして\n地夷五人を雇ひ舟を出して四月九日ノテトの崎に\n至りしに海上猶凍合して船をやる事不能故に五月\n七日迄此所に滞留せしにウシヨロよりの傭夷また是より\n奥地に入事を憚りける故此所にして舟た一夷を傭\n先駈の者となしけれは後は皆漸に心を安ふし船を出す\nへきも及ひ山旦船一艘を借て（山旦船の図前偏に出す\nコルデツケの送る所なり是ゟ奥地ハ湖頗多くして\n初島歌弱の船を以て進退する事あたはす\n故に地夷の用る所上且船を借るといふ）同八日此所を発し同\n十日イクタマーに至りしに従夷亦行事を恐るゝに依て\n止事を得す地夷壱人を傭ふてまた先ン導となし\n同十二日此所を発し其日ナニヲーに至つきぬ此ところ\n北島極北の地にして夷家わつかに五六屋ある処\nなりノテトより此所に至ルの間嶋と素韃地の\n相対せる廻海にして潮水悉く南に流れ其間瀬\n路ありといへとも波涛激沸の愁も少し小軟の夷船"
+      },
+      "updatedAt": {
+        "timestampValue": "2026-04-17T01:29:21.425Z"
+      },
+      "editedBy": {
+        "stringValue": "fdixFwL0nRPQRxgn3A9IdzY0Mof1"
+      },
+      "requestReview": {
+        "booleanValue": false
+      },
+      "share": {
+        "booleanValue": true
+      },
+      "text": {
+        "stringValue": "する心あるに地夷の流言する処初島の夷奥地に入時\nハ往時より交易の諸品を貸置し続の為に質と\nなし奥地の夷是を捕らんといたしなと聞及ひれは\n去年山丹夷の狼藉を思ひ出し従夷等悉く恐怖し\n更に従ひ行へしといふ者なし故に六夷の内悍骨な\nる者一人を残し余は悉く帰り去しめ漸にして\n地夷五人を雇ひ舟を出して四月九日ノテトの崎に\n至りしに海上猶凍合して船をやる事不能故に五月\n七日迄此所に滞留せしにウシヨロよりの傭夷また是より\n奥地に入事を憚りける故此所にして舟た一夷を傭\n先駈の者となしけれは後は皆漸に心を安ふし船を出す\nへきも及ひ山旦船一艘を借て（山旦船の図前偏に出す\nコルデツケの送る所なり是ゟ奥地ハ湖頗多くして\n初島歌弱の船を以て進退する事あたはす\n故に地夷の用る所上且船を借るといふ）同八日此所を発し同\n十日イクタマーに至りしに従夷亦行事を恐るゝに依て\n止事を得す地夷壱人を傭ふてまた先ン導となし\n同十二日此所を発し其日ナニヲーに至つきぬ此ところ\n北島極北の地にして夷家わつかに五六屋ある処\nなりノテトより此所に至ルの間嶋と素韃地の\n相対せる廻海にして潮水悉く南に流れ其間瀬\n路ありといへとも波涛激沸の愁も少し小軟の夷船"
+      },
+      "status": {
+        "stringValue": "completed"
+      }
+    },
+    "createTime": "2026-04-15T18:03:03.257630Z",
+    "updateTime": "2026-04-17T01:29:58.299119Z"
+  },
+  "readTime": "2026-09-09T17:53:42.816217Z"
+}
+]

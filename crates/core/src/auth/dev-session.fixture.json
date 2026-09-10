@@ -1,0 +1,11 @@
+{
+  "apiKey": "fixture-api-key",
+  "uid": "fixture-user",
+  "email": null,
+  "displayName": "試験利用者",
+  "providers": ["twitter.com"],
+  "refreshToken": "fixture-refresh-token",
+  "idToken": "fixture-id-token",
+  "expiresAt": "2026-09-10T01:02:03.456Z",
+  "savedAt": "2026-09-10T00:02:03.456Z"
+}

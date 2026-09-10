@@ -1,0 +1,78 @@
+:root {
+  --color-paper: #f7f5ef;
+  --color-white: #ffffff;
+  --color-ink: #252a2d;
+  --color-gray50: #e3e0d8;
+  --color-gray300: #9b9c98;
+  --color-gray500: #636862;
+  --color-gray800: #292f32;
+  --color-gray900: #1e2427;
+  --color-gray950: #161b1e;
+  --color-blue: #245da8;
+  --color-blueLight: #92bcff;
+  --color-green: #287346;
+  --color-greenLight: #87cf9e;
+  --color-amber: #916411;
+  --color-amberLight: #ebca7f;
+  --color-purple: #765496;
+  --color-purpleLight: #c6a4e8;
+  color-scheme: light;
+  --canvas: var(--color-paper);
+  --surface: var(--color-white);
+  --surface-raised: var(--color-white);
+  --text: var(--color-ink);
+  --text-muted: var(--color-gray500);
+  --border: var(--color-gray50);
+  --border-strong: var(--color-gray300);
+  --accent: var(--color-blue);
+  --accent-text: var(--color-white);
+  --focus: var(--color-blue);
+  --selection: #dceaff;
+  --status-default: var(--color-gray500);
+  --status-initiated: var(--color-amber);
+  --status-editing: var(--color-blue);
+  --status-completed: var(--color-green);
+  --status-frozen: var(--color-purple);
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --canvas: var(--color-gray950);
+  --surface: var(--color-gray900);
+  --surface-raised: var(--color-gray800);
+  --text: var(--color-paper);
+  --text-muted: var(--color-gray300);
+  --border: var(--color-gray800);
+  --border-strong: var(--color-gray500);
+  --accent: var(--color-blueLight);
+  --accent-text: var(--color-gray950);
+  --focus: var(--color-blueLight);
+  --selection: #294567;
+  --status-default: var(--color-gray300);
+  --status-initiated: var(--color-amberLight);
+  --status-editing: var(--color-blueLight);
+  --status-completed: var(--color-greenLight);
+  --status-frozen: var(--color-purpleLight);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not([data-theme="dark"]) {
+    color-scheme: dark;
+    --canvas: var(--color-gray950);
+    --surface: var(--color-gray900);
+    --surface-raised: var(--color-gray800);
+    --text: var(--color-paper);
+    --text-muted: var(--color-gray300);
+    --border: var(--color-gray800);
+    --border-strong: var(--color-gray500);
+    --accent: var(--color-blueLight);
+    --accent-text: var(--color-gray950);
+    --focus: var(--color-blueLight);
+    --selection: #294567;
+    --status-default: var(--color-gray300);
+    --status-initiated: var(--color-amberLight);
+    --status-editing: var(--color-blueLight);
+    --status-completed: var(--color-greenLight);
+    --status-frozen: var(--color-purpleLight);
+  }
+}

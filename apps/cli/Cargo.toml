@@ -1,0 +1,19 @@
+[package]
+name = "honkoku-cli"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "honkoku"
+path = "src/main.rs"
+
+[dependencies]
+honkoku-core.workspace = true
+honkoku-storage.workspace = true
+honkoku-text.workspace = true
+serde_json.workspace = true
+serde.workspace = true
+tokio.workspace = true
+clap = { version = "4", features = ["derive"] }
+directories = "6"
+unicode-width = "0.2"

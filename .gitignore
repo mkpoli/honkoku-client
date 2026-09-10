@@ -1,0 +1,17 @@
+node_modules/
+target/
+dist/
+.playwright-mcp/
+*.png
+!design/**/*.png
+.local/
+design/explorations/*/iterations/
+design/explorations/*/run.log
+docs/decisions/architecture-consult.log
+
+# Workspace build and local cache files
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+apps/client/src-tauri/gen/
+!apps/client/src-tauri/icons/*.png

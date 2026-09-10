@@ -1,0 +1,14 @@
+{
+  "name": "@honkoku/client-api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./types": "./types.ts",
+    "./invoke": "./invoke.ts",
+    "./iiif": "./iiif.ts"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "2.11.1"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "honkoku-client",
+  "version": "0.1.0",
+  "identifier": "li.mkpo.honkoku-client",
+  "build": {
+    "beforeDevCommand": "devrun bun run dev",
+    "beforeBuildCommand": "bun run build",
+    "devUrl": "http://localhost:1420",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "みんなで翻刻",
+        "width": 1440,
+        "height": 900
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; connect-src ipc: http://ipc.localhost honkoku-iiif: http://honkoku-iiif.localhost; img-src 'self' https: data: honkoku-iiif: http://honkoku-iiif.localhost; style-src 'self' 'unsafe-inline'"
+    }
+  },
+  "bundle": {
+    "active": false,
+    "icon": [
+      "icons/icon.png"
+    ]
+  }
+}

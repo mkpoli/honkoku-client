@@ -1,0 +1,7 @@
+{
+  "identifier": "default",
+  "description": "Local main reader window, including application IIIF commands",
+  "local": true,
+  "windows": ["main"],
+  "permissions": ["core:default"]
+}

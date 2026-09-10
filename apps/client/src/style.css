@@ -1,0 +1,31 @@
+:root { font-family: "Noto Sans CJK JP", "Yu Gothic", "Meiryo", "HanaMinA", "HanaMinB", sans-serif; color: var(--text); background: var(--canvas); font-synthesis: none; }
+* { box-sizing: border-box; }
+body { margin: 0; }
+header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding-block: 1rem; padding-inline: 1.5rem; border-block-end: 1px solid var(--border-strong); }
+.brand { font-weight: 700; text-decoration: none; }
+label { display: flex; align-items: center; gap: .75rem; }
+a { color: inherit; }
+button, select { font: inherit; color: var(--text); background: var(--surface-raised); border: 1px solid var(--border-strong); border-radius: .25rem; padding-block: .35rem; padding-inline: .65rem; }
+button { cursor: pointer; }
+a:focus-visible, button:focus-visible, select:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+::selection { background: var(--selection); }
+main { display: grid; grid-template-columns: minmax(15rem, 1fr) minmax(15rem, 1fr) minmax(22rem, 2fr); block-size: calc(100dvh - 5rem); }
+.pane { min-inline-size: 0; overflow: auto; padding-block: 1rem; padding-inline: 1rem; border-inline-end: 1px solid var(--border); background: var(--surface); }
+h1, h2 { font-size: 1.1rem; margin-block: 0 1rem; }
+h2:not(:first-child) { margin-block-start: 2rem; }
+p { line-height: 1.7; overflow-wrap: anywhere; }
+ul { list-style: none; padding: 0; margin: 0; }
+li a { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .5rem; padding-block: .6rem; padding-inline: .5rem; text-decoration: none; overflow-wrap: anywhere; border-block-end: 1px solid var(--border); }
+li a:hover, li a.selected { background: var(--selection); }
+li a.selected { border-inline-start: 3px solid var(--accent); }
+.muted { color: var(--text-muted); }
+.message { padding-block: .5rem; padding-inline: 1rem; background: var(--surface-raised); overflow-wrap: anywhere; }
+.message button { margin-inline-start: 1rem; }
+.reader img { display: block; max-inline-size: 100%; block-size: auto; }
+pre { white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; line-height: 1.9; }
+.status.default { color: var(--status-default); }
+.status.initiated { color: var(--status-initiated); }
+.status.editing { color: var(--status-editing); }
+.status.completed { color: var(--status-completed); }
+.status.frozen { color: var(--status-frozen); }
+@media (max-width: 850px) { main { grid-template-columns: 15rem 15rem minmax(22rem, 1fr); overflow-x: auto; } }
