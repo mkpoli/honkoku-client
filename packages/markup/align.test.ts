@@ -74,7 +74,7 @@ test("folding, multiset bigrams and plain source columns", () => {
     ),
   ).toEqual([
     { sourceIndex: 2, text: "峰" },
-    { sourceIndex: 4, text: "一行二行讀ム" },
+    { sourceIndex: 4, text: "一行二行讀" },
   ]);
 });
 
@@ -82,4 +82,9 @@ test("nested readings do not enter facsimile matching text", () => {
   expect(
     plainColumn("《割書：《振り仮名：峰｜みね》｜《見せ消ち：旧｜新》》"),
   ).toBe("峰旧");
+});
+test("plain text omits kunten and headers and cleans older single-part warigaki", () => {
+  expect(plainColumn("故￣ニ讀＿レ￣ム")).toBe("故讀");
+  expect(plainColumn("％表紙")).toBe("");
+  expect(plainColumn("俊寛《割書：能》")).toBe("俊寛能");
 });
