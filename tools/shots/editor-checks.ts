@@ -104,14 +104,46 @@ export async function checkEditor(browser: Browser, origin: string) {
       await reset(page, "峰\n残す");
       await select(page, 1, 2);
       await page.getByRole("button", { name: button, exact: true }).click();
+      await page.getByRole("button", { name: "挿入", exact: true }).click();
       assert.equal(await source(page), expected + "\n残す");
       await equal(page);
     }
+    await reset(page, "前後");
+    await select(page, 2);
+    await page.getByRole("button", { name: "割書", exact: true }).click();
+    await page.getByLabel("1行目", { exact: true }).fill("一");
+    await page.getByLabel("2行目", { exact: true }).fill("二");
+    await page.getByRole("button", { name: "挿入", exact: true }).click();
+    const secondLine = page
+      .locator(".editor-warigaki > .editor-segment")
+      .nth(1);
+    await secondLine.click({ position: { x: 6, y: 1 } });
+    await page.keyboard.press("ArrowDown");
+    await page.keyboard.type("x");
+    assert.equal(await source(page), "前《割書：一｜二x》後");
+    assert.equal(
+      await secondLine.evaluate((e) => getComputedStyle(e).fontSize),
+      "13px",
+    );
+    await equal(page);
+    await reset(page, "前後");
+    await select(page, 2);
+    await page.getByRole("button", { name: "割書", exact: true }).click();
+    await page.getByLabel("1行目", { exact: true }).fill("一");
+    await page.getByRole("button", { name: "挿入", exact: true }).click();
+    await page.locator(".editor-warigaki > .editor-segment").nth(1).click();
+    await page.keyboard.type("two");
+    assert.equal(await source(page), "前《割書：一｜two》後");
+    await equal(page);
     await reset(page, "文\n残す");
     await select(page, 2);
-    await page.getByRole("button", { name: "欠字 □", exact: true }).click();
+    await page.getByRole("button", { name: "欠字", exact: true }).hover();
+    await page.getByRole("button", { name: "欠字□", exact: true }).click();
     await page.getByRole("button", { name: "注記", exact: true }).click();
-    await page.getByRole("button", { name: "合字 ゟ", exact: true }).click();
+    await page.getByLabel("注記の内容", { exact: true }).fill("欄外の注記");
+    await page.getByRole("button", { name: "追加", exact: true }).click();
+    await page.getByRole("button", { name: "合字", exact: true }).hover();
+    await page.getByRole("button", { name: "合字ゟ", exact: true }).click();
     assert.equal(await source(page), "文□＃1ゟ\n残す");
     await equal(page);
     await page.getByRole("button", { name: "原文表示", exact: true }).click();

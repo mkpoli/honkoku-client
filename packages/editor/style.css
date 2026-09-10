@@ -9,7 +9,7 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
-  padding: 12px 16px;
+  padding: 8px 12px;
   border-bottom: 1px solid var(--border);
   position: relative;
 }
@@ -18,26 +18,6 @@
 }
 .editor-toolbar-spacer {
   flex: 1;
-}
-.editor-reading-popover {
-  position: absolute;
-  inset-block-start: calc(100% + 8px);
-  inset-inline-start: 16px;
-  z-index: 5;
-  display: flex;
-  gap: 8px;
-  padding: 16px;
-  background: var(--surface);
-  border: 1px solid var(--border-strong);
-  border-radius: 7px;
-}
-.editor-reading-popover label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.editor-reading-popover input {
-  inline-size: 160px;
 }
 .editor-body {
   display: flex;
@@ -68,7 +48,8 @@
   min-block-size: 100%;
   inline-size: 100%;
   padding: 4px;
-  caret-color: var(--focus);
+  caret-color: var(--accent);
+  cursor: default;
   outline: none;
   flex-shrink: 0;
 }
@@ -87,10 +68,6 @@
 .vertical-editor ::selection {
   background: var(--selection);
   color: var(--text);
-}
-.vertical-editor:focus-visible {
-  outline: 1px solid var(--focus);
-  outline-offset: 4px;
 }
 .vertical-editor .editor-half-divider {
   border-block-start: 1px solid var(--border-strong);
@@ -170,27 +147,76 @@
   text-decoration: underline dotted var(--border-strong);
 }
 .editor-palette {
-  padding: 12px 16px;
-  border-top: 1px solid var(--border);
   display: flex;
-  flex-direction: column;
   gap: 4px;
+  padding: 4px 12px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  position: relative;
+  z-index: 4;
 }
-.editor-palette-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px;
+.palette-category {
+  position: relative;
 }
-.editor-palette-row > span {
-  inline-size: 80px;
+.palette-chip {
   font-size: 13px;
+  padding: 2px 8px;
+  border-color: transparent;
+  background: transparent;
   color: var(--text-muted);
 }
-.editor-palette-row button {
-  min-inline-size: 34px;
+.palette-chip[aria-expanded="true"] {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+.palette-glyphs {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 260px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 7px;
+}
+.palette-category:nth-last-child(-n + 2) .palette-glyphs {
+  left: auto;
+  right: 0;
+}
+.palette-glyphs button {
+  min-width: 34px;
   padding: 2px 8px;
-  font: 400 20px/28px var(--font-serif);
+  font: 400 20px/28px var(--editor-font);
+}
+.construct-dialog {
+  width: min(400px, calc(100vw - 32px));
+  padding: 24px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 7px;
+}
+.construct-dialog::backdrop {
+  background: #0004;
+}
+.construct-dialog form,
+.construct-dialog label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.construct-dialog form {
+  gap: 16px;
+}
+.construct-dialog h2 {
+  margin: 0;
+}
+.dialog-actions {
+  display: flex;
+  gap: 8px;
 }
 .editor-raw-textarea {
   flex: 1;
@@ -218,7 +244,7 @@
   --editor-font: "Noto Serif Hentaigana", var(--font-serif);
 }
 .editor-workspace .transcription,
-.editor-palette-row button,
+.palette-glyphs button,
 .editor-workspace textarea,
 .editor-raw-textarea {
   font-family: var(--editor-font);
@@ -237,4 +263,15 @@
 .transcription.editor-scroll {
   min-width: 0;
   width: 100%;
+}
+
+.editor-segment {
+  min-width: 1em;
+  cursor: text;
+}
+.editor-raw-textarea {
+  caret-color: var(--accent);
+}
+.editor-token.markup-reference {
+  cursor: pointer;
 }
