@@ -343,3 +343,16 @@ export type CredentialStore = "os" | "file";
 export interface SessionInfo {
   credential_store?: CredentialStore;
 }
+
+export interface RecentWork {
+  entryId: string;
+  index: number;
+  projectId: string;
+  openedAt: Timestamp;
+  savedAt: Timestamp | null;
+  statusAfter: PageStatus;
+  entryLabel: Label | null;
+  projectTitle: string | null;
+  thumbnail: string | null;
+  nextUnfinishedIndex: number | null;
+}

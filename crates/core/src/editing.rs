@@ -362,6 +362,16 @@ impl EditingSession {
         self.page = self.document.page()?;
         Ok(())
     }
+    pub async fn draft_notes(&mut self, notes: &[Value]) -> Result<()> {
+        self.check_lock()?;
+        self.refresh().await?;
+        let fields = json!({"tempNotes": notes});
+        let response = self
+            .client
+            .commit(vec![self.update(fields.clone(), true)])
+            .await?;
+        self.apply(fields, &response)
+    }
     pub async fn draft(&mut self, text: &str) -> Result<()> {
         self.drafts.request(text)?;
         self.flush_drafts(false).await

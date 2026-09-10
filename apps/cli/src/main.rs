@@ -34,6 +34,10 @@ enum Command {
         #[command(subcommand)]
         command: EditCommand,
     },
+    History {
+        #[arg(long, default_value_t = 8)]
+        limit: u32,
+    },
     Projects,
     Login {
         #[arg(long, required = true)]
@@ -190,6 +194,32 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         client = client.with_session(TokenManager::new(session, store)?);
     }
     let output = match args.command {
+        Command::History { limit } => {
+            let rows = client.history_recent(limit).await?;
+            if args.json {
+                pretty(&rows)?
+            } else {
+                table(
+                    &["資料", "プロジェクト", "コマ", "状態", "日時"],
+                    rows.into_iter()
+                        .map(|row| {
+                            vec![
+                                row.entry_label
+                                    .map(|l| l.preferred(&["ja", "en"]))
+                                    .unwrap_or(row.record.entry_id),
+                                row.project_title.unwrap_or(row.record.project_id),
+                                (row.record.index + 1).to_string(),
+                                row.record.status_after,
+                                row.record
+                                    .saved_at
+                                    .map(|s| s.max(row.record.opened_at.clone()))
+                                    .unwrap_or(row.record.opened_at),
+                            ]
+                        })
+                        .collect(),
+                )
+            }
+        }
         Command::Ocr { command } => {
             use honkoku_ocr::{OcrEngine, OcrEnvironment, OcrSidecar};
             let engine = OcrSidecar::new(OcrEnvironment::new(data_dir.join("honkoku-client")));
@@ -298,6 +328,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         is_approval: None,
                     })
                     .await?;
+                let project_id = saved
+                    .page
+                    .extra
+                    .get("projectId")
+                    .and_then(serde_json::Value::as_str)
+                    .ok_or("saved page has no projectId")?;
+                client.history_saved(&saved.page, project_id).await?;
                 if args.json {
                     pretty(&saved)?
                 } else {

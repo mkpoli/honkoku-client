@@ -90,6 +90,11 @@ export function fixtureEdit(
         tempTextChanged: true,
         updatedAt: new Date().toISOString(),
       });
+    if (command === "page_draft_notes")
+      Object.assign(page, {
+        tempNotes: structuredClone(args.notes),
+        updatedAt: new Date().toISOString(),
+      });
     if (command === "page_discard") {
       page.status = page.prevStatus ?? "default";
       return;

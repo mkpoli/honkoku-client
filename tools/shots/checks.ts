@@ -69,16 +69,16 @@ export async function checkInteractions(browser: Browser, origin: string) {
   await page
     .getByRole("textbox", { name: "全プロジェクトを検索", exact: true })
     .fill("");
-  const feed = page.locator(".home-grid>.timeline-panel");
+  const feed = page.locator(".home-centre>.timeline-panel");
   await page.waitForFunction(
     () =>
-      document.querySelectorAll(".home-grid>.timeline-panel .activity")
+      document.querySelectorAll(".home-centre>.timeline-panel .activity")
         .length === 20,
   );
   await feed.getByRole("button", { name: "さらに表示", exact: false }).click();
   await page.waitForFunction(
     () =>
-      document.querySelectorAll(".home-grid>.timeline-panel .activity")
+      document.querySelectorAll(".home-centre>.timeline-panel .activity")
         .length === 40,
   );
   await page
@@ -1224,6 +1224,164 @@ export async function checkQuietWorkbench(
     assert.deepEqual(errors, []);
     console.log(
       `Quiet workbench checks passed (${theme}${suffix}): chrome, drawers, raw constructs, palette keyboard, notes add/edit/delete/save/resume, caret.`,
+    );
+  } finally {
+    await context.close();
+  }
+}
+
+export async function checkBrowsePolish(
+  browser: Browser,
+  origin: string,
+  theme: "light" | "dark",
+) {
+  const context = await browser.newContext({
+    viewport: { width: 1600, height: 1000 },
+    locale: "ja-JP",
+    colorScheme: theme,
+    reducedMotion: "reduce",
+  });
+  const page = await context.newPage();
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  const button = (name: string) =>
+    page.getByRole("button", { name, exact: true });
+  try {
+    await page.goto(`${origin}/#/projects/ainu/collections/${collection}`);
+    await page.waitForFunction(
+      () =>
+        document.querySelectorAll(".collection-row [role=progressbar]")
+          .length === 67,
+    );
+    const rows = page.locator(".collection-row h3");
+    const platform = await rows.allTextContents();
+    const sorting = page.locator(".collection-list .sort-control");
+    await sorting.getByRole("button", { name: "名前順", exact: true }).click();
+    const names = await rows.allTextContents();
+    assert.notDeepEqual(names, platform);
+    assert.deepEqual(
+      names,
+      [...platform].sort((a, b) => a.localeCompare(b, "ja")),
+    );
+    await page.reload();
+    await page.waitForFunction(
+      () =>
+        document.querySelectorAll(".collection-row [role=progressbar]")
+          .length === 67,
+    );
+    assert.deepEqual(await rows.allTextContents(), names);
+    await sorting.getByRole("button", { name: "進捗順", exact: true }).click();
+    const ratios = () =>
+      page
+        .locator(".collection-row [role=progressbar]")
+        .evaluateAll((nodes) =>
+          nodes.map(
+            (node) =>
+              Number(node.getAttribute("aria-valuenow")) /
+              Number(node.getAttribute("aria-valuemax")),
+          ),
+        );
+    const ascending = await ratios();
+    assert.deepEqual(
+      ascending,
+      [...ascending].sort((a, b) => a - b),
+    );
+    await sorting.getByRole("button", { name: "進捗順", exact: false }).click();
+    const descending = await ratios();
+    assert.deepEqual(
+      descending,
+      [...descending].sort((a, b) => b - a),
+    );
+    await sorting.getByRole("button", { name: "表示順", exact: true }).click();
+    assert.deepEqual(await rows.allTextContents(), platform);
+    await page.goto(`${origin}/#/entries/${entry}`);
+    await page.locator(".page-card").first().waitFor();
+    assert.equal(await page.locator(".page-card").count(), 18);
+    const filters = page.locator(".page-filters");
+    await filters.getByRole("button", { name: /^未着手/ }).click();
+    assert.equal(await page.locator(".page-card").count(), 1);
+    assert.equal(
+      await page.locator(".page-card").getAttribute("data-index"),
+      "5",
+    );
+    await page.reload();
+    await page.locator(".page-card").first().waitFor();
+    assert.equal(await page.locator(".page-card").count(), 1);
+    await filters.getByRole("button", { name: /^完了/ }).click();
+    await button("次の未着手へ").click();
+    assert.equal(
+      await page.evaluate(() => document.activeElement?.id),
+      "page-5",
+    );
+    assert.equal(await page.locator(".page-card").count(), 18);
+    await page.mouse.move(0, 0);
+    await page.locator(".entry-screen").evaluate((el) => (el.scrollTop = 0));
+    await page.evaluate(() => document.fonts.ready);
+    await page.waitForLoadState("networkidle");
+    await page.screenshot({
+      path: resolve(
+        import.meta.dir,
+        `../../.local/shots/13-entry-status-${theme}.png`,
+      ),
+    });
+    const finished = page.locator(".page-card.completed").first();
+    assert.equal(
+      await finished
+        .locator(".thumbnail")
+        .evaluate((el) => getComputedStyle(el).opacity),
+      "0.55",
+    );
+    await finished.hover();
+    assert.equal(
+      await finished
+        .locator(".thumbnail")
+        .evaluate((el) => getComputedStyle(el).opacity),
+      "1",
+    );
+    await page.locator("#page-0").click();
+    await page.locator(".workbench").waitFor();
+    await page.keyboard.press("n");
+    await page.waitForURL("**/pages/5");
+    await page.keyboard.press("n");
+    await page.waitForURL("**/pages/6");
+    await page.keyboard.press("n");
+    await page.waitForURL("**/pages/5");
+    await page.locator(".breadcrumb a").first().click();
+    const recent = page.locator(`.recent-row[data-entry-id="${entry}"]`);
+    await recent.waitFor();
+    assert.match(await recent.innerText(), /コマ6/);
+    assert.equal(
+      await recent
+        .getByRole("link", { name: "続きから", exact: true })
+        .getAttribute("href"),
+      `#/entries/${entry}/pages/5`,
+    );
+    await recent.getByRole("link", { name: "続きから", exact: true }).click();
+    await page.waitForURL("**/pages/5");
+    await page.locator(".workbench").waitFor();
+    await page.keyboard.press("Home");
+    await page.waitForURL("**/pages/0");
+    await page.locator(".breadcrumb a").first().click();
+    await recent.waitFor();
+    assert.equal(
+      await recent
+        .getByRole("link", { name: "次の未着手へ", exact: true })
+        .getAttribute("href"),
+      `#/entries/${entry}/pages/5`,
+    );
+    if (theme === "light") {
+      await page.evaluate(() => document.fonts.ready);
+      await page.waitForLoadState("networkidle");
+      await page.screenshot({
+        path: resolve(
+          import.meta.dir,
+          "../../.local/shots/13-home-recent-light.png",
+        ),
+      });
+    }
+    assert.deepEqual(errors, []);
+    console.log(
+      `Browse checks passed (${theme}): sorting, persistence, filters, unfinished navigation, recent history.`,
     );
   } finally {
     await context.close();

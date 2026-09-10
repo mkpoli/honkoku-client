@@ -19,6 +19,7 @@
   import { concurrentEach } from "../data";
   import { aggregate, errorMessage, label, number, user } from "../lib";
   import { href } from "../routes";
+  import SortControl from "./SortControl.svelte";
   import Progress from "./Progress.svelte";
   import Thumbnail from "./Thumbnail.svelte";
   import Timeline from "./Timeline.svelte";
@@ -48,6 +49,59 @@
   let progress = $state<Record<string, CollectionProgress>>({});
   let entryFigures = $state<Record<string, EntryProgress>>({});
   let progressErrors = $state<Record<string, string>>({});
+  let collectionSort = $state("platform"),
+    entrySort = $state("platform");
+  const completion = (p?: { completed: number; size: number }) =>
+    p && p.size > 0 ? p.completed / p.size : 0;
+  let latest = $derived.by(() => {
+    const result: Record<string, number> = {};
+    const parents = new Map(
+      collections.flatMap((c) =>
+        (c.entries ?? []).map((id) => [id, c.id] as const),
+      ),
+    );
+    for (const { event } of activity) {
+      if (event.projectId !== project.id) continue;
+      const id = parents.get(event.entryId);
+      if (id)
+        result[id] = Math.max(
+          result[id] ?? 0,
+          Date.parse(event.createdAt) || 0,
+        );
+    }
+    return result;
+  });
+  let sortedCollections = $derived(
+    [...collections].sort((a, b) => {
+      if (collectionSort === "name")
+        return a.title.localeCompare(b.title, "ja");
+      if (collectionSort.startsWith("progress"))
+        return (
+          (completion(progress[a.id]) - completion(progress[b.id])) *
+          (collectionSort === "progress-desc" ? -1 : 1)
+        );
+      if (collectionSort === "size")
+        return (
+          (progress[b.id]?.entries ?? b.entryCount ?? 0) -
+          (progress[a.id]?.entries ?? a.entryCount ?? 0)
+        );
+      if (collectionSort === "updated")
+        return (latest[b.id] ?? 0) - (latest[a.id] ?? 0);
+      return 0;
+    }),
+  );
+  let sortedEntries = $derived(
+    [...entries].sort((a, b) => {
+      if (entrySort === "name")
+        return label(a.label).localeCompare(label(b.label), "ja");
+      if (entrySort.startsWith("progress"))
+        return (
+          (completion(entryFigures[a.id]) - completion(entryFigures[b.id])) *
+          (entrySort === "progress-desc" ? -1 : 1)
+        );
+      return 0;
+    }),
+  );
   let projectGeneration = 0;
   let selectionGeneration = 0;
   let totals = $derived(selected ? progress[selected.id] : undefined);
@@ -90,6 +144,7 @@
     const g = ++projectGeneration;
     collectionsLoading = true;
     collections = [];
+    activity = [];
     progress = {};
     progressErrors = {};
     error = "";
@@ -217,8 +272,13 @@
               bind:value={search}
             /></label
           >
+          <SortControl
+            storageKey={`honkoku.sort.project.${project.id}`}
+            extended
+            bind:value={collectionSort}
+          />
           <div class="scroll">
-            {#each collections.filter( (c) => c.title.includes(search), ) as c (c.id)}
+            {#each sortedCollections.filter( (c) => c.title.includes(search) ) as c (c.id)}
               {@const p = progress[c.id]}
               <a
                 class="collection-row"
@@ -276,8 +336,12 @@
                   aria-label="進捗を読み込み中"
                   aria-busy="true"
                 ></div>{/if}
+              <SortControl
+                storageKey={`honkoku.sort.collection.${selected.id}`}
+                bind:value={entrySort}
+              />
               <div class="entry-rows">
-                {#each entries as e (e.id)}{@const p = entryFigures[e.id]}
+                {#each sortedEntries as e (e.id)}{@const p = entryFigures[e.id]}
                   {@const counts = p
                     ? {
                         default: Math.max(

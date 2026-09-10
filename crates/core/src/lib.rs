@@ -3,6 +3,7 @@ pub mod auth;
 pub mod cache;
 pub mod editing;
 pub mod firestore;
+pub mod history;
 pub mod home;
 pub mod model;
 pub mod progress;

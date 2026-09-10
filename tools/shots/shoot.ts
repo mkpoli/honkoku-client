@@ -1,4 +1,5 @@
 import {
+  checkBrowsePolish,
   checkInteractions,
   checkEditing,
   checkAlignment,
@@ -14,7 +15,7 @@ const probe = Bun.serve({
   fetch: () => new Response(),
 });
 const port = probe.port;
-probe.stop(true);
+await probe.stop(true);
 const origin = `http://127.0.0.1:${port}`;
 const output = resolve(root, ".local/shots");
 const routes = [
@@ -158,6 +159,8 @@ try {
       throw Error("Vite did not start on the assigned port.");
   }
   browser = await chromium.launch({ headless: true });
+  for (const theme of ["light", "dark"] as const)
+    await checkBrowsePolish(browser, origin, theme);
   for (const theme of ["light", "dark"] as const)
     await checkQuietWorkbench(browser, origin, theme);
   for (const theme of ["light", "dark"] as const)

@@ -12,6 +12,7 @@
   } from "@honkoku/client-api/types";
   import {
     isTauri,
+    historyOpen,
     onWindowClose,
     getCollection,
     getProject,
@@ -134,6 +135,15 @@
       signingIn = false;
     }
   }
+  let historyWrite = Promise.resolve();
+  function recordOpen(entryId: string, index: number) {
+    historyWrite = historyWrite
+      .then(() => historyOpen(entryId, index))
+      .catch(() => {
+        loginError = "作業履歴を保存できませんでした。";
+      });
+    return historyWrite;
+  }
   async function load(next: Route) {
     const g = ++generation;
     loading = true;
@@ -176,6 +186,8 @@
         collection = c;
         pages = all;
         canvases = cs;
+        if (next.pageIndex !== undefined)
+          await recordOpen(e.id, next.pageIndex);
       } else if (next.projectId) {
         const p = await getProject(next.projectId);
         if (g !== generation) return;
@@ -244,6 +256,7 @@
       const attempt = ++navigation;
       try {
         await leaveWorkbench?.();
+        await historyWrite;
       } catch (error) {
         if (attempt === navigation) {
           loginError = errorMessage(error);
@@ -268,6 +281,8 @@
           !pages.some((p) => p.index === next.pageIndex)
             ? "指定されたコマがありません。"
             : "";
+        if (!error && next.pageIndex !== undefined)
+          await recordOpen(next.entryId!, next.pageIndex);
       } else void load(next);
     };
     window.addEventListener("hashchange", navigate);
