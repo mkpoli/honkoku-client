@@ -189,10 +189,8 @@ pub async fn iiif_prepare_entry(
     state: State<'_, AppState>,
     fetcher: State<'_, Fetcher>,
 ) -> Result<Vec<PreparedCanvas>, AppError> {
-    let entry = state
-        .client
-        .cached_entry(&state.storage, &entry_id, false)
-        .await?;
+    let connection = state.connection.read().await;
+    let entry = crate::read_entry(&state, &connection.client, &entry_id).await?;
     fetcher
         .allow_url(&entry.manifest_url)
         .map_err(command_error)?;

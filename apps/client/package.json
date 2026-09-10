@@ -12,11 +12,20 @@
   "dependencies": {
     "@honkoku/client-api": "workspace:*",
     "@honkoku/ui": "workspace:*",
-    "svelte": "5.57.0"
+    "@tauri-apps/plugin-opener": "2.5.5",
+    "dompurify": "3.4.15",
+    "marked": "18.0.12",
+    "openseadragon": "6.1.1",
+    "svelte": "5.57.0",
+    "@honkoku/markup": "workspace:*"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^7.0.0",
     "@tauri-apps/cli": "2.11.4",
+    "@types/bun": "1.4.2",
+    "@types/openseadragon": "6.0.0",
+    "prettier": "3.9.6",
+    "prettier-plugin-svelte": "4.1.1",
     "svelte-check": "^4.0.0",
     "typescript": "^5.9.0",
     "vite": "8.2.2"
