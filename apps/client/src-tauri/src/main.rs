@@ -41,6 +41,7 @@ impl From<honkoku_core::Error> for AppError {
             Error::Io(_) => "io",
             Error::Keyring(_) => "credentials",
             Error::SignedOut => "signed_out",
+            Error::Conflict { .. } => "conflict",
         };
         Self {
             kind: kind.into(),
@@ -162,6 +163,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .register_asynchronous_uri_scheme_protocol("honkoku-iiif", iiif_protocol::handle)
         .setup(|app| {
             iiif_protocol::initialize(app)?;
+            app.manage(commands::EditingState::default());
             let cache = app.path().app_cache_dir()?;
             std::fs::create_dir_all(&cache)?;
             use honkoku_core::auth::{FileStore, SessionStore, TokenManager};
@@ -193,6 +195,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             commands::me,
             commands::unread_notification_count,
             commands::get_user,
+            commands::page_lock,
+            commands::page_draft,
+            commands::page_save,
+            commands::page_discard,
+            commands::page_lock_state,
             list_projects,
             get_project,
             list_collections,

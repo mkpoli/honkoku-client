@@ -3,7 +3,9 @@ use honkoku_core::{
     HonkokuClient,
     auth::{FileStore, KeyringStore, SessionStore, TokenManager, import_dev_session},
     cache::{SharedStorage, blocking},
+    editing::SaveOptions,
     home::{RankingSort, TimelineFilter},
+    model::PageStatus,
 };
 use honkoku_storage::Storage;
 use std::{
@@ -24,6 +26,10 @@ struct Args {
 }
 #[derive(Subcommand)]
 enum Command {
+    Edit {
+        #[command(subcommand)]
+        command: EditCommand,
+    },
     Projects,
     Login {
         #[arg(long, required = true)]
@@ -60,6 +66,51 @@ enum Command {
         #[arg(long)]
         status: bool,
     },
+}
+#[derive(Subcommand)]
+enum EditCommand {
+    Lock {
+        #[arg(value_name = "entryId")]
+        entry_id: String,
+        index: u32,
+        #[arg(long)]
+        sync: bool,
+    },
+    Draft {
+        #[arg(value_name = "entryId")]
+        entry_id: String,
+        index: u32,
+        #[arg(long)]
+        text_file: std::path::PathBuf,
+    },
+    Save {
+        #[arg(value_name = "entryId")]
+        entry_id: String,
+        index: u32,
+        #[arg(long, value_enum)]
+        status: Option<SaveStatus>,
+        #[arg(long)]
+        share: bool,
+        #[arg(long)]
+        request_review: bool,
+        #[arg(long, default_value = "")]
+        comment: String,
+    },
+    Discard {
+        #[arg(value_name = "entryId")]
+        entry_id: String,
+        index: u32,
+    },
+    Status {
+        #[arg(value_name = "entryId")]
+        entry_id: String,
+        index: u32,
+    },
+}
+#[derive(Clone, Copy, ValueEnum)]
+enum SaveStatus {
+    Initiated,
+    Completed,
 }
 #[derive(Clone, Copy, ValueEnum)]
 enum Sort {
@@ -112,6 +163,98 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         client = client.with_session(TokenManager::new(session, store)?);
     }
     let output = match args.command {
+        Command::Edit { command } => match command {
+            EditCommand::Lock {
+                entry_id,
+                index,
+                sync,
+            } => {
+                let session = client.lock_page(&entry_id, index, sync).await?;
+                if args.json {
+                    pretty(session.page())?
+                } else {
+                    format!("Locked {} (sync: {sync})\n", session.page().id)
+                }
+            }
+            EditCommand::Draft {
+                entry_id,
+                index,
+                text_file,
+            } => {
+                let text = std::fs::read_to_string(text_file)?;
+                let mut session = client.resume_editing(&entry_id, index).await?;
+                session.draft(&text).await?;
+                if args.json {
+                    pretty(session.page())?
+                } else {
+                    format!("Draft stored for {}\n", session.page().id)
+                }
+            }
+            EditCommand::Save {
+                entry_id,
+                index,
+                status,
+                share,
+                request_review,
+                comment,
+            } => {
+                let mut session = client.resume_editing(&entry_id, index).await?;
+                let saved = session
+                    .save(SaveOptions {
+                        status: status.map(|s| match s {
+                            SaveStatus::Initiated => PageStatus::Initiated,
+                            SaveStatus::Completed => PageStatus::Completed,
+                        }),
+                        share,
+                        request_review,
+                        comment,
+                        is_approval: None,
+                    })
+                    .await?;
+                if args.json {
+                    pretty(&saved)?
+                } else {
+                    format!(
+                        "Saved {} ({}, event {})\n",
+                        saved.page.id,
+                        saved.page.status.as_str(),
+                        saved.timeline_event_id
+                    )
+                }
+            }
+            EditCommand::Discard { entry_id, index } => {
+                client
+                    .resume_editing(&entry_id, index)
+                    .await?
+                    .discard()
+                    .await?;
+                if args.json {
+                    pretty(&serde_json::json!({"discarded":true}))?
+                } else {
+                    format!("Discarded {entry_id}_{index}\n")
+                }
+            }
+            EditCommand::Status { entry_id, index } => {
+                let state = client.page_lock_state(&entry_id, index).await?;
+                if args.json {
+                    pretty(&state)?
+                } else {
+                    let lock = if state.status != PageStatus::Editing {
+                        "unlocked"
+                    } else if state.is_mine {
+                        "locked by you"
+                    } else {
+                        "locked by another user"
+                    };
+                    format!(
+                        "{}: {} ({lock}, sync: {})\n",
+                        state.page_id,
+                        state.status.as_str(),
+                        state.sync_mode
+                    )
+                }
+            }
+        },
         Command::Login { .. } => return Err("use login --import".into()),
         Command::Whoami => {
             let user = client.me().await?;

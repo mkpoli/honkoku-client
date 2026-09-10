@@ -239,3 +239,23 @@ export interface PageNote {
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
 }
+
+export interface SaveOptions {
+  status?: "initiated" | "completed";
+  share?: boolean;
+  requestReview?: boolean;
+  comment?: string;
+  isApproval?: boolean;
+}
+export interface SavedPage {
+  page: Page;
+  timelineEventId: string;
+}
+export interface PageLockState {
+  pageId: string;
+  status: PageStatus;
+  tempEditedBy: string | null;
+  isMine: boolean;
+  syncMode: boolean;
+  updateTime: string;
+}
