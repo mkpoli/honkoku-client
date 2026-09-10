@@ -3,7 +3,8 @@ use crate::{
     commands::{self, EditingState, SessionInfo},
 };
 use honkoku_core::auth::{
-    CapturedSession, FIREBASE_API_KEY, SIGN_IN_ORIGIN, SignInProvider, sign_in_url,
+    CapturedSession, FIREBASE_API_KEY, FIREBASE_AUTH_DOMAIN, FIREBASE_SDK_VERSION, SIGN_IN_ORIGIN,
+    SignInProvider, sign_in_page_url,
 };
 use std::{
     path::PathBuf,
@@ -100,9 +101,10 @@ pub async fn session_sign_in(
         .map_err(native_error)?
         .as_secs();
     let script = include_str!("signin.js").replace("__SIGN_IN_CONFIG__", &serde_json::json!({
-        "apiKey": FIREBASE_API_KEY, "provider": provider.id(), "eventId": event_id, "startedAt": started_at
+        "apiKey": FIREBASE_API_KEY, "authDomain": FIREBASE_AUTH_DOMAIN, "origin": SIGN_IN_ORIGIN,
+        "sdkVersion": FIREBASE_SDK_VERSION, "provider": provider.id(), "eventId": event_id, "startedAt": started_at
     }).to_string());
-    let url = sign_in_url(provider, &event_id)?;
+    let url = sign_in_page_url(provider, &event_id)?;
     let builder = window_builder(
         &app,
         "signin",
@@ -159,7 +161,7 @@ pub async fn session_sign_in(
     #[cfg(debug_assertions)]
     if std::env::var_os("HONKOKU_SIGNIN_PROBE").is_some() {
         window
-            .navigate("https://app.honkoku.org/".parse().map_err(native_error)?)
+            .navigate(format!("{SIGN_IN_ORIGIN}/").parse().map_err(native_error)?)
             .map_err(native_error)?;
     }
     Ok(())

@@ -284,7 +284,10 @@ impl TokenManager {
 
 pub const FIREBASE_API_KEY: &str = "AIzaSyB-n5klhtxCtVmJqcsnhIc7-bWj5Ou--GY";
 pub const FIREBASE_SDK_VERSION: &str = "10.14.1";
-pub const SIGN_IN_ORIGIN: &str = "https://app.honkoku.org";
+/// The Firebase auth domain, which also serves the site. Sign-in runs there so
+/// the redirect result is first-party storage for the SDK's iframe.
+pub const SIGN_IN_ORIGIN: &str = "https://honkoku3-c466c.firebaseapp.com";
+pub const FIREBASE_AUTH_DOMAIN: &str = "honkoku3-c466c.firebaseapp.com";
 
 #[derive(Clone, Copy, Deserialize, Serialize)]
 pub enum SignInProvider {
@@ -302,21 +305,14 @@ impl SignInProvider {
     }
 }
 
-pub fn sign_in_url(provider: SignInProvider, event_id: &str) -> Result<reqwest::Url> {
-    let mut url = reqwest::Url::parse("https://honkoku3-c466c.firebaseapp.com/__/auth/handler")
+/// The page the sign-in window opens first. The window's initialization
+/// script recognises the path and runs the provider redirect itself.
+pub fn sign_in_page_url(provider: SignInProvider, event_id: &str) -> Result<reqwest::Url> {
+    let mut url = reqwest::Url::parse(SIGN_IN_ORIGIN)
         .map_err(|_| Error::Invalid("invalid sign-in URL".into()))?;
-    url.query_pairs_mut().extend_pairs([
-        ("apiKey", FIREBASE_API_KEY),
-        ("appName", "[DEFAULT]"),
-        ("authType", "signInViaRedirect"),
-        ("redirectUrl", "https://app.honkoku.org/"),
-        ("v", FIREBASE_SDK_VERSION),
-        ("providerId", provider.id()),
-        ("eventId", event_id),
-    ]);
-    if matches!(provider, SignInProvider::Google) {
-        url.query_pairs_mut().append_pair("scopes", "profile");
-    }
+    url.set_path("/__client_signin");
+    url.query_pairs_mut()
+        .extend_pairs([("provider", provider.id()), ("event", event_id)]);
     Ok(url)
 }
 
@@ -360,24 +356,17 @@ mod sign_in_tests {
     use super::*;
 
     #[test]
-    fn redirect_parameters_match_the_site_sdk() {
+    fn sign_in_page_is_on_the_auth_domain() {
         for provider in [SignInProvider::Google, SignInProvider::Twitter] {
-            let url = sign_in_url(provider, "random-event").unwrap();
-            assert_eq!(url.host_str(), Some("honkoku3-c466c.firebaseapp.com"));
+            let url = sign_in_page_url(provider, "random-event").unwrap();
+            assert_eq!(url.origin().ascii_serialization(), SIGN_IN_ORIGIN);
+            assert_eq!(url.host_str(), Some(FIREBASE_AUTH_DOMAIN));
+            assert_eq!(url.path(), "/__client_signin");
             let params = url
                 .query_pairs()
                 .collect::<std::collections::HashMap<_, _>>();
-            assert_eq!(params["apiKey"], FIREBASE_API_KEY);
-            assert_eq!(params["appName"], "[DEFAULT]");
-            assert_eq!(params["authType"], "signInViaRedirect");
-            assert_eq!(params["redirectUrl"], "https://app.honkoku.org/");
-            assert_eq!(params["v"], "10.14.1");
-            assert_eq!(params["providerId"], provider.id());
-            assert_eq!(params["eventId"], "random-event");
-            assert_eq!(
-                params.get("scopes").map(|v| v.as_ref()),
-                matches!(provider, SignInProvider::Google).then_some("profile")
-            );
+            assert_eq!(params["provider"], provider.id());
+            assert_eq!(params["event"], "random-event");
         }
         assert!(serde_json::from_str::<SignInProvider>("\"github.com\"").is_err());
     }
