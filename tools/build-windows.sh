@@ -8,7 +8,15 @@
 #   tools/build-windows.sh [destination-dir]
 set -euo pipefail
 repo="$(cd "$(dirname "$0")/.." && pwd)"
-dest="${1:-/mnt/c/Users/$(cmd.exe /c 'echo %USERNAME%' 2>/dev/null | tr -d '\r')/Downloads/honkoku-client}"
+downloads() {
+  # The Downloads folder may be relocated; the shell folder registry value is authoritative.
+  local raw expanded
+  raw=$(powershell.exe -NoProfile -Command "(Get-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders').'{374DE290-123F-4565-9164-39C4925E467B}'" 2>/dev/null | tr -d '\r')
+  [ -n "$raw" ] || return 1
+  expanded=$(powershell.exe -NoProfile -Command "[Environment]::ExpandEnvironmentVariables('$raw')" 2>/dev/null | tr -d '\r')
+  wslpath -u "$expanded" 2>/dev/null
+}
+dest="${1:-$(downloads || echo "$HOME/honkoku-client-windows")/honkoku-client}"
 cd "$repo"
 export PATH="/usr/lib/llvm-18/bin:$PATH" XWIN_ACCEPT_LICENSE=1
 bun run --cwd apps/client tauri build --runner cargo-xwin --target x86_64-pc-windows-msvc --no-bundle
