@@ -21,7 +21,7 @@ tools/shots/tauri.sh out.png ['#/route']       # a screenshot of the real WebKit
 
 Signing in: press ログイン in the client and choose Google or X; the platform's own sign-in opens in a window and the session is kept by the application. The CLI signs in from a session captured with `bun tools/session/login.ts` (`honkoku login --import`); `tools/session/README.md` has the details.
 
-Builds: every push to `main` runs the CI workflow, which attaches installers for Windows (NSIS and MSI), Linux (deb, AppImage, rpm) and macOS (dmg) to the run. From Linux, `tools/build-windows.sh` cross-compiles a portable `honkoku-client.exe` with cargo-xwin and copies it to a Windows folder.
+Builds: every push to `main` runs the checks; a `v*` tag or a manual run of the CI workflow also attaches installers for Windows (NSIS and MSI), Linux (deb, AppImage, rpm) and macOS (dmg) to the run. From Linux, `tools/build-windows.sh` cross-compiles a portable `honkoku-client.exe` with cargo-xwin and copies it to a Windows folder.
 
 The CLI (`cargo run -p honkoku-cli -- …`) offers `projects`, `project`, `collection`, `entry`, `pages`, `whoami`, `notifications`, `timeline`, `ranking`, and `announcements`, each with `--json`; cached responses are reused for ten minutes unless `--refresh` is given.
 
