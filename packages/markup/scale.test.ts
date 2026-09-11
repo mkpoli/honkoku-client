@@ -31,4 +31,5 @@ test("kunten side advances are reserved without counting them as base characters
   expect(textScalePadding("讀＿レ￣シテ書＿二￣ス")).toBe(34 + 25.5);
   expect(textScalePadding("《割書：讀＿レ￣ム｜書》")).toBe(34 + 4.25);
   expect(textScalePadding("《箱：字》")).toBe(40);
+  expect(textScalePadding("■□〓")).toBe(40);
 });

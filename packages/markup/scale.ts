@@ -45,6 +45,8 @@ function annotationAdvance(source: string): number {
       }
       i--;
       advance += Math.max(sides.return, sides.okurigana) * 8.5;
+    } else if (node.kind === "gap") {
+      advance += 2;
     } else if (node.kind === "warigaki") {
       advance += Math.max(...node.segments!.map(annotationAdvance)) / 2;
     } else if (node.segments) {
