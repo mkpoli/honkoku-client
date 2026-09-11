@@ -1741,12 +1741,7 @@ export async function checkSearch(
         '.transcription-reader [data-column-index="2"].alignment-active-column',
       )
       .waitFor();
-    await page
-      .getByRole("textbox", { name: "翻刻を検索", exact: true })
-      .fill("蝦夷");
-    await page
-      .getByRole("textbox", { name: "翻刻を検索", exact: true })
-      .press("Enter");
+    await page.goto(`${origin}/#/search?q=${encodeURIComponent("蝦夷")}`);
     await page.locator(".kwic-row").first().waitFor();
     await page
       .getByRole("textbox", { name: "検索語句", exact: true })
