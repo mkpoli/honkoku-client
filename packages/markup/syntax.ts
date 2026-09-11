@@ -173,7 +173,7 @@ export function parseLine(text: string, start = 0): SyntaxNode[] {
       add("return", returning[0].length, [returning[0].slice(1)]);
       continue;
     }
-    const okuri = /^￣[\p{Script=Hiragana}\p{Script=Katakana}ー]+/u.exec(rest);
+    const okuri = /^￣[ァ-ヶ]+/u.exec(rest);
     if (okuri) {
       add("okurigana", okuri[0].length, [okuri[0].slice(1)]);
       continue;

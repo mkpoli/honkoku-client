@@ -55,7 +55,7 @@ function runs(text: string): string[][] {
     );
 }
 await scan((text) => {
-  for (const match of text.matchAll(/￣([ァ-ヶー]+)/gu))
+  for (const match of text.matchAll(/￣([ァ-ヶ]+)/gu))
     increment(okurigana, match[1]);
   for (const run of runs(text))
     for (let i = 0; i < run.length; i++) {

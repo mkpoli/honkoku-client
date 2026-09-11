@@ -23,7 +23,7 @@ export function normalizePreset(
     );
   const pattern =
     group === "送り仮名"
-      ? /^[ァ-ヶー]{1,8}$/u
+      ? /^[ァ-ヶ]{1,8}$/u
       : group === "常用字"
         ? /^\p{Script=Han}$/u
         : /^\p{Script=Han}{2,8}$/u;
