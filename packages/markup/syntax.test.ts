@@ -1,5 +1,11 @@
 import { expect, test } from "bun:test";
-import { parse, parseLine, serialize } from "./syntax";
+import {
+  parse,
+  parseLine,
+  serialize,
+  tokenizeSource,
+  notePreview,
+} from "./syntax";
 
 import { pageTexts } from "./test-fixtures";
 const root = new URL("../../", import.meta.url).pathname;
@@ -143,4 +149,69 @@ test("an okurigana run ends where the katakana ends, as on the site", () => {
   ]);
   expect(kinds("讀￣ムー")).toEqual(["text:讀", "okurigana:￣ム", "text:ー"]);
   expect(kinds("地￣へ罷越")).toEqual(["text:地", "raw:￣", "text:へ罷越"]);
+});
+
+test("notation spans cover annotation fields, ruby and reading marks losslessly", () => {
+  const source = "《割書：一行｜二行》【ハヵ】未（いまだ｜ズ）讀＿レ￣ム＃1■□";
+  const spans = tokenizeSource(source);
+  expect(spans.map(({ kind, source }) => [kind, source])).toEqual([
+    ["punctuation", "《"],
+    ["label", "割書"],
+    ["punctuation", "："],
+    ["warigaki", "一行"],
+    ["punctuation", "｜"],
+    ["warigaki", "二行"],
+    ["punctuation", "》"],
+    ["punctuation", "【"],
+    ["note", "ハヵ"],
+    ["punctuation", "】"],
+    ["text", "未"],
+    ["punctuation", "（"],
+    ["ruby-reading", "いまだ"],
+    ["punctuation", "｜"],
+    ["ruby-reading", "ズ"],
+    ["punctuation", "）"],
+    ["text", "讀"],
+    ["return", "＿レ"],
+    ["okurigana", "￣ム"],
+    ["reference", "＃1"],
+    ["gap", "■"],
+    ["gap", "□"],
+  ]);
+  expect(spans.map((s) => s.source).join("")).toBe(source);
+  let offset = 0;
+  for (const span of spans) {
+    expect(span.from).toBe(offset);
+    expect(source.slice(span.from, span.to)).toBe(span.source);
+    offset = span.to;
+  }
+});
+test("notation spans preserve nested fields, legacy wrappers and incomplete input", () => {
+  for (const source of [
+    "《割書：《注記：ハヵ》｜《振り仮名：未｜いまだ》》\r\n【右丁】\r％表紙\n％",
+    "〔日本橋〕｛内蔵助｝＜安政二年＞讀｛＿レ｝",
+    "《未完\n𬼂葛\u{E0100}\t【未完",
+    "／東京（とうきょう）",
+    "",
+  ]) {
+    const spans = tokenizeSource(source);
+    expect(spans.map((s) => s.source).join("")).toBe(source);
+    for (const span of spans)
+      expect(source.slice(span.from, span.to)).toBe(span.source);
+  }
+  expect(tokenizeSource("【右丁】\n％字下げ一\n％").map((s) => s.kind)).toEqual(
+    ["divider", "newline", "block", "newline", "block"],
+  );
+  expect(
+    parseLine("〔日本橋〕｛内蔵助｝＜安政二年＞").map((n) => n.kind),
+  ).toEqual(["place", "person", "date"]);
+});
+test("note previews count graphemes and retain short notes", () => {
+  expect(notePreview("ハヵ")).toBe("ハヵ");
+  expect(notePreview("一二三四五六七八九十一二")).toBe(
+    "一二三四五六七八九十一二",
+  );
+  expect(notePreview("𬼂葛\u{E0100}か\u3099四五六七八九十一二三")).toBe(
+    "𬼂葛\u{E0100}か\u3099四五六…",
+  );
 });

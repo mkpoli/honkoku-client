@@ -27,38 +27,9 @@ const tex = (s: string) =>
       })[c] ?? `\\${c}`,
   );
 function inline(source: string, format: "xml" | "tex"): string {
-  const escape = format === "xml" ? xml : tex;
-  // These site wrappers predate the bracket notation used by the editor.
-  const parsed = parseLine(source);
-  const wrapper =
-    /｛＿([レ一二三上中下甲乙丙丁天地人])｝|｛([^｛｝]+)｝|〔([^〔〕]+)〕|＜([^＜＞]+)＞/gu;
-  let output = "",
-    start = 0;
-  for (const m of source.matchAll(wrapper)) {
-    if (
-      parsed.some(
-        (n) =>
-          n.from <= m.index &&
-          n.to >= m.index + m[0].length &&
-          n.kind !== "text" &&
-          n.kind !== "raw",
-      )
-    )
-      continue;
-    output += nodes(source.slice(start, m.index), format);
-    const content = m[1] ?? m[2] ?? m[3] ?? m[4];
-    const body = inline(content, format);
-    output += m[1]
-      ? format === "xml"
-        ? `<metamark function="kaeriten">${body}</metamark>`
-        : `\\kaeriten{ ${body} }`
-      : format === "xml"
-        ? `<${m[2] ? "persName" : m[3] ? "placeName" : "date"}>${body}</${m[2] ? "persName" : m[3] ? "placeName" : "date"}>`
-        : escape(m[0]);
-    start = m.index + m[0].length;
-  }
-  return output + nodes(source.slice(start), format);
+  return nodes(source, format);
 }
+
 function nodes(source: string, format: "xml" | "tex"): string {
   const escape = format === "xml" ? xml : tex;
   const grouped = parseLine(source).reduce<ReturnType<typeof parseLine>>(
@@ -109,6 +80,10 @@ function nodes(source: string, format: "xml" | "tex"): string {
             return `<docTitle>${p[0]}</docTitle>`;
           case "place":
             return `<placeName>${p[0]}</placeName>`;
+          case "person":
+            return `<persName>${p[0]}</persName>`;
+          case "date":
+            return `<date>${p[0]}</date>`;
         }
       else
         switch (n.kind) {

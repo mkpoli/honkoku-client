@@ -75,9 +75,8 @@ export function splitFields(source: string): string[] {
   let depth = 0,
     start = 0;
   for (let i = 0; i < source.length; i++) {
-    if (source[i] === "《" || source[i] === "【" || source[i] === "（") depth++;
-    else if (source[i] === "》" || source[i] === "】" || source[i] === "）")
-      depth--;
+    if ("《【（〔｛＜".includes(source[i])) depth++;
+    else if ("》】）〕｝＞".includes(source[i])) depth--;
     else if (source[i] === "｜" && depth === 0) {
       fields.push(source.slice(start, i));
       start = i + 1;
@@ -85,6 +84,18 @@ export function splitFields(source: string): string[] {
   }
   fields.push(source.slice(start));
   return fields;
+}
+export const inlineBrackets: Record<string, readonly [string, string]> = {
+  note: ["【", "】"],
+  editorial: ["【", "】"],
+  place: ["〔", "〕"],
+  person: ["｛", "｝"],
+  date: ["＜", "＞"],
+};
+const noteCharacters = new Intl.Segmenter("ja", { granularity: "grapheme" });
+export function notePreview(text: string): string {
+  const chars = [...noteCharacters.segment(text)].map(({ segment }) => segment);
+  return chars.length > 12 ? chars.slice(0, 6).join("") + "…" : text;
 }
 export function parseLine(text: string, start = 0): SyntaxNode[] {
   const nodes: SyntaxNode[] = [];
@@ -170,6 +181,21 @@ export function parseLine(text: string, start = 0): SyntaxNode[] {
       else add("raw", end);
       continue;
     }
+    const wrapper =
+      /^(〔[^〔〕\r\n]*〕|｛[^｛｝\r\n]*｝|＜[^＜＞\r\n]*＞)/u.exec(rest);
+    if (wrapper) {
+      const token = wrapper[0],
+        content = token.slice(1, -1);
+      const kind =
+        token[0] === "〔" ? "place" : token[0] === "＜" ? "date" : "person";
+      if (
+        kind === "person" &&
+        /^＿[レ一二三上中下甲乙丙丁天地人]$/u.test(content)
+      )
+        add("return", token.length, [content.slice(1)], "legacy");
+      else add(kind, token.length, [content], "legacy");
+      continue;
+    }
     const reference = /^＃[0-9０-９]+/u.exec(rest);
     if (reference) {
       add("reference", reference[0].length);
@@ -234,4 +260,69 @@ export function serialize(tree: SyntaxTree): string {
   return tree.columns
     .map((c) => c.nodes.map((n) => n.source).join("") + c.ending.source)
     .join("");
+}
+
+export type SourceSpanKind =
+  SyntaxKind | "punctuation" | "label" | "ruby-reading" | "block" | "newline";
+export interface SourceSpan {
+  kind: SourceSpanKind;
+  source: string;
+  from: number;
+  to: number;
+}
+/** Lossless UTF-16 ranges for painting source without changing input positions. */
+export function tokenizeSource(source: string): SourceSpan[] {
+  const spans: SourceSpan[] = [];
+  function add(kind: SourceSpanKind, from: number, to: number) {
+    if (to > from)
+      spans.push({ kind, source: source.slice(from, to), from, to });
+  }
+  function walk(node: SyntaxNode, inherited: SourceSpanKind = "text") {
+    const { from, to, kind, segments } = node;
+    if (kind === "editorial") {
+      add("punctuation", from, from + 1);
+      add("note", from + 1, to - 1);
+      add("punctuation", to - 1, to);
+    } else if (segments && node.form === "bracket") {
+      const colon = source.indexOf("：", from);
+      add("punctuation", from, from + 1);
+      add("label", from + 1, colon);
+      add("punctuation", colon, colon + 1);
+      let offset = colon + 1;
+      segments.forEach((field, index) => {
+        for (const child of parseLine(field, offset))
+          walk(child, kind === "ruby" && index > 0 ? "ruby-reading" : kind);
+        offset += field.length;
+        add("punctuation", offset, offset + 1);
+        offset++;
+      });
+    } else if (segments && kind === "ruby") {
+      let offset = from;
+      if (node.source.startsWith("／")) add("punctuation", offset, ++offset);
+      segments.forEach((field, index) => {
+        for (const child of parseLine(field, offset))
+          walk(child, index > 0 ? "ruby-reading" : inherited);
+        offset += field.length;
+        add("punctuation", offset, offset + 1);
+        offset++;
+      });
+    } else if (segments && node.form === "legacy" && inlineBrackets[kind]) {
+      add("punctuation", from, from + 1);
+      for (const child of parseLine(segments[0], from + 1)) walk(child, kind);
+      add("punctuation", to - 1, to);
+    } else add(kind === "text" ? inherited : kind, from, to);
+  }
+  for (const column of parse(source).columns) {
+    const nodes = column.nodes;
+    const start = nodes[0]?.from ?? column.ending.from;
+    if (
+      /^％(?:表紙|字下げ[一二三])?$/.test(
+        source.slice(start, column.ending.from),
+      )
+    )
+      add("block", start, column.ending.from);
+    else for (const node of nodes) walk(node);
+    add("newline", column.ending.from, column.ending.to);
+  }
+  return spans;
 }

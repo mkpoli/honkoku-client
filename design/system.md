@@ -30,6 +30,10 @@ The client's visual system combines the layout of exploration E (`explorations/e
 
 Every status has a label and a distinct symbol beside its colour.
 
+Inline annotations use accent for 注記, gold for 場所, link (muted blue) for 人物, and success (muted green) for 日時. Their brackets use text-muted. Content and brackets are 0.72em with a 10% annotation-colour tint, 2px corners, and 1px horizontal padding. Notes over 12 graphemes show six graphemes followed by …, with the full note available on hover or while editing its field.
+
+In 記法 mode, labels and punctuation use text-muted; notes use accent; ruby readings use gold; okurigana and kaeriten use link. Footnotes and gaps use text-muted with a 10% tint. Page headers are bold and block markers use text-muted.
+
 ## Typography
 
 | Role | Family | Size / line height | Weight |

@@ -1,10 +1,20 @@
-import { parseLine } from "./syntax";
-export { parse, serialize, parseLine, allowsChild } from "./syntax";
+import { parseLine, inlineBrackets, notePreview } from "./syntax";
+export {
+  parse,
+  serialize,
+  parseLine,
+  allowsChild,
+  tokenizeSource,
+  inlineBrackets,
+  notePreview,
+} from "./syntax";
 export type {
   SyntaxTree,
   SyntaxNode,
   SyntaxKind,
   SourceColumn,
+  SourceSpan,
+  SourceSpanKind,
 } from "./syntax";
 export type Inline =
   | {
@@ -123,12 +133,14 @@ export function renderInline(nodes: Inline[]): string {
         case "rightLine":
         case "title":
         case "box":
+          return `<span class="markup-${node.kind} editor-${node.kind}">${renderInline(parseInline(node.text))}</span>`;
         case "place":
         case "note":
         case "person":
         case "date":
-          return `<span class="markup-${node.kind} editor-${node.kind}">${renderInline(parseInline(node.text))}</span>`;
+          return renderSmallAnnotation(node.kind, node.text);
         case "editorial":
+          return renderSmallAnnotation("editorial", node.text.slice(1, -1));
         case "comment":
         case "glyph":
           return `<span class="markup-${node.kind} editor-${node.kind}">${escape(node.text)}</span>`;
@@ -186,13 +198,30 @@ export { exportTranscription } from "./export";
 export type { ExportFormat, ExportPage } from "./export";
 export { elements } from "./elements";
 
-/** Render legacy semantic wrappers without changing the saved source or editor tree. */
+/** Render a source line with its semantic annotations. */
 export function renderReadingLine(source: string): string {
-  const nodes=parseLine(source);
-  const normalized=source.replace(/｛＿([レ一二三上中下甲乙丙丁天地人])｝|｛([^｛｝]+)｝|〔([^〔〕]+)〕|＜([^＜＞]+)＞/gu,
-    (whole:string, mark:string|undefined, person:string|undefined, place:string|undefined, date:string|undefined, offset:number)=> {
-      if(nodes.some(n=>n.from<=offset && n.to>=offset+whole.length && n.kind!=="text" && n.kind!=="raw")) return whole;
-      return mark ? `＿${mark}` : person ?? place ?? date ?? whole;
-    });
-  return renderInline(parseInline(normalized));
+  return renderInline(parseInline(source));
+}
+function renderSmallAnnotation(kind: string, text: string): string {
+  const [open, close] = inlineBrackets[kind];
+  const content = kind === "note" ? fieldText(text) : text;
+  const shown =
+    kind === "note" || kind === "editorial" ? notePreview(content) : content;
+  const body =
+    kind === "editorial" || shown !== content
+      ? escape(shown)
+      : renderInline(parseInline(text));
+  return `<span class="markup-${kind} editor-${kind} inline-annotation" title="${escape(content)}"><span class="inline-annotation-bracket">${open}</span><span class="inline-annotation-body">${body}</span><span class="inline-annotation-bracket">${close}</span></span>`;
+}
+
+function fieldText(source: string): string {
+  return parseLine(source)
+    .map((node) =>
+      node.segments
+        ? node.segments.map(fieldText).join("")
+        : node.kind === "text" || node.kind === "raw"
+          ? node.source
+          : "",
+    )
+    .join("");
 }
