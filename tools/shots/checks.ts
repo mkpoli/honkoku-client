@@ -201,11 +201,11 @@ export async function checkInteractions(browser: Browser, origin: string) {
   await page.locator(".page-card").nth(3).click();
   await page.locator(".workbench").waitFor();
   await page.keyboard.press("ArrowRight");
-  assert.ok(page.url().endsWith("/pages/4"));
+  await page.waitForURL("**/pages/4");
   await page.keyboard.press("Home");
-  assert.ok(page.url().endsWith("/pages/0"));
+  await page.waitForURL("**/pages/0");
   await page.keyboard.press("End");
-  assert.ok(page.url().endsWith("/pages/17"));
+  await page.waitForURL("**/pages/17");
   await page.keyboard.press("ArrowRight");
   assert.ok(page.url().endsWith("/pages/17"));
   await page.getByRole("button", { name: "表示設定", exact: true }).click();

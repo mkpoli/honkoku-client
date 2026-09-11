@@ -180,6 +180,7 @@ try {
     await stopServer();
     process.exit(0);
   }
+  await checkInteractions(browser, origin);
   for (const theme of ["light", "dark"] as const)
     await checkWorkbenchParity(browser, origin, theme);
   for (const theme of ["light", "dark"] as const)
@@ -215,7 +216,6 @@ try {
   } finally {
     await webkitBrowser.close();
   }
-  await checkInteractions(browser, origin);
   for (const theme of ["light", "dark"] as const) {
     const context = await browser.newContext({
       viewport: { width: 1600, height: 1000 },
