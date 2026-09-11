@@ -783,7 +783,12 @@ export async function checkAlignment(
       "caret panning preserves zoom",
     );
     await page.getByRole("button", { name: "全体", exact: true }).click();
-    await third.click();
+    const focusColumn = () =>
+      page
+        .locator(`.editor-mount [data-column-index="${expectedColumn}"]`)
+        .first()
+        .click();
+    await focusColumn();
     await page.mouse.move(0, 0);
     await page.getByRole("button", { name: "表示設定", exact: true }).click();
     await page
@@ -799,14 +804,12 @@ export async function checkAlignment(
     await page
       .getByRole("button", { name: "左右を入れ替え", exact: false })
       .click();
-    await toggle.click();
     assert.equal(
       await page.locator(".line-overlay:visible").count(),
       1,
-      "current line remains visible with frames off",
+      "only the current line is visible",
     );
-    await toggle.click();
-    await third.click();
+    await focusColumn();
     await page.mouse.move(0, 0);
     await page.waitForFunction(() => {
       const column = document
