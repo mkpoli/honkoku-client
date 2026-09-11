@@ -1034,7 +1034,7 @@ export async function checkQuietWorkbench(
     await raw.evaluate((element: HTMLTextAreaElement) =>
       element.setSelectionRange(1, 1),
     );
-    await button("注記").click();
+    await page.getByRole("toolbar", { name: "翻刻の編集", exact: true }).getByRole("button", { name: "注記", exact: true }).click();
     await page
       .getByLabel("注記の内容", { exact: true })
       .fill("合字は「より」を表す。");
@@ -1065,7 +1065,7 @@ export async function checkQuietWorkbench(
     await raw.evaluate((element: HTMLTextAreaElement) =>
       element.setSelectionRange(4, 4),
     );
-    await button("注記").click();
+    await page.getByRole("toolbar", { name: "翻刻の編集", exact: true }).getByRole("button", { name: "注記", exact: true }).click();
     await page.getByLabel("注記の内容", { exact: true }).fill("二つ目の注記");
     await page.keyboard.press("Escape");
     assert.equal(await raw.inputValue(), "前＃1後＃2");

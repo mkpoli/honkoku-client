@@ -987,7 +987,11 @@ export async function checkPaletteTerms(browser: Browser, origin: string, theme:
     assert.match(await terms.first().getAttribute("title") ?? "", /資料内\d[\d,]*回/u);
     await page.evaluate(() => document.fonts.ready);
     await page.waitForLoadState("networkidle", { timeout: 20000 });
-    await page.waitForTimeout(1000);
+    await page.evaluate(() => import("/src/dev/viewer-harness.ts"));
+    await page.waitForFunction(() => {
+      const viewer = window.honkokuViewer();
+      return viewer && viewer.world.getItemCount() > 0 && viewer.getFullyLoaded();
+    });
     await page.screenshot({ path: resolve(`.local/shots/22-palette-terms-${theme}.png`) });
     await page.getByRole("button", { name: "原文表示", exact: true }).click();
     const raw = page.getByRole("textbox", { name: "原文を編集", exact: true });
