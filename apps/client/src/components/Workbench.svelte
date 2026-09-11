@@ -1,4 +1,5 @@
 <script lang="ts">
+  import type { Snippet } from "svelte";
   import { openSessions } from "../editing-sessions.svelte";
   import { restoreDraft } from "../editing-draft";
   import type { Region } from "../region.svelte";
@@ -25,7 +26,7 @@
     textareaSource,
   } from "@honkoku/editor";
   import Transcription from "./Transcription.svelte";
-  import { date, label, notes, status, statusClass, user } from "../lib";
+  import { date, notes, status, statusClass, user } from "../lib";
   import { href, parseRoute } from "../routes";
   import VerticalEditor from "@honkoku/editor/VerticalEditor.svelte";
   import type { EditorUpdate } from "@honkoku/editor";
@@ -59,7 +60,11 @@
     pagesRegion,
     pagesPending = false,
     canvasesRegion,
+    leading,
+    trailing,
   }: {
+    leading?: Snippet;
+    trailing?: Snippet;
     pagesRegion: Region<Page[]>;
     pagesPending?: boolean;
     canvasesRegion: Region<Canvas[]>;
@@ -112,7 +117,6 @@
     /＃[0-9０-９]+/.test(editing ? source : displayedSource),
   );
   let ocrOpen = $state(sessionStorage.getItem("honkoku.ocr.open") === "true");
-  let showLines = $state(false);
   let noteList = $state(false);
   let noteAnchor = $state<HTMLElement>();
   let notePosition = $state({ x: 0, y: 0 });
@@ -556,7 +560,6 @@
       editing = false;
       currentColumn = -1;
       hoveredLine = null;
-      showLines = false;
       localOcr = null;
       closeNotes();
       source = "";
@@ -830,7 +833,7 @@
         >再試行</button
       >
     </div>{/if}
-  {#if notice || saveState || celebration !== undefined}<div
+  {#if notice || celebration !== undefined}<div
       class="workbench-notification caption"
       role="status"
     >
@@ -839,11 +842,11 @@
             ? `・${celebration.toLocaleString("ja-JP")}文字`
             : ""}</span
         >
-      {:else if notice}<span class="edit-notice">{notice}</span>{:else}<span
-          class="edit-status">{saveState}</span
-        >{/if}
+      {:else}<span class="edit-notice">{notice}</span>{/if}
     </div>{/if}
   <div class="workbench-toolbar">
+    <div class="toolbar-leading">
+    {#if leading}{@render leading()}{/if}
     <div class="editing-pages">
       {#if otherEdits.length}<details>
           <summary
@@ -858,10 +861,8 @@
           </div>
         </details>{/if}
     </div>
+    </div>
     <div class="page-position">
-      <span class="entry-position-title caption muted"
-        >{label(entry.label)}</span
-      >
       <div>
         <button
           disabled={index === 0}
@@ -875,6 +876,7 @@
           aria-label="次のコマ">›</button
         >
       </div>
+      <span class="edit-status caption" aria-live="polite">{saveState}</span>
     </div>
     <div class="toolbar-actions">
       {#if editing}
@@ -966,11 +968,6 @@
           sessionStorage.setItem("honkoku.ocr.open", String(ocrOpen));
         }}>OCR</button
       >
-      <button
-        aria-pressed={showLines}
-        disabled={!lineModel.lines.length}
-        onclick={() => (showLines = !showLines)}>行枠</button
-      >
       <div class="workbench-menu">
         <button
           aria-label="表示設定"
@@ -994,6 +991,7 @@
             >
           </div>{/if}
       </div>
+      {#if trailing}{@render trailing()}{/if}
     </div>
   </div>
   {#if recovered}<details class="edit-recovery">
@@ -1065,7 +1063,6 @@
       pageNumber={index + 1}
       bind:half
       {lineModel}
-      {showLines}
       highlightedLine={selectedLine}
       onlineselect={selectLine}
       onlinehover={(line) => (hoveredLine = line)}
