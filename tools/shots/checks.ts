@@ -528,13 +528,16 @@ export async function checkEditing(
               tempText: string;
               syncMode: boolean;
             }[];
-            Object.assign(pages.find((p) => p.index === 3)!, {
-              status: "editing",
-              prevStatus: "completed",
-              tempEditedBy: actor.uid,
-              tempText: "共有前の下書き",
-              syncMode,
-            });
+            Object.assign(
+              pages.find((p) => p.index === 3)!,
+              {
+                status: "editing",
+                prevStatus: "completed",
+                tempEditedBy: actor.uid,
+                tempText: "共有前の下書き",
+                syncMode,
+              },
+            );
             location.hash = "#/";
             return actor.displayName;
           },
@@ -1583,10 +1586,13 @@ export async function checkWorkbenchParity(
         tempText: string;
         updatedAt: string;
       }[];
-      Object.assign(pages.find((p) => p.index === 3)!, {
-        tempText: "サーバーの新しい下書き",
-        updatedAt: new Date(Date.now() + 60_000).toISOString(),
-      });
+      Object.assign(
+        pages.find((p) => p.index === 3)!,
+        {
+          tempText: "サーバーの新しい下書き",
+          updatedAt: new Date(Date.now() + 60_000).toISOString(),
+        },
+      );
     }, entry);
     await button("前のコマ").click();
     await page.waitForURL("**/pages/3");
@@ -1903,7 +1909,6 @@ export async function checkGlyphs(
       );
       throw e;
     }
-    await page.getByRole("button", { name: "表示設定", exact: true }).click();
     await page.getByRole("button", { name: "切り抜き", exact: true }).click();
     const host = await page.locator(".osd").boundingBox();
     assert.ok(host);
@@ -2024,12 +2029,10 @@ export async function checkKunten(
     await kana
       .getByRole("button", { name: "送り仮名ニヨリテ", exact: true })
       .waitFor();
-    const height = await page
-      .locator(".palette-glyphs")
-      .evaluate((el) => ({
-        palette: el.getBoundingClientRect().height,
-        editor: el.closest(".editor-workspace")!.getBoundingClientRect().height,
-      }));
+    const height = await page.locator(".palette-glyphs").evaluate((el) => ({
+      palette: el.getBoundingClientRect().height,
+      editor: el.closest(".editor-workspace")!.getBoundingClientRect().height,
+    }));
     assert.ok(height.palette <= height.editor * 0.4 + 1);
     await page.screenshot({
       path: resolve(".local/shots", `17-okurigana-palette-${theme}.png`),
@@ -2211,7 +2214,9 @@ export async function checkRankingSelf(
       await page.goto(`${origin}/#/`, { waitUntil: "domcontentloaded" });
       await page.locator(".ranking-list li").first().waitFor();
       if (scenario === "signed-out")
-        await page.getByRole("button", { name: "ログイン", exact: true }).waitFor();
+        await page
+          .getByRole("button", { name: "ログイン", exact: true })
+          .waitFor();
       else await page.locator(".own-record").waitFor();
       const panel = page.locator(".ranking");
       const button = panel.getByRole("button", {
@@ -2287,11 +2292,15 @@ export async function checkRankingSelf(
         }
         await row.evaluate((row) => {
           row.dataset.pulseStarts = "0";
-          row.addEventListener("animationstart", () => {
-            row.dataset.pulseStarts = String(
-              Number(row.dataset.pulseStarts) + 1,
-            );
-          }, { once: true });
+          row.addEventListener(
+            "animationstart",
+            () => {
+              row.dataset.pulseStarts = String(
+                Number(row.dataset.pulseStarts) + 1,
+              );
+            },
+            { once: true },
+          );
         });
         await button.click();
         await page.waitForFunction(
@@ -2369,4 +2378,230 @@ export async function checkRankingSelf(
   console.log(
     `Ranking checks passed (${theme}): self row, scroll, pulse, sorts, pinned rank, missing field, sign-out.`,
   );
+}
+
+export async function checkRecognition(
+  browser: Browser,
+  origin: string,
+  theme: "light" | "dark",
+) {
+  const context = await browser.newContext({
+    viewport: { width: 1600, height: 1000 },
+    locale: "ja-JP",
+    colorScheme: theme,
+    reducedMotion: "reduce",
+  });
+  await context.addInitScript(
+    (theme) => localStorage.setItem("honkoku.theme", theme),
+    theme,
+  );
+  const page = await context.newPage();
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  try {
+    await page.goto(`${origin}/#/`);
+    await page.locator(".activity").first().waitFor();
+    const count = await page.locator(".home-centre .activity").count();
+    await page
+      .getByRole("button", { name: "添削希望のみ表示", exact: true })
+      .click();
+    const filtered = await page.locator(".home-centre .activity").count();
+    assert.ok(filtered > 0 && filtered < count);
+    assert.equal(
+      await page.locator(".home-centre .activity .review-chip").count(),
+      filtered,
+    );
+    await page.evaluate(async (entryId) => {
+      const { fixtureInvoke } = await import("/src/dev/fixtures.ts");
+      const pages = (await fixtureInvoke("list_pages", {
+        entryId,
+      })) as import("../../packages/client-api/types").Page[];
+      const p = pages.find((p) => p.index === 7)!;
+      const activity = (await fixtureInvoke("home_timeline", {
+        filter: {},
+        limit: 20,
+      })) as import("../../packages/client-api/types").TimelineItem[];
+      const session = (await fixtureInvoke("session_current", {})) as {
+        uid: string;
+      };
+      const requester =
+        activity.find((item) => item.actor && item.actor.uid !== session.uid)
+          ?.actor?.uid ?? "another-reviewer";
+      Object.assign(p, {
+        status: "completed",
+        editedBy: requester,
+        approvedBy: [],
+        requestReview: true,
+      });
+      location.hash = `#/entries/${entryId}/pages/7`;
+    }, entry);
+    await page.getByRole("button", { name: "共有モード", exact: true }).click();
+    await page.getByRole("button", { name: "編集開始", exact: true }).click();
+    await page.locator(".editor-palette").waitFor();
+    await page.getByText("共有中", { exact: true }).waitFor();
+    await page.getByRole("button", { name: "原文表示", exact: true }).click();
+    const raw = page.getByRole("textbox", { name: "原文を編集", exact: true });
+    const before = await raw.inputValue();
+    await raw.evaluate((node: HTMLTextAreaElement) => {
+      node.focus();
+      node.setSelectionRange(2, 4);
+      node.dispatchEvent(new Event("select", { bubbles: true }));
+    });
+    await viewerReady(page);
+    await page.getByRole("button", { name: "認識", exact: true }).click();
+    const box = await page.locator(".osd").boundingBox();
+    assert.ok(box);
+    await page.mouse.move(box.x + box.width * 0.45, box.y + box.height * 0.4);
+    await page.mouse.down();
+    await page.mouse.move(box.x + box.width * 0.51, box.y + box.height * 0.5, {
+      steps: 8,
+    });
+    await page.mouse.up();
+    await page.locator(".candidate").nth(9).waitFor();
+    assert.equal(await page.locator(".candidate").count(), 10);
+    await page.keyboard.press("1");
+    assert.equal(
+      await raw.inputValue(),
+      before.slice(0, 2) + "候" + before.slice(4),
+    );
+    await page.locator(".comparisons .glyph-card").nth(3).waitFor();
+    await page.waitForFunction(() => {
+      const images = [
+        ...document.querySelectorAll<HTMLImageElement>(".comparisons img"),
+      ];
+      return (
+        images.length === 4 &&
+        images.every((image) => image.complete && image.naturalWidth > 0)
+      );
+    });
+    await page.evaluate(() => document.fonts.ready);
+    await page.screenshot({
+      path: resolve(
+        import.meta.dir,
+        `../../.local/shots/18-recognize-${theme}.png`,
+      ),
+    });
+    await page.keyboard.press("Escape");
+    assert.equal(await page.locator(".candidate").count(), 0);
+    await page.evaluate(
+      () =>
+        (window.honkokuRecognitionError = "文字認識の結果を取得できません。"),
+    );
+    await page.getByRole("button", { name: "再認識", exact: true }).click();
+    await page.locator(".recognition-error").waitFor();
+    assert.equal(await page.locator(".candidate").count(), 0);
+    await page.evaluate(() => (window.honkokuRecognitionError = undefined));
+    await page
+      .locator(".recognition-error")
+      .getByRole("button", { name: "再試行", exact: true })
+      .click();
+    await page.locator(".candidate").nth(9).waitFor();
+    await page.keyboard.press("Escape");
+    await page.getByRole("button", { name: "再認識", exact: true }).click();
+    await page.locator(".candidate").nth(9).waitFor();
+    const beforeVisual = await raw.inputValue();
+    await page.getByRole("button", { name: "原文表示", exact: true }).click();
+    await page.locator(".vertical-editor").evaluate((root: HTMLElement) => {
+      root.focus();
+      const text = document
+        .createTreeWalker(root, NodeFilter.SHOW_TEXT)
+        .nextNode();
+      if (!text || (text.textContent?.length ?? 0) < 2)
+        throw Error("Editor text is missing");
+      const range = document.createRange();
+      range.setStart(text, 0);
+      range.setEnd(text, 2);
+      const selection = window.getSelection()!;
+      selection.removeAllRanges();
+      selection.addRange(range);
+      document.dispatchEvent(new Event("selectionchange"));
+    });
+    await page.waitForTimeout(50);
+    await page
+      .getByRole("button", { name: "2：侯を挿入", exact: true })
+      .click();
+    await page.getByRole("button", { name: "原文表示", exact: true }).click();
+    assert.equal(await raw.inputValue(), "侯" + beforeVisual.slice(2));
+    await page.getByRole("button", { name: "通常", exact: true }).click();
+    assert.equal(await page.locator(".recognition-strip").count(), 0);
+    await page.getByRole("button", { name: "保存", exact: true }).click();
+    const save = page.locator(".save-popover");
+    assert.ok(
+      await save.getByLabel("チェック済みにする", { exact: true }).isEnabled(),
+    );
+    await save.getByLabel("添削希望", { exact: true }).check();
+    await save.getByLabel("チェック済みにする", { exact: true }).check();
+    assert.ok(await save.getByLabel("共有", { exact: true }).isChecked());
+    if (theme === "light")
+      await page.screenshot({
+        path: resolve(
+          import.meta.dir,
+          "../../.local/shots/18-save-options-light.png",
+        ),
+      });
+    await save.getByRole("button", { name: "保存を確定", exact: true }).click();
+    await page.getByRole("button", { name: "編集開始", exact: true }).waitFor();
+    await page.getByText("✓1／2", { exact: true }).waitFor();
+    await page.getByRole("button", { name: "編集開始", exact: true }).click();
+    await page.getByRole("button", { name: "保存", exact: true }).click();
+    await page.getByLabel("チェックを取り消す", { exact: true }).check();
+    await page.getByRole("button", { name: "保存を確定", exact: true }).click();
+    await page.getByRole("button", { name: "編集開始", exact: true }).waitFor();
+    assert.equal(await page.getByText("✓1／2", { exact: true }).count(), 0);
+    // Simulate another account publishing temporary text after the reader opens.
+    await page.evaluate(async (entryId) => {
+      const { fixtureInvoke } = await import("/src/dev/fixtures.ts");
+      const pages = (await fixtureInvoke("list_pages", {
+        entryId,
+      })) as import("../../packages/client-api/types").Page[];
+      Object.assign(
+        pages.find((p) => p.index === 8)!,
+        {
+          status: "editing",
+          tempEditedBy: "another-reviewer",
+          syncMode: true,
+          tempText: "共有する本文",
+        },
+      );
+      location.hash = `#/entries/${entryId}/pages/8`;
+    }, entry);
+    await page
+      .locator(".transcription-reader")
+      .getByText("共有する本文", { exact: false })
+      .waitFor();
+    await page.evaluate(async (entryId) => {
+      const { fixtureInvoke } = await import("/src/dev/fixtures.ts");
+      const pages = (await fixtureInvoke("list_pages", {
+        entryId,
+      })) as import("../../packages/client-api/types").Page[];
+      pages.find((p) => p.index === 8)!.tempText = "三秒後の本文";
+    }, entry);
+    await page
+      .locator(".transcription-reader")
+      .getByText("三秒後の本文", { exact: false })
+      .waitFor({ timeout: 8000 });
+    assert.equal(await page.locator(".workbench-editor").count(), 0);
+    const aligned = (await import("../../fixtures/api/page-minna-ocr.json"))
+      .page;
+    await page.evaluate(({ entryId, index }) => {
+      location.hash = `#/entries/${entryId}/pages/${index}`;
+    }, aligned);
+    await viewerReady(page);
+    await page.getByRole("button", { name: "行枠", exact: true }).click();
+    await page
+      .locator('.line-overlay[data-line-index="0"]')
+      .click({ modifiers: ["Alt"] });
+    assert.equal(await page.locator(".recognition-strip").count(), 0);
+    const line = page.locator('.line-overlay[data-line-index="2"]');
+    await line.click({ modifiers: ["Alt"] });
+    await page.locator(".candidate").nth(9).waitFor();
+    const segment = await page.evaluate(() => window.honkokuRecognitionRegion);
+    assert.ok(segment && segment[2] > 0 && segment[3] > 0);
+    assert.deepEqual(errors, []);
+    console.log(
+      `Recognition, approval, review filter and realtime checks passed (${theme}).`,
+    );
+  } finally {
+    await context.close();
+  }
 }
