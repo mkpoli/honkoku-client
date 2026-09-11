@@ -7,7 +7,8 @@ import {
   toMarkup,
   insertOkurigana,
   extendOkurigana,
-  deleteKunten,
+  deleteContext,
+  NodeSelection,
   moveCaret,
 } from "./index";
 import { loadPresets, normalizePreset, presetKey } from "./presets";
@@ -51,7 +52,7 @@ test("partial shells unwrap, nested whole shells retain their spelling", () => {
   );
   expect(selectedMarkup(fromMarkup("一二\r\n三四"), 2, 6)).toBe("二\r\n三");
 });
-test("kunten insertion retains selection, navigation and deletion treat a run as a unit", () => {
+test("okurigana insertion enters its field and deletion selects the whole context first", () => {
   let state = EditorState.create({ doc: fromMarkup("故山川") });
   const dispatch = (tr: typeof state.tr) => {
     state = state.apply(tr);
@@ -59,14 +60,20 @@ test("kunten insertion retains selection, navigation and deletion treat a run as
   dispatch(state.tr.setSelection(TextSelection.create(state.doc, 1, 3)));
   expect(insertOkurigana("ニ")(state, dispatch)).toBe(true);
   expect(toMarkup(state.doc)).toBe("故山￣ニ川");
+  expect(state.selection.from).toBe(5);
+  moveCaret("ArrowDown")(state, dispatch);
+  moveCaret("ArrowDown")(state, dispatch);
   expect(extendOkurigana("シテ")(state, dispatch)).toBe(true);
   expect(toMarkup(state.doc)).toBe("故山￣ニシテ川");
   const end = state.selection.from;
   moveCaret("ArrowUp")(state, dispatch);
-  expect(state.selection.from).toBe(3);
+  expect(state.selection.from).toBe(end - 2);
   moveCaret("ArrowDown")(state, dispatch);
   expect(state.selection.from).toBe(end);
-  expect(deleteKunten(state, dispatch)).toBe(true);
+  expect(deleteContext(true)(state, dispatch)).toBe(true);
+  expect(state.selection).toBeInstanceOf(NodeSelection);
+  expect(toMarkup(state.doc)).toBe("故山￣ニシテ川");
+  deleteContext(true)(state, dispatch);
   expect(toMarkup(state.doc)).toBe("故山川");
   dispatch(state.tr.setSelection(TextSelection.create(state.doc, 1)));
   expect(insertOkurigana("ニ")(state, dispatch)).toBe(false);

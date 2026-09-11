@@ -73,8 +73,7 @@
   padding-block-start: 12px;
 }
 .editor-source-anchor {
-  display: inline;
-  font-size: 0;
+  display: inline-block;
 }
 .editor-token {
   user-select: none;
@@ -410,4 +409,80 @@
 .palette-expressions button {
   font-size: 17px;
   white-space: nowrap;
+}
+
+.editor-annotation,
+.editor-source-anchor {
+  position: relative;
+}
+.vertical-editor [data-context-label]::before {
+  content: attr(data-context-label);
+  position: absolute;
+  writing-mode: horizontal-tb;
+  inset-inline-start: 0;
+  inset-block-end: calc(100% + 3px);
+  font: 400 10px/14px var(--font-sans);
+  white-space: nowrap;
+  color: var(--text-muted);
+  background: var(--surface);
+  visibility: hidden;
+  cursor: pointer;
+  z-index: 2;
+}
+.vertical-editor .editor-caret-big,
+.vertical-editor .editor-caret-small {
+  outline: 1px solid var(--border-strong);
+  border-radius: 2px;
+}
+.vertical-editor .editor-caret-big {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  outline-color: var(--accent);
+}
+.vertical-editor .editor-caret-big::before {
+  color: var(--accent);
+}
+.vertical-editor .editor-caret-big::before,
+.vertical-editor .editor-caret-small::before,
+.vertical-editor
+  [data-context-label]:hover:not(
+    :has([data-context-label]:hover, .editor-caret-small, .editor-caret-big)
+  )::before {
+  visibility: visible;
+}
+.vertical-editor[data-caret-mode="big"] {
+  caret-color: transparent;
+}
+.vertical-editor .editor-kenten.editor-caret-small > .editor-right {
+  inline-size: max-content;
+  block-size: auto;
+  inset-block-start: -1em;
+  inset-inline-start: 0;
+  overflow: visible;
+}
+.editor-context-path {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-inline-start: auto;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+.editor-context-path button {
+  border: 0;
+  background: transparent;
+  padding: 2px;
+  font: inherit;
+  color: inherit;
+}
+.editor-context-path button:disabled {
+  opacity: 1;
+}
+.transcription.horizontal .vertical-editor {
+  writing-mode: horizontal-tb;
+}
+@media (prefers-reduced-motion: reduce) {
+  .vertical-editor .editor-caret-big {
+    transition: none;
+  }
 }

@@ -8,6 +8,7 @@ import {
   EditorState,
   Plugin,
   TextSelection,
+  NodeSelection,
   type Command,
   type Transaction,
 } from "prosemirror-state";
@@ -22,18 +23,26 @@ import {
   allowsChild,
   type SyntaxNode,
 } from "@honkoku/markup";
-export { undo, redo, TextSelection };
+export { undo, redo, TextSelection, NodeSelection };
+import {
+  caretPlugin,
+  contextName,
+  contextNames,
+  selectContext,
+  escapeContext,
+  enterContext,
+  deleteContext,
+  moveCharacter,
+  characterPositions,
+  contextSelection,
+} from "./caret";
+export * from "./caret";
 
-const annotationNames: Record<string, string> = {
-  ruby: "振り仮名",
-  warigaki: "割書",
-  misekechi: "見せ消ち",
-  kenten: "圏点",
-  rightLine: "右線",
-  title: "題",
-  box: "箱",
-  place: "場所",
-};
+const annotationNames = Object.fromEntries(
+  Object.entries(contextNames).filter(
+    ([kind]) => !["return", "okurigana"].includes(kind),
+  ),
+);
 const nodes: Record<string, NodeSpec> = {
   doc: { content: "column+", attrs: { newline: { default: "\n" } } },
   column: {
@@ -84,13 +93,24 @@ const nodes: Record<string, NodeSpec> = {
     atom: true,
     attrs: { source: { default: "" }, kind: { default: "gap" } },
     toDOM: (node) => [
-      "span",
+      node.attrs.kind === "reference" ? "button" : "span",
       {
-        class: "editor-source-anchor",
+        ...(node.attrs.kind === "reference"
+          ? {
+              type: "button",
+              "data-note": String(
+                Number(node.attrs.source.slice(1).normalize("NFKC")),
+              ),
+              "aria-label": `注記${Number(node.attrs.source.slice(1).normalize("NFKC"))}`,
+            }
+          : {}),
+        class: `editor-source-anchor editor-token markup-${node.attrs.kind === "gap" ? "glyph" : node.attrs.kind}`,
         "data-source": node.attrs.source,
         "data-kind": node.attrs.kind,
-        "aria-hidden": "true",
+        "data-context-label": contextName(node),
+        contenteditable: "false",
       },
+      node.attrs.source,
     ],
     parseDOM: [
       {
@@ -117,6 +137,7 @@ for (const name of [...Object.keys(annotationNames), "return", "okurigana"]) {
     group: "inline",
     content: `segment${count}`,
     isolating: true,
+    atom: name === "return",
     attrs: {
       original: { default: null },
       originalParts: { default: null },
@@ -128,6 +149,8 @@ for (const name of [...Object.keys(annotationNames), "return", "okurigana"]) {
         class: `editor-annotation editor-${name}`,
         "data-annotation": name,
         "data-form": node.attrs.form,
+        "data-context-label": contextName(node),
+        ...(name === "return" ? { contenteditable: "false" } : {}),
       },
       0,
     ],
@@ -376,15 +399,18 @@ export const insertAnnotation =
   (state, dispatch) => {
     if (!canInsert(state, kind)) return false;
     const node = annotation(kind, values);
+    const from = state.selection.from;
     const tr = closeHistory(state.tr).replaceSelectionWith(node, false);
-    dispatch?.(tr.scrollIntoView());
+    dispatch?.(
+      tr.setSelection(TextSelection.create(tr.doc, from + 2)).scrollIntoView(),
+    );
     return true;
   };
 export const wrapSelection =
   (kind: ConstructKind, reading = ""): Command =>
   (state, dispatch) => {
     if (!canInsert(state, kind)) return false;
-    const { from, to, empty } = state.selection;
+    const { from, to } = state.selection;
     const value = columnSource(
       state.selection.$from.parent.cut(
         state.selection.$from.parentOffset,
@@ -394,10 +420,7 @@ export const wrapSelection =
     const node = annotation(kind, [kind === "warigaki" ? "" : value, reading]);
     const tr = closeHistory(state.tr).replaceWith(from, to, node);
     const first = from + 2;
-    const target =
-      kind !== "warigaki" && (!empty || kind === "misekechi")
-        ? first + node.firstChild!.nodeSize
-        : first;
+    const target = first;
     dispatch?.(
       tr.setSelection(TextSelection.create(tr.doc, target)).scrollIntoView(),
     );
@@ -433,8 +456,7 @@ export function shellKey(key: string, backwards = false): Command {
       );
       return true;
     };
-    if (key === "Escape" || key === "ArrowRight")
-      return move(start + node.nodeSize);
+
     if (key === "Tab" || (key === "Enter" && node.type.name === "warigaki")) {
       const next = index + (backwards ? -1 : 1);
       if (next < 0) return move(start);
@@ -457,62 +479,8 @@ export function shellKey(key: string, backwards = false): Command {
       if (key === "Enter") return true;
       return move(start + node.nodeSize);
     }
-    if (
-      key === "Backspace" &&
-      !columnSource($head.parent) &&
-      node.type.name === "warigaki"
-    ) {
-      if (index === 0 && parts(node).every((part) => !part))
-        return move(start, state.tr.delete(start, start + node.nodeSize));
-      if (index === 1 && node.childCount === 2) {
-        const content = schema.nodes.column.create(
-          null,
-          parseLine(columnSource(node.firstChild!)).map(project),
-        ).content;
-        return move(
-          start + content.size,
-          state.tr.replaceWith(start, start + node.nodeSize, content),
-        );
-      }
-      if (index === node.childCount - 1 && node.childCount > 2) {
-        const from = $head.before();
-        return move(from - 1, state.tr.delete(from, $head.after()));
-      }
-      return true;
-    }
     return false;
   };
-}
-function activeShells(state: EditorState): Set<number> {
-  const result = new Set<number>();
-  const { $head } = state.selection;
-  for (let depth = 1; depth <= $head.depth; depth++)
-    if (["ruby", "warigaki", "misekechi"].includes($head.node(depth).type.name))
-      result.add($head.before(depth));
-  return result;
-}
-function emptyShells(
-  state: EditorState,
-  positions: Set<number>,
-  force = false,
-): Transaction | null {
-  const tr = state.tr;
-  const removals: { from: number; to: number }[] = [];
-  state.doc.descendants((node, pos) => {
-    if (!["ruby", "warigaki", "misekechi"].includes(node.type.name)) return;
-    if (
-      positions.has(pos) &&
-      parts(node).every((part) => !part) &&
-      (force ||
-        state.selection.head <= pos ||
-        state.selection.head >= pos + node.nodeSize)
-    ) {
-      removals.push({ from: pos, to: pos + node.nodeSize });
-      return false;
-    }
-  });
-  for (const { from, to } of removals.reverse()) tr.delete(from, to);
-  return removals.length ? tr : null;
 }
 export const insertText =
   (text: string): Command =>
@@ -532,19 +500,10 @@ export const insertOkurigana =
     const node = annotation("okurigana", [kana]);
     const tr = closeHistory(state.tr).insert(to, node);
     dispatch?.(
-      tr
-        .setSelection(TextSelection.create(tr.doc, to + node.nodeSize))
-        .scrollIntoView(),
+      tr.setSelection(TextSelection.create(tr.doc, to + 2)).scrollIntoView(),
     );
     return true;
   };
-export const deleteKunten: Command = (state, dispatch) => {
-  const { empty, $from, from } = state.selection;
-  const previous = $from.nodeBefore;
-  if (!empty || !isKunten(previous)) return false;
-  dispatch?.(state.tr.delete(from - previous!.nodeSize, from).scrollIntoView());
-  return true;
-};
 export const extendOkurigana =
   (text: string): Command =>
   (state, dispatch) => {
@@ -616,9 +575,17 @@ export const insertSource =
     if (!canInsert(state, "reference")) return false;
     const node = parse(text).columns[0].nodes[0];
     if (!node) return false;
+    const projected = project(node);
+    const from = state.selection.from;
+    const tr = closeHistory(state.tr).replaceSelectionWith(projected, false);
     dispatch?.(
-      closeHistory(state.tr)
-        .replaceSelectionWith(project(node), false)
+      tr
+        .setSelection(
+          TextSelection.create(
+            tr.doc,
+            from + (projected.isAtom ? projected.nodeSize : 2),
+          ),
+        )
         .scrollIntoView(),
     );
     return true;
@@ -635,54 +602,28 @@ export const replaceSource =
     dispatch?.(tr);
     return true;
   };
-function caretPositions(doc: PMNode, columnIndex: number): number[] {
-  let offset = 0;
-  for (let i = 0; i < columnIndex; i++) offset += doc.child(i).nodeSize;
-  const positions: number[] = [];
-  const segmenter = new Intl.Segmenter("ja", { granularity: "grapheme" });
-  const column = doc.child(columnIndex);
-  if (!column.childCount) positions.push(offset + 1);
-  column.descendants((node, pos) => {
-    if (isKunten(node)) {
-      positions.push(offset + 1 + pos, offset + 1 + pos + node.nodeSize);
-      return false;
-    }
-    if (
-      node.type.name === "segment" &&
-      node.attrs.placeholder &&
-      !columnSource(node)
-    ) {
-      positions.push(offset + 2 + pos);
-      return false;
-    }
-    if (node.isText) {
-      for (const part of segmenter.segment(node.text!))
-        positions.push(offset + 1 + pos + part.index);
-      positions.push(offset + 1 + pos + node.nodeSize);
-    } else if (node.isLeaf || (node.inlineContent && !node.content.size)) {
-      positions.push(offset + 1 + pos + (node.isLeaf ? 0 : 1));
-      if (node.isLeaf) positions.push(offset + 1 + pos + node.nodeSize);
-    }
-  });
-  positions.push(offset + 1, offset + column.nodeSize - 1);
-  return [...new Set(positions)].sort((a, b) => a - b);
-}
-export function moveCaret(key: string, extend = false): Command {
+export function moveCaret(
+  key: string,
+  extend = false,
+  horizontal = false,
+  word = false,
+): Command {
+  const forward = horizontal ? "ArrowRight" : "ArrowDown";
+  const backward = horizontal ? "ArrowLeft" : "ArrowUp";
+  if (key === forward || key === backward)
+    return moveCharacter(key === forward, extend, word);
   return (state, dispatch) => {
     const { $head, anchor, head } = state.selection;
     const index = $head.index(0),
-      positions = caretPositions(state.doc, index);
+      positions = characterPositions(state.doc, index);
     let target = head;
     if (key === "Home") target = positions[0];
     else if (key === "End") target = positions.at(-1)!;
-    else if (key === "ArrowUp")
-      target = positions.filter((p) => p < head).at(-1) ?? head;
-    else if (key === "ArrowDown")
-      target = positions.find((p) => p > head) ?? head;
     else {
-      const next = index + (key === "ArrowLeft" ? 1 : -1);
+      const next =
+        index + (key === (horizontal ? "ArrowDown" : "ArrowLeft") ? 1 : -1);
       if (next >= 0 && next < state.doc.childCount) {
-        const other = caretPositions(state.doc, next);
+        const other = characterPositions(state.doc, next);
         const ordinal = positions.findIndex((p) => p >= head);
         target = other[Math.min(Math.max(0, ordinal), other.length - 1)];
       }
@@ -690,7 +631,7 @@ export function moveCaret(key: string, extend = false): Command {
     dispatch?.(
       state.tr
         .setSelection(
-          TextSelection.create(state.doc, extend ? anchor : target, target),
+          contextSelection(state.doc, extend ? anchor : target, target),
         )
         .scrollIntoView(),
     );
@@ -745,37 +686,6 @@ function decorations(doc: PMNode): DecorationSet {
   });
   doc.descendants((node, pos) => {
     if (node.type.name !== "source") return;
-    decorations.push(
-      Decoration.widget(
-        pos + 1,
-        () => {
-          const span = document.createElement(
-            node.attrs.kind === "reference" ? "button" : "span",
-          );
-          if (node.attrs.kind === "reference") {
-            span.dataset.note = String(
-              Number(node.attrs.source.slice(1).normalize("NFKC")),
-            );
-            span.setAttribute("type", "button");
-          }
-          span.className = `editor-token markup-${node.attrs.kind === "gap" ? "glyph" : node.attrs.kind}`;
-          span.textContent = node.attrs.source;
-          span.contentEditable = "false";
-          span.setAttribute(
-            "aria-label",
-            node.attrs.kind === "reference"
-              ? `注記${span.dataset.note}`
-              : node.attrs.source,
-          );
-          return span;
-        },
-        {
-          side: -1,
-          key: `${pos}:${node.attrs.kind}:${node.attrs.source}`,
-          ignoreSelection: true,
-        },
-      ),
-    );
     if (node.attrs.kind === "divider") {
       const $pos = doc.resolve(pos);
       decorations.push(
@@ -819,6 +729,8 @@ function normalizeFields(state: EditorState): Transaction | null {
     if (!node.content.size) {
       tr.insertText("\u200b", pos + 1);
       tr.setNodeMarkup(pos, undefined, { ...node.attrs, placeholder: true });
+      if (state.selection.empty && state.selection.head === pos + 1)
+        tr.setSelection(TextSelection.create(tr.doc, pos + 1));
       continue;
     }
     let offset = -1;
@@ -884,14 +796,21 @@ export function verticalCaretRect(view: EditorView, position: number) {
   };
 }
 
+function horizontalMode(view: EditorView) {
+  return !!view.dom.closest(".transcription.horizontal");
+}
 function pointerPosition(view: EditorView, x: number, y: number): number {
+  if (horizontalMode(view))
+    return (
+      view.posAtCoords({ left: x, top: y })?.pos ?? view.state.selection.head
+    );
   const columns = [...view.dom.children] as HTMLElement[];
   const distance = (el: HTMLElement) => {
     const r = el.getBoundingClientRect();
     return Math.max(r.left - x, x - r.right, 0);
   };
   const column = columns.reduce((a, b) => (distance(b) < distance(a) ? b : a));
-  let positions = caretPositions(view.state.doc, columns.indexOf(column));
+  let positions = characterPositions(view.state.doc, columns.indexOf(column));
   const segment = view.dom.ownerDocument
     .elementFromPoint(x, y)
     ?.closest(".editor-segment");
@@ -927,6 +846,9 @@ export function createEditor(
   let current = source;
   let composing = false;
   let pendingSource: string | undefined;
+  let composingContext:
+    | { from: number; node: PMNode; emptyDoc: PMNode }
+    | undefined;
   const decorationPlugin: Plugin<DecorationSet> = new Plugin<DecorationSet>({
     state: {
       init: (_, state) => decorations(state.doc),
@@ -987,6 +909,7 @@ export function createEditor(
       plugins: [
         decorationPlugin,
         alignmentPlugin,
+        caretPlugin(),
         new Plugin({
           props: {
             decorations(state) {
@@ -1048,6 +971,7 @@ export function createEditor(
         const dom = document.createElement("span");
         dom.className = "editor-annotation editor-kenten";
         dom.dataset.annotation = "kenten";
+        dom.dataset.contextLabel = "圏点";
         const update = (next: PMNode) => {
           if (next.type.name !== "kenten") return false;
           const mark = parts(next)[1]
@@ -1070,13 +994,7 @@ export function createEditor(
         return false;
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "a")
         return selectColumn(view.state, view.dispatch);
-      if (event.ctrlKey || event.metaKey || event.altKey) return false;
-      if (event.key === "Backspace" && deleteKunten(view.state, view.dispatch))
-        return true;
-      if (!event.shiftKey && shellKey(event.key)(view.state, view.dispatch))
-        return true;
-      if (event.key === "Tab")
-        return shellKey(event.key, event.shiftKey)(view.state, view.dispatch);
+      const horizontal = horizontalMode(view);
       if (
         [
           "ArrowUp",
@@ -1086,22 +1004,32 @@ export function createEditor(
           "Home",
           "End",
         ].includes(event.key)
+      ) {
+        return moveCaret(
+          event.key,
+          event.shiftKey,
+          horizontal,
+          event.ctrlKey || event.altKey || event.metaKey,
+        )(view.state, view.dispatch);
+      }
+      if (event.ctrlKey || event.metaKey || event.altKey) return false;
+      if (event.key === "Escape")
+        return escapeContext(view.state, view.dispatch);
+      if (
+        (event.key === "Backspace" || event.key === "Delete") &&
+        deleteContext(event.key === "Backspace")(view.state, view.dispatch)
       )
-        return moveCaret(event.key, event.shiftKey)(view.state, view.dispatch);
+        return true;
+      if (event.key === "Enter" && enterContext()(view.state, view.dispatch))
+        return true;
+      if (event.key === "Tab" || event.key === "Enter") {
+        if (shellKey(event.key, event.shiftKey)(view.state, view.dispatch))
+          return true;
+      }
       if (event.key === "Enter") return newColumn(view.state, view.dispatch);
       return false;
     },
     handleDOMEvents: {
-      blur: (view, event) => {
-        const target = event.relatedTarget as Node | null;
-        const workspace = view.dom.closest(".editor-workspace");
-        if (target && workspace?.contains(target)) return false;
-        if (!composing && !view.composing) {
-          const tr = emptyShells(view.state, activeShells(view.state), true);
-          if (tr) view.dispatch(tr);
-        }
-        return false;
-      },
       beforeinput: (view, event) => {
         if (
           event.inputType !== "insertText" ||
@@ -1125,16 +1053,32 @@ export function createEditor(
         return true;
       },
       mousedown: (view, event) => {
+        if (event.button !== 0 || composing || view.composing) return false;
+        const target = event.target as HTMLElement;
+        const shell = target.closest<HTMLElement>(
+          "[data-annotation], [data-source]",
+        );
         if (
-          event.button !== 0 ||
-          composing ||
-          view.composing ||
-          (event.target as HTMLElement).closest("[data-note]")
-        )
-          return false;
+          shell &&
+          view.dom.contains(shell) &&
+          (!shell.contains(target.closest(".editor-segment")) ||
+            shell.dataset.annotation === "return")
+        ) {
+          const pos =
+            view.posAtDOM(shell, 0) -
+            (shell.hasAttribute("data-source") ? 0 : 1);
+          if (selectContext(pos)(view.state, view.dispatch)) {
+            view.focus();
+            event.preventDefault();
+            return true;
+          }
+        }
         const columns = [...view.dom.children] as HTMLElement[];
         const last = columns.at(-1)!;
-        if (event.clientX < last.getBoundingClientRect().left - 4) {
+        if (
+          !horizontalMode(view) &&
+          event.clientX < last.getBoundingClientRect().left - 4
+        ) {
           const tr = closeHistory(view.state.tr).insert(
             view.state.doc.content.size,
             schema.nodes.column.create(),
@@ -1148,6 +1092,20 @@ export function createEditor(
           if (event.detail === 2) {
             const $pos = view.state.doc.resolve(pos);
             const parent = $pos.parent;
+            if (parent.type.name === "segment") {
+              const end =
+                parent.attrs.placeholder && parent.textContent === "\u200b"
+                  ? $pos.start()
+                  : $pos.end();
+              view.dispatch(
+                view.state.tr.setSelection(
+                  TextSelection.create(view.state.doc, $pos.start(), end),
+                ),
+              );
+              view.focus();
+              event.preventDefault();
+              return true;
+            }
             const script = (c: string) =>
               /[\p{Script=Hiragana}\p{Script=Katakana}ー]/u.test(c)
                 ? "kana"
@@ -1216,15 +1174,32 @@ export function createEditor(
         event.preventDefault();
         return true;
       },
-      compositionstart: () => {
+      compositionstart: (view) => {
+        if (view.state.selection instanceof NodeSelection) {
+          const { from, node } = view.state.selection;
+          const tr = closeHistory(view.state.tr).deleteSelection();
+          composingContext = { from, node, emptyDoc: tr.doc };
+          view.dispatch(tr.setSelection(TextSelection.create(tr.doc, from)));
+          composingContext.emptyDoc = view.state.doc;
+        }
         composing = true;
         publish();
         return false;
       },
-      compositionend: () => {
+      compositionend: (_view, event) => {
         composing = false;
         setTimeout(() => {
           if (view.isDestroyed) return;
+          if (
+            composingContext &&
+            !event.data &&
+            view.state.doc.eq(composingContext.emptyDoc)
+          ) {
+            const { from, node } = composingContext;
+            const tr = view.state.tr.insert(from, node);
+            view.dispatch(tr.setSelection(NodeSelection.create(tr.doc, from)));
+          }
+          composingContext = undefined;
           if (pendingSource !== undefined) {
             const next = pendingSource;
             pendingSource = undefined;
@@ -1281,14 +1256,16 @@ export function createEditor(
       return true;
     },
     dispatchTransaction(tr) {
-      const previousShells = activeShells(view.state);
-      const mappedShells = new Set(
-        [...previousShells].map((pos) => tr.mapping.map(pos)),
-      );
       const patches = sourcePatches(tr);
       current = applyPatches(current, patches);
       view.updateState(view.state.apply(tr));
-      if (tr.selectionSet && view.hasFocus() && !composing && !view.composing) {
+      if (
+        tr.selectionSet &&
+        view.state.selection instanceof TextSelection &&
+        view.hasFocus() &&
+        !composing &&
+        !view.composing
+      ) {
         const { anchor, head } = view.state.selection;
         const a = textPoint(view, anchor),
           b = textPoint(view, head);
@@ -1300,15 +1277,6 @@ export function createEditor(
       if (!composing && !view.composing) {
         const placeholders = normalizeFields(view.state);
         if (placeholders) view.dispatch(placeholders);
-      }
-      if (
-        tr.selectionSet &&
-        !composing &&
-        !view.composing &&
-        !tr.getMeta("replaceSource")
-      ) {
-        const cleanup = emptyShells(view.state, mappedShells);
-        if (cleanup) view.dispatch(cleanup);
       }
     },
   });
@@ -1375,10 +1343,6 @@ export function createEditor(
     setSource,
     focusColumn,
     setHighlightedColumn,
-    leaveShell() {
-      const tr = emptyShells(view.state, activeShells(view.state), true);
-      if (tr) view.dispatch(tr);
-    },
     destroy: () => {
       stopDrag();
       view.destroy();
