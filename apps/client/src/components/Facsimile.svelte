@@ -1,4 +1,6 @@
 <script lang="ts">
+  import Recognition from "./Recognition.svelte";
+  import type { Rectangle } from "./glyph-regions";
   import Skeleton from "./Skeleton.svelte";
   import RegionNotice from "./RegionNotice.svelte";
   import type { Region } from "../region.svelte";
@@ -11,6 +13,11 @@
   import OpenSeadragon from "openseadragon";
   import type { Canvas } from "@honkoku/client-api/types";
   let {
+    mode = $bindable("normal"),
+    canClip = false,
+    recognitionDisabled = true,
+    oninsert = () => {},
+    lineCharacterCounts = {},
     children,
     canvas,
     pending = false,
@@ -23,6 +30,11 @@
     onlinehover,
     onlineselect,
   }: {
+    mode?: "normal" | "clip" | "recognize";
+    canClip?: boolean;
+    recognitionDisabled?: boolean;
+    oninsert?: (character: string) => void;
+    lineCharacterCounts?: Record<number, number>;
     children?: Snippet<[OpenSeadragon.Viewer | undefined]>;
     canvas?: Canvas;
     pending?: boolean;
@@ -35,6 +47,12 @@
     onlinehover?: (index: number | null) => void;
     onlineselect?: (index: number) => void;
   } = $props();
+  let recognitionSelection = $state<Rectangle>();
+  $effect(() => {
+    canvas;
+    mode;
+    recognitionSelection = undefined;
+  });
   let host: HTMLDivElement;
   let retryVersion = $state(0);
   let imageSlow = $state(false);
@@ -171,7 +189,28 @@
         enterHandler: () => onlinehover?.(line.index),
         leaveHandler: () => onlinehover?.(null),
         clickHandler: (event) => {
-          if (event.quick) onlineselect?.(line.index);
+          if (!event.quick) return;
+          const count = lineCharacterCounts[line.index];
+          if (showLines && event.originalEvent.altKey && count) {
+            const vertical = line.height >= line.width;
+            const bounds = element.getBoundingClientRect();
+            const fraction = vertical
+              ? event.position.y / bounds.height
+              : event.position.x / bounds.width;
+            const offset = Math.max(
+              0,
+              Math.min(count - 1, Math.floor(fraction * count)),
+            );
+            const advance = (vertical ? line.height : line.width) / count;
+            const region: Rectangle = vertical
+              ? [line.x, line.y + offset * advance, line.width, advance]
+              : [line.x + offset * advance, line.y, advance, line.height];
+            mode = "recognize";
+            queueMicrotask(
+              () =>
+                (recognitionSelection = region.map(Math.round) as Rectangle),
+            );
+          } else onlineselect?.(line.index);
         },
       });
       trackers.push(tracker);
@@ -262,6 +301,21 @@
             ? "みんなで翻刻"
             : "国立国会図書館"}{lineModel.estimated ? "・推定" : ""}</span
       >{/if}
+    <div class="viewer-modes" aria-label="原本の操作">
+      <button aria-pressed={mode === "normal"} onclick={() => (mode = "normal")}
+        >通常</button
+      >
+      <button
+        aria-pressed={mode === "clip"}
+        disabled={!canClip}
+        onclick={() => (mode = "clip")}>切り抜き</button
+      >
+      <button
+        aria-pressed={mode === "recognize"}
+        disabled={!canvas?.infoJsonUrl}
+        onclick={() => (mode = "recognize")}>認識</button
+      >
+    </div>
     <div class="zoom-controls">
       <button aria-label="縮小" onclick={() => zoom(1 / 1.25)}>−</button><span
         class="numeric">{scale}%</span
@@ -270,6 +324,13 @@
       >
     </div>
   </div>
+  {#if mode === "recognize"}<Recognition
+      viewer={opened ? viewer : undefined}
+      {canvas}
+      disabled={recognitionDisabled}
+      {oninsert}
+      selection={recognitionSelection}
+    />{/if}
   <div class="half-tabs" aria-label="原本の見開き">
     <button
       class:active={half === "左丁"}
@@ -317,3 +378,14 @@
     {@render children?.(opened ? viewer : undefined)}
   </div>
 </section>
+
+<style>
+  .viewer-modes {
+    display: flex;
+    gap: 4px;
+  }
+  .viewer-modes button[aria-pressed="true"] {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+</style>

@@ -364,6 +364,10 @@ export async function fixtureInvoke(
       return (
         required(entries.find((e) => e.id === args.entryId)).canvases ?? []
       );
+    case "recognize_region":
+      if (window.honkokuRecognitionError) throw {kind:"recognition",message:window.honkokuRecognitionError};
+      window.honkokuRecognitionRegion=args.xywh as number[];
+      return [..."候侯健倹供使侍何作仁"].map((character, i) => ({ character, probability: i === 0 ? 0.82 : 0.18 / 9 }));
     case "glyph_image_url":
     case "iiif_local_url":
       return args.url;
@@ -446,5 +450,7 @@ export async function fixtureInvoke(
 declare global {
   interface Window {
     honkokuFixtureDelays?: Record<string, number>;
+    honkokuRecognitionError?: string;
+    honkokuRecognitionRegion?: number[];
   }
 }
