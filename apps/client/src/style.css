@@ -1680,7 +1680,11 @@ button.line-overlay {
   cursor: pointer;
 }
 button.line-overlay.highlighted {
-  background: color-mix(in srgb, var(--selection) 35%, transparent);
+  background: transparent;
+  border: 2px solid var(--accent);
+  box-shadow:
+    0 0 0 2px rgb(255 255 255 / 75%),
+    0 0 0 3px rgb(0 0 0 / 12%);
 }
 button.line-overlay.line-hidden {
   visibility: hidden;
