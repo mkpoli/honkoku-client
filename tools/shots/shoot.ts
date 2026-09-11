@@ -1,4 +1,4 @@
-import { checkInlineEditor } from "./editor-checks";
+import { checkInlineEditor, checkCaretContexts } from "./editor-checks";
 import {
   checkHistory,
   checkRankingSelf,
@@ -189,6 +189,8 @@ try {
     process.exit(0);
   }
   for (const theme of ["light", "dark"] as const)
+    await checkCaretContexts(browser, origin, theme);
+  for (const theme of ["light", "dark"] as const)
     await checkRankingSelf(browser, origin, theme);
   for (const theme of ["light", "dark"] as const)
     await checkGlyphs(browser, origin, theme);
@@ -215,7 +217,8 @@ try {
     await checkAlignment(browser, origin, theme);
   const webkitBrowser = await webkit.launch({ headless: true });
   try {
-    await checkGlyphs(webkitBrowser, origin, "light", "-webkit");
+    await checkCaretContexts(webkitBrowser, origin, "light", "-webkit");
+    await checkGlyphs(webkitBrowser,origin,"light","-webkit");
     await checkInlineEditor(webkitBrowser, origin, "light", "-webkit");
     await checkQuietWorkbench(webkitBrowser, origin, "light", "-webkit");
     await checkAlignment(webkitBrowser, origin, "light", "-webkit");

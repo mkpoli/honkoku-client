@@ -750,7 +750,11 @@ export async function checkAlignment(
     );
     for (let i = 0; i < 3; i++)
       await page.getByRole("button", { name: "拡大", exact: true }).click();
-    await page.waitForTimeout(300);
+    await page.waitForFunction(
+      (target) =>
+        document.querySelector(".zoom-controls .numeric")?.textContent === target,
+      `${Math.round(100 * 1.25 ** 4)}%`,
+    );
     const zoomLabel = await page
       .locator(".zoom-controls .numeric")
       .textContent();
@@ -1051,6 +1055,7 @@ export async function checkQuietWorkbench(
         ),
       });
     await button("注記1").click();
+    await button("注記を編集").click();
     await page
       .getByLabel("注記の内容", { exact: true })
       .fill("原本の合字は「より」を表す。");
@@ -1066,6 +1071,7 @@ export async function checkQuietWorkbench(
     assert.equal(await raw.inputValue(), "前＃1後＃2");
     await button("原文表示").click();
     await button("注記1").click();
+    await button("注記を編集").click();
     await button("削除").click();
     await button("次のコマ").click();
     await page.waitForURL("**/pages/4");
@@ -2001,6 +2007,8 @@ export async function checkKunten(
     assert.equal(await kana.locator(".palette-glyphs > button:not(.palette-action)").count(), 24);
     await kana.getByRole("button", { name: "送り仮名ニ", exact: true }).click();
     assert.equal(await source(), "故￣ニ");
+    await page.keyboard.press("ArrowDown");
+    await page.keyboard.press("ArrowDown");
     const input = kana.getByRole("textbox", { name: "その他の送り仮名" });
     await input.fill("によりて");
     await input.press("Enter");
@@ -2091,6 +2099,9 @@ export async function checkKunten(
     await set("故");
     await page.keyboard.press("Control+v");
     assert.equal(await source(), "故￣ニ");
+    await page.keyboard.press("Backspace");
+    assert.equal(await source(), "故￣ニ");
+    assert.equal(await page.locator(".editor-caret-big").count(), 1);
     await page.keyboard.press("Backspace");
     assert.equal(await source(), "故");
     await page.keyboard.insertText("￣");

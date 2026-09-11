@@ -2,6 +2,9 @@
   import { onMount, untrack, tick } from "svelte";
   import {
     historyKey,
+    caretContext,
+    selectContext,
+    type CaretContext,
     createEditor,
     textareaSource,
     wrapSelection,
@@ -31,6 +34,7 @@
     onready,
     oncolumnchange,
     highlightedColumn = -1,
+    horizontal = false,
     onnote,
     onglyph,
     accountId,
@@ -41,6 +45,7 @@
     onnote?: (content: string | null, index?: number) => number;
     oncolumnchange?: (index: number) => void;
     highlightedColumn?: number;
+    horizontal?: boolean;
     onupdate?: (update: EditorUpdate) => void;
     onready?: (editor: ReturnType<typeof createEditor>) => void;
   } = $props();
@@ -53,6 +58,7 @@
   type Construct = "振り仮名" | "割書" | "見せ消ち" | "注記";
   const commands: Construct[] = ["振り仮名", "割書", "見せ消ち", "注記"];
   let status = $state("");
+  let contextPath = $state<CaretContext[]>([]);
   let note = $state<{ index: number; content: string; x: number; y: number }>();
   let noteInput = $state<HTMLTextAreaElement>(null!);
   let openCategory = $state<string | null>(null);
@@ -355,6 +361,7 @@
         source = update.source;
         composing = update.composing;
         if (editor) {
+          contextPath = caretContext(editor.view.state).path;
           canUndo = undo(editor.view.state);
           canRedo = redo(editor.view.state);
         }
@@ -412,7 +419,6 @@
       disabled={composing}
       aria-pressed={raw}
       onclick={() => {
-        editor?.leaveShell();
         raw = !raw;
         if (!raw) requestAnimationFrame(() => editor?.view.focus());
       }}>原文表示</button
@@ -521,9 +527,18 @@
           </div>{/if}
       </div>
     {/each}
+    {#if !raw}
+      <nav class="editor-context-path" aria-label="カーソルの位置">
+        <button disabled={composing || !contextPath.length} onmousedown={event => event.preventDefault()} onclick={() => editor?.run(selectContext(null))}>本文</button>
+        {#each contextPath as context}
+          <span aria-hidden="true">›</span>
+          <button disabled={composing} onmousedown={event => event.preventDefault()} onclick={() => editor?.run(selectContext(context.pos))}>{context.label}</button>
+        {/each}
+      </nav>
+    {/if}
   </section>
   <div class="editor-body" class:editor-raw-mode={raw}>
-    <div class="transcription editor-scroll" hidden={raw}>
+    <div class="transcription editor-scroll" class:horizontal hidden={raw}>
       <div bind:this={host} class="editor-mount"></div>
     </div>
     {#if raw}<textarea

@@ -82,6 +82,7 @@ export async function checkEditor(browser: Browser, origin: string) {
     await reset(page, "峰\r\n変えない＃００１\r《未知：原文》");
     await select(page, 1, 2);
     await page.getByRole("button", { name: "振り仮名", exact: true }).click();
+    await page.keyboard.press("Tab");
     await page.keyboard.insertText("みね");
     assert.equal(
       await source(page),
@@ -246,7 +247,7 @@ export async function checkEditor(browser: Browser, origin: string) {
     for (const [key, expected] of [
       ["Control+r", "前《振り仮名：仮名｜》後"],
       ["Control+w", "前《割書：仮名｜》後"],
-      ["Control+m", "前《見せ消ち：｜仮名》後"],
+      ["Control+m", "前《見せ消ち：仮名｜》後"],
     ]) {
       await reset(page, "前後");
       await select(page, 2);
@@ -536,22 +537,20 @@ export async function checkInlineEditor(
     assert.equal(await source(page), "前《割書：一｜二｜｜》後");
     await page.keyboard.press("Backspace");
     await page.keyboard.press("Backspace");
-    assert.equal(await source(page), "前《割書：一｜二》後");
+    assert.equal(await source(page), "前《割書：一｜二｜｜》後");
+    await reset(page, "前《割書：一｜二》後");
+    await select(page, 8);
     await page.keyboard.press("Control+r");
     await page.keyboard.insertText("峰");
     await page.keyboard.press("Tab");
     await page.keyboard.insertText("みね");
-    await page.keyboard.press("Control+w");
-    assert.match(
-      await page.locator(".editor-status").innerText(),
-      /入れられません/,
-    );
-    await page.keyboard.press("ArrowRight");
+    await page.keyboard.press("ArrowDown");
     assert.equal(
       await source(page),
       "前《割書：一｜二《振り仮名：峰｜みね》》後",
     );
     await equal(page);
+    await page.keyboard.press("Escape");
     await page.keyboard.press("Escape");
     await page.keyboard.insertText("続");
     assert.equal(
@@ -567,7 +566,7 @@ export async function checkInlineEditor(
       await reset(page, "前後");
       await select(page, 2);
       await page.keyboard.press(key);
-      await page.keyboard.press("Escape");
+      await page.keyboard.press("Backspace");
       assert.equal(await source(page), "前後");
     }
     await reset(page, "前後");
@@ -577,7 +576,7 @@ export async function checkInlineEditor(
     await page.keyboard.insertText("山");
     await page.keyboard.press("Tab");
     await page.keyboard.insertText("やま");
-    await page.keyboard.press("ArrowRight");
+    await page.keyboard.press("ArrowDown");
     await page.keyboard.press("Enter");
     await page.keyboard.insertText("川");
     assert.equal(
@@ -725,6 +724,184 @@ export async function checkInlineEditor(
     console.log(
       `Inline editor checks passed (${theme}${suffix}): drag, script runs, keyboard selection, source clipboard, shells, nesting, raw templates, notes, layout.`,
     );
+  } finally {
+    await context.close();
+  }
+}
+
+export async function checkCaretContexts(
+  browser: Browser,
+  origin: string,
+  theme: "light" | "dark",
+  suffix = "",
+) {
+  const context = await browser.newContext({
+    viewport: { width: 1600, height: 1000 },
+    locale: "ja-JP",
+    colorScheme: theme,
+    reducedMotion: "reduce",
+  });
+  await context.addInitScript(
+    (theme) => localStorage.setItem("honkoku.theme", theme),
+    theme,
+  );
+  const page = await context.newPage();
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  try {
+    await page.goto(origin + "/#/spike/editor");
+    await page.locator(".vertical-editor").waitFor();
+    await page.evaluate(() => document.fonts.ready);
+    await reset(page, "讀＿レ￣ム");
+    await select(page, 12);
+    await page.keyboard.press("Backspace");
+    assert.equal(await source(page), "讀＿レ￣ム");
+    assert.equal(
+      await page.locator(".editor-okurigana.editor-caret-big").count(),
+      1,
+    );
+    assert.equal(
+      await page
+        .locator(".vertical-editor")
+        .evaluate((el) => getComputedStyle(el).caretColor),
+      "rgba(0, 0, 0, 0)",
+    );
+    if (theme === "light")
+      await page.screenshot({
+        path: `.local/shots/21-caret-big-light${suffix}.png`,
+        caret: "initial",
+      });
+    await page.keyboard.press("Backspace");
+    assert.equal(await source(page), "讀＿レ");
+    await reset(page, "讀＿レ￣ム");
+    await select(page, 12);
+    await page.keyboard.press("ArrowUp");
+    assert.equal(await position(page), 10);
+    assert.equal(
+      await page.locator(".editor-okurigana.editor-caret-small").count(),
+      1,
+    );
+    if (theme === "dark")
+      await page.screenshot({
+        path: `.local/shots/21-caret-small-dark${suffix}.png`,
+        caret: "initial",
+      });
+    await page.keyboard.press("Backspace");
+    assert.equal(await source(page), "讀＿レ￣");
+    await page.keyboard.press("Backspace");
+    assert.equal(await source(page), "讀＿レ");
+
+    await reset(page, "《割書：《振り仮名：峰｜みね》｜二行》");
+    await select(page, 8);
+    const path = page.getByRole("navigation", { name: "カーソルの位置" });
+    assert.deepEqual(await path.getByRole("button").allTextContents(), [
+      "本文",
+      "割書 1行目",
+      "振り仮名 読み",
+    ]);
+    assert.equal(await page.locator(".editor-caret-small").count(), 1);
+    assert.equal(
+      await page.locator(".editor-warigaki.editor-caret-small").count(),
+      0,
+    );
+    if (theme === "light")
+      await page.screenshot({
+        path: `.local/shots/21-caret-path-light${suffix}.png`,
+        caret: "initial",
+      });
+    await page.keyboard.press("Escape");
+    assert.equal(
+      await page.locator(".editor-ruby.editor-caret-big").count(),
+      1,
+    );
+    await page.keyboard.press("Escape");
+    assert.equal(
+      await page.locator(".editor-warigaki.editor-caret-big").count(),
+      1,
+    );
+    await page.keyboard.press("Escape");
+    assert.equal(await position(page), 18);
+    await select(page, 8);
+    await path.getByRole("button", { name: "割書 1行目", exact: true }).click();
+    assert.equal(
+      await page.locator(".editor-warigaki.editor-caret-big").count(),
+      1,
+    );
+    await page.keyboard.press("Enter");
+    assert.equal(await position(page), 3);
+
+    await reset(page, "未（いまだ｜ズ）");
+    await select(page, 6);
+    await page.locator(".editor-ruby > .editor-right").dblclick();
+    assert.equal(
+      await page.evaluate(() => window.getSelection()!.toString()),
+      "いまだ",
+    );
+    // The visible label is part of the shell's hit target.
+    const labelBox = await page.locator(".editor-ruby").boundingBox();
+    await page.mouse.click(labelBox!.x + 4, labelBox!.y - 7);
+    assert.equal(
+      await page.locator(".editor-ruby.editor-caret-big").count(),
+      1,
+    );
+    await page.keyboard.insertText("字");
+    assert.equal(await source(page), "字");
+    if (!suffix) {
+      await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+      await reset(page, "未（いまだ｜ズ）");
+      await select(page, 1);
+      await page.keyboard.press("Delete");
+      await page.keyboard.press("Control+c");
+      assert.equal(
+        await page.evaluate(() => navigator.clipboard.readText()),
+        "未（いまだ｜ズ）",
+      );
+      await page.keyboard.press("Control+x");
+      assert.equal(await source(page), "");
+      await reset(page, "未（いまだ｜ズ）");
+      await select(page, 1);
+      await page.keyboard.press("Delete");
+      const cdp = await context.newCDPSession(page);
+      await cdp.send("Input.imeSetComposition", {
+        text: "かな",
+        selectionStart: 2,
+        selectionEnd: 2,
+      });
+      await cdp.send("Input.insertText", { text: "仮名" });
+      await page.waitForTimeout(100);
+      assert.equal(await source(page), "仮名");
+      await cdp.detach();
+    }
+    for (const atom of ["□", "■", "＃1", "＿レ"]) {
+      await reset(page, atom);
+      await select(page, 1);
+      await page.locator(".editor-source-anchor, .editor-return").click();
+      assert.equal(await page.locator(".editor-caret-big").count(), 1);
+      await page.keyboard.press("Delete");
+      assert.equal(await source(page), "");
+    }
+    // Switch the same editor surface used by the workbench toggle.
+    await page
+      .locator(".editor-scroll")
+      .evaluate((el) => el.classList.add("horizontal"));
+    await reset(page, "讀＿レ￣ム");
+    await select(page, 12);
+    await page.keyboard.press("ArrowLeft");
+    assert.equal(await position(page), 10);
+    await page.keyboard.press("ArrowRight");
+    assert.equal(await position(page), 12);
+    await select(page, 7);
+    await page.keyboard.press("Shift+ArrowRight");
+    assert.deepEqual(
+      await page.evaluate(() => {
+        const s = window.editorSpike!.view.state.selection;
+        return [s.from, s.to];
+      }),
+      [7, 12],
+    );
+    await equal(page);
+    assert.deepEqual(errors, []);
+    console.log(`Caret context checks passed (${theme}${suffix}).`);
   } finally {
     await context.close();
   }

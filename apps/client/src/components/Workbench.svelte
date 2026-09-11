@@ -887,6 +887,7 @@
       const target = targetOf(event);
       if (!target) return;
       show(event);
+      if (editing && target.closest(".vertical-editor")) return;
       if (editing && pageNotes[noteIndex!]) {
         editor?.editNote(noteIndex!, pageNotes[noteIndex!]!.content);
         closeNotes();
@@ -1207,7 +1208,6 @@
                 menuOpen = false;
               }}>⇄左右を入れ替え</button
             ><button
-              disabled={editing}
               aria-pressed={!horizontal}
               onclick={() => {
                 horizontal = !horizontal;
@@ -1235,6 +1235,7 @@
           inert={busy || verifying}
         >
           <VerticalEditor
+            {horizontal}
             accountId={session?.uid}
             bind:this={editor}
             bind:source

@@ -14,6 +14,7 @@ import {
   moveCaret,
   schema,
   textareaSource,
+  deleteContext,
 } from "./index";
 import { pageTexts } from "../markup/test-fixtures";
 const root = new URL("../../", import.meta.url).pathname;
@@ -210,8 +211,7 @@ test("nested shells navigate, serialize and enforce grammar", async () => {
   e.dispatch(e.state.tr.insertText("峰"));
   shellKey("Tab")(e.state, e.dispatch);
   e.dispatch(e.state.tr.insertText("みね"));
-  expect(wrapSelection("warigaki")(e.state, e.dispatch)).toBe(false);
-  shellKey("ArrowRight")(e.state, e.dispatch);
+  shellKey("Tab")(e.state, e.dispatch);
   shellKey("Enter")(e.state, e.dispatch);
   e.dispatch(e.state.tr.insertText("二"));
   expect(e.source).toBe("前《割書：《振り仮名：峰｜みね》｜二》後\n別列");
@@ -220,23 +220,23 @@ test("nested shells navigate, serialize and enforce grammar", async () => {
   shellKey("Enter")(e.state, e.dispatch);
   shellKey("Enter")(e.state, e.dispatch);
   expect(e.source).toBe("前《割書：《振り仮名：峰｜みね》｜二｜｜》後\n別列");
-  shellKey("Backspace")(e.state, e.dispatch);
-  expect(e.source).toBe("前《割書：《振り仮名：峰｜みね》｜二｜》後\n別列");
+  deleteContext(true)(e.state, e.dispatch);
+  expect(e.source).toBe("前《割書：《振り仮名：峰｜みね》｜二｜｜》後\n別列");
   selectColumn(e.state, e.dispatch);
   expect(e.state.selection.from).toBe(1);
   selectColumn(e.state, e.dispatch);
   expect(e.state.selection.to).toBe(e.state.doc.content.size - 1);
 });
 
-test("removing the last empty warigaki line preserves its remaining text", async () => {
+test("Backspace in an empty warigaki field preserves its neighbouring text", async () => {
   const { shellKey } = await import("./index");
   const e = editor("前後");
   e.dispatch(e.state.tr.setSelection(TextSelection.create(e.state.doc, 2)));
   wrapSelection("warigaki")(e.state, e.dispatch);
   e.dispatch(e.state.tr.insertText("一"));
   shellKey("Enter")(e.state, e.dispatch);
-  shellKey("Backspace")(e.state, e.dispatch);
-  expect(e.source).toBe("前一後");
+  deleteContext(true)(e.state, e.dispatch);
+  expect(e.source).toBe("前《割書：一｜》後");
 });
 
 test("a selected kana run becomes katakana okurigana after the preceding character", () => {
