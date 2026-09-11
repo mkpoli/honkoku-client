@@ -16,10 +16,10 @@ Status: ○ present, △ partial, × absent.
 | Tabs 画像 / 閲覧 / 入力 | ○ | ○ | Both panes visible at once; facsimile side selectable. |
 | OCR tab: NDL, みんなで翻刻OCR, copy result, saved result | ○ | ○ plus local GPU OCR | |
 | 編集履歴 tab: past saves from `timelineEvents`, diff dialog | ○ | × | Side panel with inline character diff and restore into the editor. |
-| 注釈 tab: notes of type 注釈 / メモ / 翻刻 with optional image region, create, edit, delete, kept in `tempNotes` while editing | ○ | × (the client's 注記 are inline 【】 marks) | Notes panel, overlays on the facsimile, region capture with the same rectangle gesture as clips. |
+| 注釈 tab: typed notes with optional image regions, create, edit, delete, kept in `tempNotes` while editing | ○ | ○ | Facsimile drawer with thumbnails, region selection, and overlays; inline 注記 remain available. |
 | 翻訳 tab (crowd translation module) | ○ | × | Later, with the proofreading module. |
 | Viewer modes: normal, 画像を保存 (clip), 注釈・翻刻を追加 (region note), AI recognition (range select, Metom or in-browser model) | ○ | △ clip only | Add 認識 and 注釈 modes; candidates appear beside the facsimile with keyboard picks, no dialog. |
-| Toggle annotation overlays | ○ | × | With the notes panel. |
+| Toggle annotation overlays | ○ | ○ | 注釈表示 in the workbench display menu. |
 | Full-size image download | ○ | × | Native save dialog through the IIIF fetcher. |
 | Special-mark palette: 振り仮名, 踊り字, 縦横切替 | ○ | ○ plus 合字, 変体仮名, 欠字, 返り点, 送り仮名, 常用字, 常用句, 記号, 集字 | |
 | Input templates 【注記】 and 《場所：》 | ○ | ○ / △ | 場所 is parsed and rendered; add it to the palette. |

@@ -11,6 +11,7 @@
     index,
     onclose,
     onsaved,
+    onregion,
   }: {
     viewer?: OpenSeadragon.Viewer;
     canvas?: Canvas;
@@ -18,6 +19,7 @@
     index: number;
     onclose: () => void;
     onsaved: () => void;
+    onregion?: (region: Rectangle) => void;
   } = $props();
   let rect = $state<Rectangle>(),
     position = $state({ x: 16, y: 48 });
@@ -90,6 +92,10 @@
         const value = draw(event.position);
         start = undefined;
         if (value && value[2] >= 2 && value[3] >= 2) {
+          if (onregion) {
+            onregion(value);
+            return;
+          }
           rect = value;
           anchor();
           requestAnimationFrame(() => form?.querySelector("input")?.focus());
@@ -131,7 +137,9 @@
 </script>
 
 <div class="clip-mode" role="status">
-  原本をドラッグして切り抜く<button disabled={saving} onclick={onclose}
+  {onregion
+    ? "原本をドラッグして注釈の領域を選択"
+    : "原本をドラッグして切り抜く"}<button disabled={saving} onclick={onclose}
     >取消</button
   >
 </div>

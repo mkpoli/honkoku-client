@@ -94,8 +94,13 @@ export function fixtureEdit(
     if (command === "page_draft_notes")
       Object.assign(page, {
         tempNotes: structuredClone(args.notes),
-        updatedAt: new Date().toISOString(),
       });
+    if (command === "page_note_delete") {
+      const notes = structuredClone(page.tempNotes ?? []),
+        index = Number(args.noteIndex);
+      if (index >= 0 && index < notes.length) notes[index] = null;
+      page.tempNotes = notes;
+    }
     if (command === "page_discard") {
       page.status = page.prevStatus ?? "default";
       return;
