@@ -2100,6 +2100,8 @@ button.line-overlay.line-hidden {
 }
 .toolbar-actions {
   justify-content: flex-end;
+  flex-wrap: nowrap;
+  white-space: nowrap;
 }
 .workbench-menu,
 .editing-pages details {
