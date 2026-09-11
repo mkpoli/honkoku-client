@@ -31,6 +31,8 @@ async function walk(directory: string, depth = 0) {
 await walk(dump);
 const okurigana = new Map<string, number>();
 const kanji = new Map<string, number>();
+const notes = new Map<string, number>();
+const df = new Map<string, number>();
 const grams = Array.from({ length: 8 }, () => new Map<string, number>());
 const increment = (map: Map<string, number>, key: string) =>
   map.set(key, (map.get(key) ?? 0) + 1);
@@ -55,9 +57,18 @@ function runs(text: string): string[][] {
     );
 }
 await scan((text) => {
+  for (const match of text.matchAll(/【([^【】\n]{1,12})】/gu))
+    increment(notes, match[1]);
+  const seen = new Set<string>();
+  const cleanedRuns = runs(text);
+  for (const run of cleanedRuns)
+    for (let start = 0; start < run.length - 1; start++)
+      for (let n = 2; n <= 4 && start + n <= run.length; n++)
+        seen.add(run.slice(start, start + n).join(""));
+  for (const gram of seen) increment(df, gram);
   for (const match of text.matchAll(/￣([ァ-ヶ]+)/gu))
     increment(okurigana, match[1]);
-  for (const run of runs(text))
+  for (const run of cleanedRuns)
     for (let i = 0; i < run.length; i++) {
       increment(kanji, run[i]);
       if (i + 1 < run.length) increment(grams[2], run[i] + run[i + 1]);
@@ -79,8 +90,9 @@ await scan((text) => {
       }
     }
 });
+const compareTerms = new Intl.Collator("ja").compare;
 const ordered = (map: Map<string, number>) =>
-  [...map].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "ja"));
+  [...map].sort((a, b) => b[1] - a[1] || compareTerms(a[0], b[0]));
 const characters = ordered(kanji).filter(([char]) => !excluded.test(char));
 const top = new Set(characters.slice(0, 200).map(([char]) => char));
 const expressions: { text: string; count: number; free: number }[] = [];
@@ -106,13 +118,16 @@ for (let n = 2; n <= 6; n++) {
 }
 expressions.sort(
   (a, b) =>
-    b.free - a.free || b.count - a.count || a.text.localeCompare(b.text, "ja"),
+    b.free - a.free || b.count - a.count || compareTerms(a.text, b.text),
 );
 const data = {
   source:
     "みんなで翻刻データ v3, CC BY-SA 4.0, https://github.com/yuta1984/honkoku-data",
   commit: revision,
   pages: files.length,
+  notes: ordered(notes)
+    .filter(([, count]) => count >= 100)
+    .map(([text, count]) => ({ text, count })),
   okurigana: ordered(okurigana)
     .filter(([, count]) => count >= 100)
     .map(([kana, count]) => ({ kana, count })),
@@ -122,6 +137,16 @@ const data = {
 await Bun.write(
   new URL("../../packages/editor/corpus.json", import.meta.url),
   JSON.stringify(data, null, 2) + "\n",
+);
+const frequentDF: [string, number][] = [];
+for (const entry of df) if (entry[1] >= 30) frequentDF.push(entry);
+frequentDF.sort((a, b) => b[1] - a[1] || compareTerms(a[0], b[0]));
+await Bun.write(
+  new URL("../../packages/editor/corpus-df.json", import.meta.url),
+  JSON.stringify({
+    pages: files.length,
+    df: Object.fromEntries(frequentDF),
+  }),
 );
 console.log(
   JSON.stringify(
