@@ -15,19 +15,19 @@ Status: ○ present, △ partial, × absent.
 | Two-reviewer approval (`isApproval`, `approvedBy`, at most two) | ○ | ○ | Page counts and inline approval/withdrawal. The site enables approval for a previously completed page edited by another account; its bundle has no project-level gate. |
 | Tabs 画像 / 閲覧 / 入力 | ○ | ○ | Both panes visible at once; facsimile side selectable. |
 | OCR tab: NDL, みんなで翻刻OCR, copy result, saved result | ○ | ○ plus local GPU OCR | |
-| 編集履歴 tab: past saves from `timelineEvents`, diff dialog | ○ | × | Side panel with inline character diff and restore into the editor. |
+| 編集履歴 tab: past saves from `timelineEvents`, diff dialog | ○ | ○ | Facsimile-side drawer with a character diff between saves, comparison with the current text, and 復元 into the editor. |
 | 注釈 tab: typed notes with optional image regions, create, edit, delete, kept in `tempNotes` while editing | ○ | ○ | Facsimile drawer with thumbnails, region selection, and overlays; inline 注記 remain available. |
 | 翻訳 tab (crowd translation module) | ○ | × | Later, with the proofreading module. |
 | Viewer modes: normal, 画像を保存 (clip), 注釈・翻刻を追加 (region note), AI recognition (range select, Metom or in-browser model) | ○ | ○ | Move, clip, region notes, and Metom recognition; candidates support caret insertion and OCR-line segments. |
 | Toggle annotation overlays | ○ | ○ | 注釈表示 in the workbench display menu. |
-| Full-size image download | ○ | × | Native save dialog through the IIIF fetcher. |
+| Full-size image download | ○ | ○ | フルサイズ画像を保存 in the display menu, through the IIIF fetcher and the system save dialog. |
 | Special-mark palette: 振り仮名, 踊り字, 縦横切替 | ○ | ○ plus 合字, 変体仮名, 欠字, 返り点, 送り仮名, 常用字, 常用句, 記号, 集字 | |
 | Input templates 【注記】 and 《場所：》 | ○ | ○ / △ | 場所 is parsed and rendered; add it to the palette. |
 | Drawer: navigation, search, project top, collection top, timeline, forum, home | ○ | ○ breadcrumb and search | Forum pending. |
-| Drawer: 特殊記法の解説 | ○ | × | In-app reference generated from the markup package. |
-| Drawer: 翻刻ガイドライン (standard and project-specific) | ○ | × | Project screen and workbench link. |
-| Drawer: 翻刻文のダウンロード (text, LaTeX, Word, XML templates; zip for many) | ○ | × | Page and entry export as text, TEI XML, and LaTeX. |
-| Drawer: 書誌情報 | ○ | × | Manifest metadata panel. |
+| Drawer: 特殊記法の解説 | ○ | ○ | `#/help/markup`, generated from the markup element catalogue. |
+| Drawer: 翻刻ガイドライン (standard and project-specific) | ○ | ○ | Project guidelines route, linked from the project screen and the display menu. |
+| Drawer: 翻刻文のダウンロード (text, LaTeX, Word, XML templates; zip for many) | ○ | ○ | Page or entry export as text, TEI XML, or LaTeX with the site's element mappings. |
+| Drawer: 書誌情報 | ○ | ○ | Drawer with the manifest's label, metadata, attribution, rights, and links. |
 | Status labels (自分／他人が編集中, 未着手, 着手済み, 翻刻完了) | ○ | ○ | |
 | Tutorial bubbles | ○ | × | Not planned. |
 
