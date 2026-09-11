@@ -25,3 +25,7 @@ wiremock = "=0.6.5"
 [[example]]
 name = "glyphs-verify"
 path = "../../tools/shots/glyphs-live.rs"
+
+[[example]]
+name = "notes-verify"
+path = "../../tools/shots/notes-live.rs"

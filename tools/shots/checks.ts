@@ -1119,12 +1119,15 @@ export async function checkQuietWorkbench(
     await raw.fill(
       "原本を読む\n《振り仮名：峰｜みね》\n《割書：一行目｜二行目》\nゟ　ヿ　〆",
     );
-    await button("注記1件").click();
+    await page
+      .locator(".workbench-toolbar")
+      .getByRole("button", { name: /^注釈/ })
+      .click();
     assert.match(
-      await page.locator(".note-popover").innerText(),
+      await page.locator(".notes-drawer").innerText(),
       /二つ目の注記/,
     );
-    await button("注記を閉じる").click();
+    await button("注釈を閉じる").click();
     await button("原文表示").click();
     const editor = page.locator(".vertical-editor");
     await editor.locator(".transcription-column").first().click();
@@ -2024,12 +2027,10 @@ export async function checkKunten(
     await kana
       .getByRole("button", { name: "送り仮名ニヨリテ", exact: true })
       .waitFor();
-    const height = await page
-      .locator(".palette-glyphs")
-      .evaluate((el) => ({
-        palette: el.getBoundingClientRect().height,
-        editor: el.closest(".editor-workspace")!.getBoundingClientRect().height,
-      }));
+    const height = await page.locator(".palette-glyphs").evaluate((el) => ({
+      palette: el.getBoundingClientRect().height,
+      editor: el.closest(".editor-workspace")!.getBoundingClientRect().height,
+    }));
     assert.ok(height.palette <= height.editor * 0.4 + 1);
     await page.screenshot({
       path: resolve(".local/shots", `17-okurigana-palette-${theme}.png`),
@@ -2211,7 +2212,9 @@ export async function checkRankingSelf(
       await page.goto(`${origin}/#/`, { waitUntil: "domcontentloaded" });
       await page.locator(".ranking-list li").first().waitFor();
       if (scenario === "signed-out")
-        await page.getByRole("button", { name: "ログイン", exact: true }).waitFor();
+        await page
+          .getByRole("button", { name: "ログイン", exact: true })
+          .waitFor();
       else await page.locator(".own-record").waitFor();
       const panel = page.locator(".ranking");
       const button = panel.getByRole("button", {
@@ -2287,11 +2290,15 @@ export async function checkRankingSelf(
         }
         await row.evaluate((row) => {
           row.dataset.pulseStarts = "0";
-          row.addEventListener("animationstart", () => {
-            row.dataset.pulseStarts = String(
-              Number(row.dataset.pulseStarts) + 1,
-            );
-          }, { once: true });
+          row.addEventListener(
+            "animationstart",
+            () => {
+              row.dataset.pulseStarts = String(
+                Number(row.dataset.pulseStarts) + 1,
+              );
+            },
+            { once: true },
+          );
         });
         await button.click();
         await page.waitForFunction(
@@ -2369,4 +2376,154 @@ export async function checkRankingSelf(
   console.log(
     `Ranking checks passed (${theme}): self row, scroll, pulse, sorts, pinned rank, missing field, sign-out.`,
   );
+}
+
+export async function checkNotes(
+  browser: Browser,
+  origin: string,
+  theme: "light" | "dark",
+) {
+  const context = await browser.newContext({
+    viewport: { width: 1600, height: 1000 },
+    locale: "ja-JP",
+    colorScheme: theme,
+    reducedMotion: "reduce",
+  });
+  await context.addInitScript((theme) => {
+    localStorage.setItem("honkoku.theme", theme);
+    sessionStorage.setItem("honkoku.fixture.notes", "true");
+  }, theme);
+  const page = await context.newPage(),
+    errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  const toolbar = page.locator(".workbench-toolbar");
+  const drawer = page.getByRole("complementary", { name: "注釈一覧" });
+  const editor = drawer.getByRole("form", { name: "注釈を編集" });
+  try {
+    await page.goto(`${origin}/#/entries/${entry}/pages/3`);
+    await viewerReady(page);
+    await toolbar.getByRole("button", { name: /^注釈/ }).click();
+    await drawer.waitFor();
+    assert.equal(await drawer.locator(".page-note").count(), 3);
+    await drawer
+      .locator(".note-thumbnail img.ready")
+      .waitFor({ timeout: 60000 });
+    assert.match(
+      await drawer.innerText(),
+      /編集を開始すると注釈を追加できます/,
+    );
+    assert.equal(
+      await drawer.getByRole("button", { name: "新規", exact: true }).count(),
+      0,
+    );
+    assert.equal(await page.locator(".note-overlay:visible").count(), 1);
+    await page.evaluate(() => document.fonts.ready);
+    await page.screenshot({
+      path: resolve(
+        import.meta.dir,
+        `../../.local/shots/19-notes-${theme}.png`,
+      ),
+    });
+    await drawer.locator(".page-note").first().hover();
+    assert.equal(await page.locator(".note-overlay.highlighted").count(), 1);
+    await drawer.getByRole("button", { name: "注釈3の領域へ移動" }).click();
+    await drawer.getByRole("button", { name: "注釈を閉じる" }).click();
+    await page.locator(".note-overlay").hover();
+    await page.locator(".note-overlay-tooltip:visible").waitFor();
+    if (theme === "light")
+      await page.screenshot({
+        path: resolve(
+          import.meta.dir,
+          "../../.local/shots/19-notes-overlay-light.png",
+        ),
+      });
+    await toolbar.getByRole("button", { name: "表示設定" }).click();
+    await page.getByRole("button", { name: "注釈表示", exact: true }).click();
+    assert.equal(await page.locator(".note-overlay:visible").count(), 0);
+    await toolbar.getByRole("button", { name: "表示設定" }).click();
+    await page.getByRole("button", { name: "注釈表示", exact: true }).click();
+    assert.equal(await page.locator(".note-overlay:visible").count(), 1);
+    await toolbar
+      .getByRole("button", { name: "編集開始", exact: true })
+      .click();
+    await toolbar.getByRole("button", { name: /^注釈/ }).click();
+    await drawer.getByRole("button", { name: "新規", exact: true }).click();
+    await editor.getByRole("button", { name: "メモ", exact: true }).click();
+    await editor.getByRole("textbox", { name: "本文" }).fill("追加した注釈");
+    await editor.getByRole("button", { name: "保存", exact: true }).click();
+    await drawer.locator('.page-note[data-page-note-index="3"]').waitFor();
+    const added = drawer.locator('.page-note[data-page-note-index="3"]');
+    await added.getByRole("button", { name: "編集", exact: true }).click();
+    await editor.getByRole("textbox", { name: "本文" }).fill("修正した注釈");
+    await editor.getByRole("button", { name: "保存", exact: true }).click();
+    await added.getByText("修正した注釈", { exact: true }).waitFor();
+    await added.getByRole("button", { name: "削除", exact: true }).click();
+    await added.getByRole("button", { name: "取消", exact: true }).click();
+    assert.equal(await added.count(), 1);
+    await added.getByRole("button", { name: "削除", exact: true }).click();
+    await added.getByRole("button", { name: "削除する", exact: true }).click();
+    await added.waitFor({ state: "detached" });
+    const writes = await page.evaluate(() =>
+      JSON.parse(sessionStorage.getItem("honkoku.fixture.noteWrites") ?? "[]"),
+    );
+    assert.equal(writes.at(-1).command, "page_note_delete");
+    assert.equal(writes.at(-1).tempNotes.length, 4);
+    assert.equal(writes.at(-1).tempNotes[3], null);
+    assert.equal(writes.at(-2).tempNotes[3].content, "修正した注釈");
+    await page.getByRole("button", { name: "全体", exact: true }).click();
+    await page
+      .getByRole("group", { name: "原本の操作" })
+      .getByRole("button", { name: "注釈", exact: true })
+      .click();
+    const points = await page.evaluate(() => {
+      const v = window.honkokuViewer()!,
+        item = v.world.getItemAt(0),
+        bounds = v.canvas.getBoundingClientRect();
+      return [
+        [300, 200],
+        [440, 370],
+      ].map(([x, y]) => {
+        const p = v.viewport.pixelFromPoint(
+          item.imageToViewportCoordinates(x, y),
+          true,
+        );
+        return { x: p.x + bounds.x, y: p.y + bounds.y };
+      });
+    });
+    await page.mouse.move(points[0].x, points[0].y);
+    await page.mouse.down();
+    await page.mouse.move(points[1].x, points[1].y, { steps: 12 });
+    await page.mouse.up();
+    await editor.waitFor();
+    await editor.getByRole("textbox", { name: "本文" }).fill("選択領域の注釈");
+    await editor.getByRole("button", { name: "保存", exact: true }).click();
+    await drawer.getByText("選択領域の注釈", { exact: true }).waitFor();
+    const region = await page.evaluate(() =>
+      JSON.parse(sessionStorage.getItem("honkoku.fixture.noteWrites") ?? "[]")
+        .at(-1)
+        .tempNotes.at(-1),
+    );
+    assert.deepEqual(region.xywh, [300, 200, 140, 170]);
+    assert.match(region.image, /\/300,200,140,170\/300,\/0\/default.jpg$/);
+    assert.equal(await page.locator(".note-overlay").count(), 2);
+    await toolbar.getByRole("button", { name: "破棄", exact: true }).click();
+    await page.getByRole("button", { name: "破棄する", exact: true }).click();
+    await toolbar
+      .getByRole("button", { name: "編集開始", exact: true })
+      .waitFor();
+    assert.equal(await drawer.locator(".page-note").count(), 3);
+    assert.equal(await page.locator(".note-overlay").count(), 1);
+    assert.deepEqual(errors, []);
+    console.log(
+      `Notes checks passed (${theme}): drawer, thumbnails, overlay toggle, inline editing, indexed deletion, region gesture, discard.`,
+    );
+  } catch (error) {
+    console.error(
+      "Notes UI state:",
+      await drawer.innerText().catch(() => "drawer closed"),
+    );
+    throw error;
+  } finally {
+    await context.close();
+  }
 }
