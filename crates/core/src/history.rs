@@ -18,6 +18,70 @@ pub struct RecentWork {
     pub next_unfinished_index: Option<u32>,
 }
 impl HonkokuClient {
+    /// Page saves include unshared events; this is independent of the public timeline.
+    pub async fn page_history(
+        &self,
+        entry_id: &str,
+        index: u32,
+        limit: u32,
+    ) -> Result<Vec<crate::model::TimelineItem>> {
+        use crate::{
+            firestore::{and_filters, equal},
+            model::{TimelineEvent, TimelineItem},
+        };
+        use serde_json::json;
+        if entry_id.is_empty() || entry_id.contains('/') {
+            return Err(crate::Error::Invalid("invalid entry ID".into()));
+        }
+        if limit == 0 {
+            return Ok(vec![]);
+        }
+        let query = json!({"from":[{"collectionId":"timelineEvents"}],
+            "where":and_filters(vec![equal("transcriptionId",json!({"stringValue":format!("{entry_id}_{index}")})),equal("eventType",json!({"stringValue":"transcription"}))]),
+            "orderBy":[{"field":{"fieldPath":"createdAt"},"direction":"DESCENDING"}],"limit":limit});
+        let events: Vec<TimelineEvent> = self.run_query(query).await?;
+        let copy = events.clone();
+        blocking(&self.home_storage, move |db| {
+            db.transaction(|db| {
+                for event in &copy {
+                    db.put_timeline_event(event)?;
+                }
+                Ok(())
+            })
+        })
+        .await?;
+        use futures_util::{StreamExt, stream};
+        let uids: std::collections::BTreeSet<_> =
+            events.iter().map(|event| event.uid.clone()).collect();
+        let actors: std::collections::BTreeMap<_, _> = stream::iter(uids)
+            .map(|uid| async move {
+                let actor = self
+                    .cached(
+                        &self.home_storage,
+                        format!("history/actor/{uid}"),
+                        false,
+                        self.user(&uid),
+                        |db, user| db.put_user(user),
+                    )
+                    .await
+                    .ok();
+                (uid, actor)
+            })
+            .buffer_unordered(4)
+            .collect()
+            .await;
+        let mut items = Vec::new();
+        for event in events {
+            items.push(TimelineItem {
+                actor: actors.get(&event.uid).cloned().flatten(),
+                excerpt: event.data["text"].as_str().unwrap_or_default().into(),
+                event,
+                entry_label: None,
+                project_title: None,
+            });
+        }
+        Ok(items)
+    }
     pub async fn history_open(&self, entry_id: &str, index: u32) -> Result<()> {
         let id = entry_id.to_owned();
         let cached: Option<EntrySummary> =
@@ -103,6 +167,47 @@ mod tests {
     use honkoku_storage::Storage;
     use serde_json::json;
     use std::sync::{Arc, Mutex};
+
+    #[tokio::test]
+    async fn page_saves_query_includes_unshared_snapshots_and_caches_them() -> Result<()> {
+        use wiremock::{
+            Mock, MockServer, ResponseTemplate,
+            matchers::{body_partial_json, method, path},
+        };
+        let server = MockServer::start().await;
+        let storage: SharedStorage = Arc::new(Mutex::new(Storage::in_memory()?));
+        let client =
+            HonkokuClient::with_endpoints(&server.uri(), &format!("{}/documents", server.uri()))?
+                .with_storage(storage.clone());
+        let data = json!({"uid":"writer","projectId":"project","entryId":"entry","transcriptionId":"entry_3","index":3,
+            "eventType":"transcription","count":2,"isReview":false,"share":false,"createdAt":"2026-09-11T00:00:00Z","data":{"text":"保存した本文","comment":"修正"}});
+        let fields = data
+            .as_object()
+            .ok_or_else(|| crate::Error::Invalid("event object".into()))?
+            .iter()
+            .map(|(key, value)| (key.clone(), crate::firestore::encode_value(value)))
+            .collect::<serde_json::Map<_, _>>();
+        Mock::given(method("POST")).and(path("/documents:runQuery")).and(body_partial_json(json!({"structuredQuery":{
+            "from":[{"collectionId":"timelineEvents"}],"where":{"compositeFilter":{"op":"AND","filters":[
+                {"fieldFilter":{"field":{"fieldPath":"transcriptionId"},"op":"EQUAL","value":{"stringValue":"entry_3"}}},
+                {"fieldFilter":{"field":{"fieldPath":"eventType"},"op":"EQUAL","value":{"stringValue":"transcription"}}}
+            ]}},"orderBy":[{"field":{"fieldPath":"createdAt"},"direction":"DESCENDING"}],"limit":4}})))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!([{"document":{"name":"documents/timelineEvents/save","fields":fields}}])))
+            .expect(1).mount(&server).await;
+        let items = client.page_history("entry", 3, 4).await?;
+        assert_eq!(items.len(), 1);
+        assert_eq!(items[0].excerpt, "保存した本文");
+        assert_eq!(items[0].event.share, Some(false));
+        assert!(items[0].actor.is_none());
+        let cached: Option<serde_json::Value> =
+            blocking(&storage, |db| db.get_timeline_event("save")).await?;
+        assert_eq!(
+            cached.map(|v| v["data"]["text"].clone()),
+            Some(json!("保存した本文"))
+        );
+        assert!(client.page_history("entry", 3, 0).await?.is_empty());
+        Ok(())
+    }
 
     #[tokio::test]
     async fn opening_legacy_canvases_uses_cached_statuses() -> Result<()> {
