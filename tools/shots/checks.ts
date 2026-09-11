@@ -955,11 +955,17 @@ export async function checkQuietWorkbench(
     await page.goto(`${origin}/#/entries/${entry}/pages/3`);
     await button("編集開始").waitFor();
     await page.waitForLoadState("networkidle");
-    assert.equal(await page.locator(".topbar input").count(), 1);
+    assert.equal(await page.locator(".topbar").count(), 0);
+    assert.equal(await page.locator(".workbench-toolbar .search").count(), 0);
     assert.ok(
-      !(await page.locator(".topbar").innerText()).includes("みんなで翻刻"),
+      !(await page.locator(".workbench-toolbar").innerText()).includes(
+        "みんなで翻刻",
+      ),
     );
-    assert.equal(await page.locator(".topbar .breadcrumb a").count(), 4);
+    assert.equal(
+      await page.locator(".workbench-toolbar .breadcrumb a").count(),
+      4,
+    );
     assert.match(
       await page.locator(".workbench-toolbar .page-count").innerText(),
       /4／18/,
