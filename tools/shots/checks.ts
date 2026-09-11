@@ -398,7 +398,7 @@ export async function checkEditing(
       .nth(4)
       .getAttribute("aria-label");
     await page.getByRole("button", { name: "編集開始", exact: true }).click();
-    await page.getByRole("button", { name: "原文表示", exact: true }).click();
+    await page.getByRole("button", { name: "記法", exact: true }).click();
     const raw = page.getByRole("textbox", { name: "原文を編集", exact: true });
     await raw.fill("長い行".repeat(150));
     assert.ok(
@@ -417,7 +417,7 @@ export async function checkEditing(
     );
     // Navigate before the draft timer fires, then resume the same retained lock.
     await page.getByRole("button", { name: "編集開始", exact: true }).click();
-    await page.getByRole("button", { name: "原文表示", exact: true }).click();
+    await page.getByRole("button", { name: "記法", exact: true }).click();
     await raw.fill("再開する本文");
     await page.getByRole("button", { name: "次のコマ", exact: true }).click();
     await page.waitForURL("**/pages/5");
@@ -426,7 +426,7 @@ export async function checkEditing(
     await page
       .getByRole("textbox", { name: "翻刻本文", exact: true })
       .waitFor();
-    await page.getByRole("button", { name: "原文表示", exact: true }).click();
+    await page.getByRole("button", { name: "記法", exact: true }).click();
     assert.equal(await raw.inputValue(), "再開する本文");
     await page.keyboard.press("Control+s");
     await page.getByRole("button", { name: "編集開始", exact: true }).waitFor();
@@ -437,11 +437,11 @@ export async function checkEditing(
       "shortcut reuses last save options",
     );
     await page.getByRole("button", { name: "編集開始", exact: true }).click();
-    await page.getByRole("button", { name: "原文表示", exact: true }).click();
+    await page.getByRole("button", { name: "記法", exact: true }).click();
     await raw.fill(
       Array.from({ length: 30 }, (_, i) => `列${i + 1}本文`).join("\n"),
     );
-    await page.getByRole("button", { name: "原文表示", exact: true }).click();
+    await page.getByRole("button", { name: "記法", exact: true }).click();
     const scroll = page.locator(".editor-scroll");
     const wide = await scroll.evaluate((e) => {
       const pane = e.getBoundingClientRect();
@@ -484,7 +484,7 @@ export async function checkEditing(
     await page.getByRole("button", { name: "前のコマ", exact: true }).click();
     await page.waitForURL("**/pages/3");
     await page.getByRole("button", { name: "編集開始", exact: true }).click();
-    await page.getByRole("button", { name: "原文表示", exact: true }).click();
+    await page.getByRole("button", { name: "記法", exact: true }).click();
     await page.getByRole("button", { name: "OCR", exact: true }).click();
     const beforeOcr = await raw.inputValue();
     const ocr = (
@@ -575,7 +575,7 @@ export async function checkEditing(
       await page
         .getByRole("textbox", { name: "翻刻本文", exact: true })
         .waitFor();
-      await page.getByRole("button", { name: "原文表示", exact: true }).click();
+      await page.getByRole("button", { name: "記法", exact: true }).click();
       await page.evaluate(async () => {
         const { fixtureInvoke } = await import("/src/dev/fixtures.ts");
         await fixtureInvoke("session_clear", {});
@@ -595,7 +595,7 @@ export async function checkEditing(
         .getByRole("button", { name: "編集開始", exact: true })
         .waitFor();
       await page.getByRole("button", { name: "編集開始", exact: true }).click();
-      await page.getByRole("button", { name: "原文表示", exact: true }).click();
+      await page.getByRole("button", { name: "記法", exact: true }).click();
       await page.evaluate(async (entry) => {
         const { fixtureInvoke } = await import("/src/dev/fixtures.ts");
         const pages = (await fixtureInvoke("list_pages", {
@@ -890,7 +890,7 @@ async function checkOcr(browser: Browser, origin: string) {
       ),
     );
     assert.notEqual(await page.locator(".ProseMirror").textContent(), before);
-    await page.getByRole("button", { name: "原文表示", exact: true }).click();
+    await page.getByRole("button", { name: "記法", exact: true }).click();
     const text = await page
       .getByRole("textbox", { name: "原文を編集", exact: true })
       .inputValue();
@@ -1009,7 +1009,7 @@ export async function checkQuietWorkbench(
       .click();
     await page.keyboard.press("Home");
     await shot("editing-quiet");
-    await button("原文表示").click();
+    await button("記法").click();
     const raw = page.getByRole("textbox", { name: "原文を編集", exact: true });
     await raw.fill("前後\n別列");
     await raw.evaluate((element: HTMLTextAreaElement) =>
@@ -1025,14 +1025,14 @@ export async function checkQuietWorkbench(
     await button("振り仮名").click();
     assert.equal(await raw.inputValue(), "前ゟ《振り仮名：後｜》\n別列");
     await raw.fill("前《割書：一｜二｜三｜四》後");
-    await button("原文表示").click();
+    await button("記法").click();
     await page
       .locator(".editor-warigaki > .editor-segment")
       .nth(1)
       .click({ position: { x: 6, y: 1 } });
     await page.keyboard.press("ArrowDown");
     await page.keyboard.type("x");
-    await button("原文表示").click();
+    await button("記法").click();
     assert.equal(await raw.inputValue(), "前《割書：一｜二x｜三｜四》後");
     await raw.fill("前後");
     await raw.evaluate((element: HTMLTextAreaElement) =>
@@ -1044,7 +1044,7 @@ export async function checkQuietWorkbench(
       .fill("合字は「より」を表す。");
     await page.keyboard.press("Escape");
     assert.equal(await raw.inputValue(), "前＃1後");
-    await button("原文表示").click();
+    await button("記法").click();
     await button("注記1").hover();
     await page.locator(".note-popover").waitFor();
     assert.match(
@@ -1064,7 +1064,7 @@ export async function checkQuietWorkbench(
       .getByLabel("注記の内容", { exact: true })
       .fill("原本の合字は「より」を表す。");
     await button("更新").click();
-    await button("原文表示").click();
+    await button("記法").click();
     assert.equal(await raw.inputValue(), "前＃1後");
     await raw.evaluate((element: HTMLTextAreaElement) =>
       element.setSelectionRange(4, 4),
@@ -1073,7 +1073,7 @@ export async function checkQuietWorkbench(
     await page.getByLabel("注記の内容", { exact: true }).fill("二つ目の注記");
     await page.keyboard.press("Escape");
     assert.equal(await raw.inputValue(), "前＃1後＃2");
-    await button("原文表示").click();
+    await button("記法").click();
     await button("注記1").click();
     await button("注記を編集").click();
     await button("削除").click();
@@ -1115,7 +1115,7 @@ export async function checkQuietWorkbench(
       saved[1]?.createdBy && saved[1]?.createdAt && saved[1]?.updatedAt,
     );
     await button("編集開始").click();
-    await button("原文表示").click();
+    await button("記法").click();
     await raw.fill(
       "原本を読む\n《振り仮名：峰｜みね》\n《割書：一行目｜二行目》\nゟ　ヿ　〆",
     );
@@ -1128,7 +1128,7 @@ export async function checkQuietWorkbench(
       /二つ目の注記/,
     );
     await button("注釈を閉じる").click();
-    await button("原文表示").click();
+    await button("記法").click();
     const editor = page.locator(".vertical-editor");
     await editor.locator(".transcription-column").first().click();
     await page.keyboard.press("Home");
@@ -1172,9 +1172,9 @@ export async function checkQuietWorkbench(
         ),
       });
     await page.mouse.move(0, 0);
-    await button("原文表示").click();
+    await button("記法").click();
     await raw.fill("一二\n三四");
-    await button("原文表示").click();
+    await button("記法").click();
     const firstColumn = await editor
       .locator(".transcription-column")
       .first()
@@ -1187,9 +1187,9 @@ export async function checkQuietWorkbench(
         20,
     );
     await page.keyboard.type("x");
-    await button("原文表示").click();
+    await button("記法").click();
     assert.equal(await raw.inputValue(), "一二x\n三四");
-    await button("原文表示").click();
+    await button("記法").click();
     const lastColumn = await editor
       .locator(".transcription-column")
       .last()
@@ -1197,7 +1197,7 @@ export async function checkQuietWorkbench(
     assert.ok(lastColumn);
     await page.mouse.click(lastColumn.x - 30, lastColumn.y + 30);
     await page.keyboard.type("y");
-    await button("原文表示").click();
+    await button("記法").click();
     assert.equal(await raw.inputValue(), "一二x\n三四\ny");
     await button("破棄").click();
     await button("破棄する").click();
@@ -1542,19 +1542,19 @@ export async function checkWorkbenchParity(
       .waitFor();
     await button("OCRを閉じる").click();
     await button("編集開始").click();
-    await button("原文表示").click();
+    await button("記法").click();
     const raw = page.getByRole("textbox", { name: "原文を編集", exact: true });
     await raw.fill("移動しても残る本文");
     await button("次のコマ").focus();
     await page.keyboard.press("ArrowRight");
     await page.waitForURL("**/pages/4");
     await button("編集開始").click();
-    await button("原文表示").click();
+    await button("記法").click();
     await raw.fill("もう一つの下書き");
     await button("前のコマ").focus();
     await page.keyboard.press("ArrowLeft");
     await page.waitForURL("**/pages/3");
-    await button("原文表示").click();
+    await button("記法").click();
     assert.equal(await raw.inputValue(), "移動しても残る本文");
     assert.equal(await button("編集を再開").count(), 0);
     assert.equal(
@@ -1596,7 +1596,7 @@ export async function checkWorkbenchParity(
     }, entry);
     await button("前のコマ").click();
     await page.waitForURL("**/pages/3");
-    await button("原文表示").click();
+    await button("記法").click();
     assert.equal(await raw.inputValue(), "サーバーの新しい下書き");
     await button("保存").click();
     await button("保存を確定").click();
@@ -1615,7 +1615,7 @@ export async function checkWorkbenchParity(
       /あなたが編集中/,
     );
     await page.locator("#page-4").click();
-    await button("原文表示").click();
+    await button("記法").click();
     assert.equal(await raw.inputValue(), "もう一つの下書き");
     await button("破棄").click();
     await button("破棄する").click();
@@ -1856,7 +1856,7 @@ export async function checkGlyphs(
     await page.locator(".editor-palette").or(start).waitFor();
     if (await start.isVisible()) await start.click();
     await page.locator(".editor-palette").waitFor();
-    await page.getByRole("button", { name: "原文表示", exact: true }).click();
+    await page.getByRole("button", { name: "記法", exact: true }).click();
     const raw = page.getByRole("textbox", { name: "原文を編集", exact: true });
     await raw.evaluate((node: HTMLTextAreaElement) => {
       const offset = node.value.indexOf("候");
@@ -2579,7 +2579,7 @@ export async function checkHistory(
       .getByRole("button", { name: "編集を開始して復元", exact: true })
       .click();
     await page.locator(".workbench-editor .ProseMirror").waitFor();
-    await page.getByRole("button", { name: "原文表示", exact: true }).click();
+    await page.getByRole("button", { name: "記法", exact: true }).click();
     assert.equal(
       await page.locator(".editor-raw-textarea").inputValue(),
       "秋の空\n里に雪あり",
@@ -2710,7 +2710,7 @@ export async function checkRecognition(
     await page.getByRole("button", { name: "編集開始", exact: true }).click();
     await page.locator(".editor-palette").waitFor();
     await page.getByText("共有中", { exact: true }).waitFor();
-    await page.getByRole("button", { name: "原文表示", exact: true }).click();
+    await page.getByRole("button", { name: "記法", exact: true }).click();
     const raw = page.getByRole("textbox", { name: "原文を編集", exact: true });
     const before = await raw.inputValue();
     await raw.evaluate((node: HTMLTextAreaElement) => {
@@ -2782,7 +2782,7 @@ export async function checkRecognition(
     await page.getByRole("button", { name: "再認識", exact: true }).click();
     await page.locator(".candidate").nth(9).waitFor();
     const beforeVisual = await raw.inputValue();
-    await page.getByRole("button", { name: "原文表示", exact: true }).click();
+    await page.getByRole("button", { name: "記法", exact: true }).click();
     await page.locator(".vertical-editor").evaluate((root: HTMLElement) => {
       root.focus();
       const text = document
@@ -2802,7 +2802,7 @@ export async function checkRecognition(
     await page
       .getByRole("button", { name: "2：侯を挿入", exact: true })
       .click();
-    await page.getByRole("button", { name: "原文表示", exact: true }).click();
+    await page.getByRole("button", { name: "記法", exact: true }).click();
     assert.equal(await raw.inputValue(), "侯" + beforeVisual.slice(2));
     await page.getByRole("button", { name: "移動", exact: true }).click();
     assert.equal(await page.locator(".recognition-strip").count(), 0);

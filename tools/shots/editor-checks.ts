@@ -606,7 +606,7 @@ export async function checkInlineEditor(
     );
     assert.equal(await page.locator(".editor-warigaki").count(), 2);
     await equal(page);
-    await button("原文表示").click();
+    await button("記法").click();
     const raw = page.getByRole("textbox", { name: "原文を編集", exact: true });
     for (const title of ["振り仮名", "割書", "見せ消ち"]) {
       await raw.fill("前後");
@@ -631,7 +631,7 @@ export async function checkInlineEditor(
     await page.keyboard.insertText("欄外の注記");
     await page.keyboard.press("Escape");
     assert.equal(await raw.evaluate((e) => e === document.activeElement), true);
-    await button("原文表示").click();
+    await button("記法").click();
 
     const layout = await Bun.file(
       new URL("../../fixtures/markup/layout-samples.txt", import.meta.url),
@@ -993,15 +993,254 @@ export async function checkPaletteTerms(browser: Browser, origin: string, theme:
       return viewer && viewer.world.getItemCount() > 0 && viewer.getFullyLoaded();
     });
     await page.screenshot({ path: resolve(`.local/shots/22-palette-terms-${theme}.png`) });
-    await page.getByRole("button", { name: "原文表示", exact: true }).click();
+    await page.getByRole("button", { name: "記法", exact: true }).click();
     const raw = page.getByRole("textbox", { name: "原文を編集", exact: true });
     await raw.fill((await raw.inputValue()) + "\n松前城と松前城");
     await open("この資料");
     await group("この資料").getByRole("button", { name: "松前城", exact: true }).waitFor();
-    await page.getByRole("button", { name: "原文表示", exact: true }).click();
+    await page.getByRole("button", { name: "記法", exact: true }).click();
 
     assert.deepEqual(errors, []);
     console.log(`Palette checks passed (${theme}): inline notes, empty shell, custom notes, combining mark, fixture entry terms, live edits, empty terms.`);
+  } finally {
+    await context.close();
+  }
+}
+
+export async function checkNotesStyle(
+  browser: Browser,
+  origin: string,
+  theme: "light" | "dark",
+  suffix = "",
+) {
+  const context = await browser.newContext({
+    viewport: { width: 1600, height: 1000 },
+    deviceScaleFactor: 2,
+    colorScheme: theme,
+    locale: "ja-JP",
+    reducedMotion: "reduce",
+  });
+  await context.addInitScript(
+    (theme) => localStorage.setItem("honkoku.theme", theme),
+    theme,
+  );
+  const page = await context.newPage();
+  page.setDefaultNavigationTimeout(120000);
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  const fixture = "《割書：一行｜二行》【ハヵ】未（いまだ｜ズ）讀＿レ￣ム＃1■□";
+  const long = "この文字は原本の汚れにより判読できない";
+  try {
+    await page.goto(origin + "/#/spike/editor", {
+      waitUntil: "domcontentloaded",
+    });
+    await page.locator(".vertical-editor").waitFor();
+    await reset(
+      page,
+      `春【ハヵ】秋\n前【${long}】後\n《注記：${long}》\n〔日本橋〕｛内蔵助｝＜安政二年＞\n《見せ消ち：旧｜新》《題：表題》`,
+    );
+    await page.getByRole("button", { name: "表示を確認", exact: true }).click();
+    await page.evaluate(() => document.fonts.ready);
+    const geometry = await page.evaluate(() => {
+      const roots = [
+        document.querySelector(".vertical-editor")!,
+        document.querySelector(".editor-source-panel .transcription")!,
+      ];
+      return roots.map((root) => {
+        const note = root.querySelector<HTMLElement>(".editor-editorial")!;
+        const style = getComputedStyle(note);
+        const token = document.createElement("span");
+        token.style.color = "var(--accent)";
+        root.append(token);
+        const accent = getComputedStyle(token).color;
+        token.remove();
+        return {
+          size: parseFloat(style.fontSize),
+          parent: parseFloat(getComputedStyle(note.parentElement!).fontSize),
+          color: style.color,
+          accent,
+          brackets: getComputedStyle(
+            note.querySelector(".inline-annotation-bracket")!,
+          ).color,
+          muted: style.getPropertyValue("--text-muted").trim(),
+          preview: root.querySelectorAll(".editor-editorial")[1].textContent,
+          full: root
+            .querySelectorAll(".editor-editorial")[1]
+            .getAttribute("title"),
+        };
+      });
+    });
+    for (const result of geometry) {
+      assert.ok(Math.abs(result.size / result.parent - 0.72) < 0.001);
+      assert.equal(result.color, result.accent);
+      assert.equal(result.preview, `【${[...long].slice(0, 6).join("")}…】`);
+      assert.equal(result.full, long);
+    }
+    assert.equal(geometry[0].size, geometry[1].size);
+    await page.locator(".vertical-editor .editor-note").evaluate((element) => {
+      if (element.textContent?.includes("…") !== true)
+        throw Error("Long field has no ellipsis");
+      if (
+        getComputedStyle(element.querySelector(".inline-note-tail")!)
+          .display !== "none"
+      )
+        throw Error("Long field tail is visible");
+    });
+    // Verify the small-text fixture independently of the pane's default scale.
+    await page.evaluate(() =>
+      document
+        .querySelectorAll<HTMLElement>(".transcription")
+        .forEach((e) => (e.style.fontSize = "16px")),
+    );
+    for (const note of await page.locator(".editor-editorial").all())
+      assert.ok(
+        await note.evaluate(
+          (e) => parseFloat(getComputedStyle(e).fontSize) < 13,
+        ),
+      );
+    await page.evaluate(() =>
+      document
+        .querySelectorAll<HTMLElement>(".transcription")
+        .forEach((e) => e.style.removeProperty("font-size")),
+    );
+    await page.screenshot({
+      path: new URL(
+        `../../.local/shots/24-notes-inline-${theme}${suffix}.png`,
+        import.meta.url,
+      ).pathname,
+    });
+    await equal(page);
+    await page.evaluate(async () => {
+      const { TextSelection } = await import("/src/dev/editor-harness.ts");
+      const view = window.editorSpike!.view;
+      let start = 0;
+      view.state.doc.descendants((node, pos) => {
+        if (node.type.name === "note") start = pos + 2;
+      });
+      view.dispatch(
+        view.state.tr.setSelection(TextSelection.create(view.state.doc, start)),
+      );
+      view.focus();
+    });
+    assert.notEqual(
+      await page
+        .locator(".vertical-editor .inline-note-tail")
+        .evaluate((e) => getComputedStyle(e).display),
+      "none",
+    );
+    await page.keyboard.insertText("追");
+    assert.ok((await source(page)).includes(`《注記：追${long}》`));
+    await equal(page);
+    await reset(page, fixture);
+    const button = page.getByRole("button", { name: "記法", exact: true });
+    assert.match(
+      (await button.getAttribute("title")) ?? "",
+      /記法のまま編集.*Ctrl\+Shift\+M/,
+    );
+    await button.click();
+    assert.equal(await button.getAttribute("aria-pressed"), "true");
+    await page.getByText("記法で編集中", { exact: true }).waitFor();
+    const input = page.getByRole("textbox", {
+      name: "原文を編集",
+      exact: true,
+    });
+    const mirror = page.locator(".editor-notation-mirror");
+    assert.equal(await mirror.getAttribute("aria-hidden"), "true");
+    assert.equal(await mirror.textContent(), fixture);
+    for (const kind of [
+      "punctuation",
+      "label",
+      "warigaki",
+      "note",
+      "text",
+      "ruby-reading",
+      "return",
+      "okurigana",
+      "reference",
+      "gap",
+    ])
+      assert.ok(await mirror.locator(`.notation-${kind}`).count(), kind);
+    async function alignment() {
+      return page.evaluate(() => {
+        const input = document.querySelector<HTMLTextAreaElement>(
+          ".editor-notation textarea",
+        )!;
+        const mirror = document.querySelector<HTMLElement>(
+          ".editor-notation-mirror",
+        )!;
+        const span = mirror.querySelector("span")!;
+        const box = input.getBoundingClientRect(),
+          first = span.getBoundingClientRect();
+        const style = getComputedStyle(input);
+        // Inline glyph boxes have font ascent leading within the 28px line box.
+        const range = document.createElement("span");
+        range.textContent = span.textContent;
+        range.style.cssText = `font:${style.font};line-height:${style.lineHeight};white-space:pre-wrap`;
+        const probe = document.createElement("div");
+        probe.style.cssText =
+          "position:absolute;top:0;left:0;visibility:hidden";
+        probe.append(range);
+        document.body.append(probe);
+        const leading =
+          range.getBoundingClientRect().top - probe.getBoundingClientRect().top;
+        probe.remove();
+        return {
+          x:
+            first.left -
+            (box.left + parseFloat(style.paddingLeft) - input.scrollLeft),
+          y:
+            first.top -
+            (box.top +
+              parseFloat(style.paddingTop) +
+              leading -
+              input.scrollTop),
+          width: mirror.clientWidth - input.clientWidth,
+          scroll: mirror.scrollTop - input.scrollTop,
+          scrollHeight: mirror.scrollHeight - input.scrollHeight,
+        };
+      });
+    }
+    for (const difference of Object.values(await alignment()))
+      assert.ok(Math.abs(difference) < 1, JSON.stringify(await alignment()));
+    await page.screenshot({
+      path: new URL(
+        `../../.local/shots/24-notation-mode-${theme}${suffix}.png`,
+        import.meta.url,
+      ).pathname,
+    });
+    await input.fill(
+      `${fixture}\n【右丁】\n％表紙\n${"一\t二 long word 𬼂 ".repeat(150)}\n`,
+    );
+    await input.evaluate((e) => {
+      e.scrollTop = e.scrollHeight;
+      e.dispatchEvent(new Event("scroll"));
+    });
+    for (const difference of Object.values(await alignment()))
+      assert.ok(Math.abs(difference) < 1);
+    await page.setViewportSize({ width: 1100, height: 760 });
+    await page.waitForTimeout(100);
+    for (const difference of Object.values(await alignment()))
+      assert.ok(Math.abs(difference) < 1);
+    await input.focus();
+    await page.keyboard.press("Control+Shift+m");
+    assert.equal(await button.getAttribute("aria-pressed"), "false");
+    await page.keyboard.press("Control+Shift+m");
+    assert.equal(await button.getAttribute("aria-pressed"), "true");
+    await input.fill("前\n後");
+    await input.evaluate((e) => {
+      e.focus();
+      e.setSelectionRange(1, 1);
+    });
+    await input.dispatchEvent("compositionstart");
+    assert.equal(await button.isDisabled(), true);
+    await input.dispatchEvent("compositionend");
+    await page.keyboard.insertText("日本");
+    assert.equal(await mirror.textContent(), "前日本\n後");
+    await equal(page);
+    assert.deepEqual(errors, []);
+    console.log(
+      `Inline notes and notation mirror: ${theme}${suffix} passed; default note ${geometry[0].size}px, accent ${geometry[0].color}`,
+    );
   } finally {
     await context.close();
   }
