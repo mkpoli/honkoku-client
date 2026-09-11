@@ -73,6 +73,10 @@
     "allow-clips-list",
     "allow-clip-create",
     "allow-clip-delete",
-    "allow-glyph-image-url"
+    "allow-glyph-image-url",
+    "allow-page-history",
+    "allow-entry-bibliography",
+    "allow-save-transcription",
+    "allow-save-full-image"
   ]
 }
