@@ -538,6 +538,24 @@ export const insertOkurigana =
     );
     return true;
   };
+export const okuriganaFromSelection: Command = (state, dispatch) => {
+  const { empty, $from, $to, from, to } = state.selection;
+  if (empty || !$from.sameParent($to) || !canInsert(state, "okurigana"))
+    return false;
+  const kana = state.doc
+    .textBetween(from, to, "\ufffc", "\ufffc")
+    .normalize("NFC")
+    .replace(/[ぁ-ゖ]/gu, (c) => String.fromCodePoint(c.codePointAt(0)! + 0x60));
+  if (!/^[ァ-ヶー]{1,8}$/u.test(kana) || !$from.nodeBefore) return false;
+  const node = annotation("okurigana", [kana]);
+  const tr = closeHistory(state.tr).replaceWith(from, to, node);
+  dispatch?.(
+    tr
+      .setSelection(TextSelection.create(tr.doc, from + node.nodeSize))
+      .scrollIntoView(),
+  );
+  return true;
+};
 export const deleteKunten: Command = (state, dispatch) => {
   const { empty, $from, from } = state.selection;
   const previous = $from.nodeBefore;

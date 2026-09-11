@@ -8,6 +8,7 @@ import {
   sourcePatches,
   applyPatches,
   wrapSelection,
+  okuriganaFromSelection,
   replaceSource,
   newColumn,
   moveCaret,
@@ -236,4 +237,22 @@ test("removing the last empty warigaki line preserves its remaining text", async
   shellKey("Enter")(e.state, e.dispatch);
   shellKey("Backspace")(e.state, e.dispatch);
   expect(e.source).toBe("前一後");
+});
+
+test("a selected kana run becomes katakana okurigana after the preceding character", () => {
+  const cases: [string, number, number, string | false][] = [
+    ["讀む", 2, 3, "讀￣ム"],
+    ["讀むな", 2, 4, "讀￣ムナ"],
+    ["告げテ", 2, 4, "告￣ゲテ"],
+    ["讀む", 1, 3, false],
+    ["むな", 1, 3, false],
+  ];
+  for (const [source, from, to, expected] of cases) {
+    const e = editor(source);
+    const tr = e.state.tr.setSelection(TextSelection.create(e.state.doc, from, to));
+    e.dispatch(tr);
+    const done = okuriganaFromSelection(e.state, e.dispatch);
+    expect(done).toBe(expected !== false);
+    if (expected !== false) expect(e.source).toBe(expected);
+  }
 });

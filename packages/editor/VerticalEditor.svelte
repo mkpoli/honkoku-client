@@ -7,6 +7,7 @@
     wrapSelection,
     insertText,
     insertOkurigana,
+    okuriganaFromSelection,
     insertSource,
     undo,
     redo,
@@ -141,6 +142,26 @@
       void insertRaw(`￣${kana}`, focus);
     } else if (!editor?.run(insertOkurigana(kana), focus)) {
       status = "文字の後に送り仮名を入れてください。";
+      return false;
+    }
+    status = "";
+    return true;
+  }
+  function convertSelection(focus = true) {
+    if (composing) return false;
+    if (raw) {
+      captureRaw();
+      const kana = normalizePreset(
+        "送り仮名",
+        rawInput.value.slice(rawRange.from, rawRange.to),
+      );
+      if (!kana) {
+        status = "かなを選択してから押してください。";
+        return false;
+      }
+      void insertRaw(`￣${kana}`, focus);
+    } else if (!editor?.run(okuriganaFromSelection, focus)) {
+      status = "文字の後に続くかなを選択してから押してください。";
       return false;
     }
     status = "";
@@ -427,6 +448,18 @@
             role="group"
             aria-label={`${group.label}の文字`}
           >
+            {#if group.label === "送り仮名"}<button
+                class="palette-action"
+                disabled={composing}
+                aria-label="選択した文字を送り仮名にする"
+                title="選択したかなを片仮名の送り仮名にします"
+                onmousedown={(event) => event.preventDefault()}
+                onclick={(event) => {
+                  convertSelection(event.detail !== 0);
+                  openCategory = group.label;
+                  if (event.detail === 0) event.currentTarget.focus();
+                }}>選択を送り仮名に</button
+              >{/if}
             {#each group.characters as character}<button
                 disabled={composing}
                 aria-label={group.label === "常用句"

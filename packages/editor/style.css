@@ -411,3 +411,17 @@
   font-size: 17px;
   white-space: nowrap;
 }
+.palette-action {
+  font: inherit;
+  font-size: 12px;
+  padding: 2px 8px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+}
+.palette-action:hover,
+.palette-action:focus-visible {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
