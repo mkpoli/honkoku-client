@@ -13,7 +13,7 @@ use std::{
 };
 use tokio::{
     io::{AsyncBufReadExt, AsyncWriteExt, BufReader, Lines},
-    process::{Child, ChildStdin, ChildStdout, Command},
+    process::{Child, ChildStdin, ChildStdout},
     sync::Mutex,
 };
 type Input = Arc<Mutex<ChildStdin>>;
@@ -66,7 +66,7 @@ impl OcrSidecar {
             .open(&self.log_path)?)
     }
     async fn diagnostic_command(&self, action: &str) -> Result<String> {
-        let output = Command::new(self.environment.python())
+        let output = crate::command(self.environment.python())
             .args(["-c", include_str!("diagnostics.py"), action])
             .env(
                 "HONKOKU_OCR_MODELS",
@@ -141,7 +141,7 @@ impl OcrSidecar {
             Some(script) => script.clone(),
             None => self.environment.server()?,
         };
-        let mut child = Command::new(self.environment.python())
+        let mut child = crate::command(self.environment.python())
             .arg("-u")
             .arg(script)
             .env(
@@ -318,6 +318,7 @@ impl OcrEngine for OcrSidecar {
                 models_ready: false,
                 model_version: "v18".into(),
                 cuda_available: OcrEnvironment::driver_available().await,
+                cuda_error: None,
                 environment_ready: false,
             });
         }
