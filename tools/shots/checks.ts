@@ -235,13 +235,13 @@ export async function checkInteractions(browser: Browser, origin: string) {
   assert.equal(metrics.whiteSpace, "pre-wrap");
   assert.ok(Math.round(metrics.width) >= 44);
   assert.ok(metrics.height > 0);
-  const panel = await page.locator(".transcription").evaluate((e) => ({
-    scrollHeight: e.scrollHeight,
-    clientHeight: e.clientHeight,
-  }));
-  assert.ok(
-    panel.scrollHeight <= panel.clientHeight + 1,
-    "columns wrap instead of overflowing downward",
+  await page.waitForFunction(
+    () => {
+      const e = document.querySelector(".transcription");
+      return !!e && e.scrollHeight <= e.clientHeight + 1;
+    },
+    {},
+    { timeout: 15000 },
   );
   await page.getByRole("radio", { name: "ダーク", exact: true }).click();
   assert.equal(await page.locator("html").getAttribute("data-theme"), "dark");
