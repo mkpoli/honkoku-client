@@ -1897,7 +1897,6 @@ export async function checkGlyphs(
       );
       throw e;
     }
-    await page.getByRole("button", { name: "表示設定", exact: true }).click();
     await page.getByRole("button", { name: "切り抜き", exact: true }).click();
     const host = await page.locator(".osd").boundingBox();
     assert.ok(host);
