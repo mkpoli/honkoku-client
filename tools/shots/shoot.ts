@@ -1,4 +1,4 @@
-import { checkInlineEditor, checkCaretContexts } from "./editor-checks";
+import { checkPaletteTerms, checkInlineEditor, checkCaretContexts } from "./editor-checks";
 import {
   checkHistory,
   checkRankingSelf,
@@ -173,6 +173,13 @@ try {
       throw Error("Vite did not start on the assigned port.");
   }
   browser = await chromium.launch({ headless: true });
+  for (const theme of ["light", "dark"] as const) await checkPaletteTerms(browser, origin, theme);
+  if (process.env.HONKOKU_SHOTS_TERMS_ONLY === "1") {
+    await browser.close();
+    browser = undefined;
+    await stopServer();
+    process.exit(0);
+  }
   for (const theme of ["light", "dark"] as const) await checkHistory(browser, origin, theme);
   if (process.env.HONKOKU_SHOTS_HISTORY_ONLY === "1") {
     await browser.close();
