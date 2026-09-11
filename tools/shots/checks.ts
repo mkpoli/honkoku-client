@@ -1989,7 +1989,7 @@ export async function checkKunten(
     await set("故");
     const kana = page.getByRole("toolbar", { name: "送り仮名", exact: true });
     await kana.getByRole("button", { name: "送り仮名", exact: true }).hover();
-    assert.equal(await kana.locator(".palette-glyphs > button").count(), 24);
+    assert.equal(await kana.locator(".palette-glyphs > button:not(.palette-action)").count(), 24);
     await kana.getByRole("button", { name: "送り仮名ニ", exact: true }).click();
     assert.equal(await source(), "故￣ニ");
     const input = kana.getByRole("textbox", { name: "その他の送り仮名" });
