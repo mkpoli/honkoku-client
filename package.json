@@ -3,5 +3,11 @@
   "private": true,
   "packageManager": "bun@1.3.14",
   "workspaces": ["apps/client", "packages/*"],
-  "scripts": {"check": "bun run --cwd apps/client check", "build": "bun run --cwd apps/client build"}
+  "scripts": {
+    "check": "bun run --cwd apps/client check",
+    "build": "bun run --cwd apps/client build"
+  },
+  "devDependencies": {
+    "playwright": "^1.63.0"
+  }
 }

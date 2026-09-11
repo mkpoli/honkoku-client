@@ -1,4 +1,6 @@
 <script lang="ts">
+  import Recognition from "./Recognition.svelte";
+  import type { Rectangle } from "./glyph-regions";
   import Skeleton from "./Skeleton.svelte";
   import RegionNotice from "./RegionNotice.svelte";
   import type { Region } from "../region.svelte";
@@ -11,6 +13,8 @@
   import OpenSeadragon from "openseadragon";
   import type { Canvas } from "@honkoku/client-api/types";
   let {
+    oninsert,
+    lineCharacterCounts = {},
     children,
     modes = [],
     canvas,
@@ -30,6 +34,8 @@
       disabled?: boolean;
       select: () => void;
     }[];
+    oninsert?: (character: string) => void;
+    lineCharacterCounts?: Record<number, number>;
     children?: Snippet<[OpenSeadragon.Viewer | undefined]>;
     canvas?: Canvas;
     pending?: boolean;
@@ -42,6 +48,14 @@
     onlinehover?: (index: number | null) => void;
     onlineselect?: (index: number) => void;
   } = $props();
+  let recognitionMode = $derived(modes.find((mode) => mode.label === "認識"));
+  let recognizing = $derived(!!recognitionMode?.active);
+  let recognitionSelection = $state<Rectangle>();
+  $effect(() => {
+    canvas;
+    recognizing;
+    recognitionSelection = undefined;
+  });
   let host: HTMLDivElement;
   let retryVersion = $state(0);
   let imageSlow = $state(false);
@@ -178,7 +192,34 @@
         enterHandler: () => onlinehover?.(line.index),
         leaveHandler: () => onlinehover?.(null),
         clickHandler: (event) => {
-          if (event.quick) onlineselect?.(line.index);
+          if (!event.quick) return;
+          const count = lineCharacterCounts[line.index];
+          if (
+            !element.classList.contains("line-hidden") &&
+            event.originalEvent.altKey &&
+            count &&
+            recognitionMode &&
+            !recognitionMode.disabled
+          ) {
+            const vertical = line.height >= line.width;
+            const bounds = element.getBoundingClientRect();
+            const fraction = vertical
+              ? event.position.y / bounds.height
+              : event.position.x / bounds.width;
+            const offset = Math.max(
+              0,
+              Math.min(count - 1, Math.floor(fraction * count)),
+            );
+            const advance = (vertical ? line.height : line.width) / count;
+            const region: Rectangle = vertical
+              ? [line.x, line.y + offset * advance, line.width, advance]
+              : [line.x + offset * advance, line.y, advance, line.height];
+            if (!recognizing) recognitionMode.select();
+            queueMicrotask(
+              () =>
+                (recognitionSelection = region.map(Math.round) as Rectangle),
+            );
+          } else onlineselect?.(line.index);
         },
       });
       trackers.push(tracker);
@@ -284,6 +325,13 @@
       >
     </div>
   </div>
+  {#if recognizing}<Recognition
+      viewer={opened ? viewer : undefined}
+      {canvas}
+      disabled={!oninsert}
+      oninsert={(character) => oninsert?.(character)}
+      selection={recognitionSelection}
+    />{/if}
   <div class="half-tabs" aria-label="原本の見開き">
     <button
       class:active={half === "左丁"}

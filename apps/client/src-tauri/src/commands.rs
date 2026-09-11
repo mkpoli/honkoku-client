@@ -1037,7 +1037,13 @@ fn glyph_service_url(info: &Value, info_url: &str, requested: &str) -> Result<St
     } else {
         ImageVersion::V2
     };
-    let size = if version == ImageVersion::V3 && requested_side > region[2].max(region[3]) {
+    let size = if version == ImageVersion::V3
+        && requested_side
+            > if parts[1].starts_with(',') {
+                region[3]
+            } else {
+                region[2]
+            } {
         format!("^{}", parts[1])
     } else {
         parts[1].into()
@@ -1130,4 +1136,91 @@ pub async fn page_note_delete(
     let session = guard.as_mut().ok_or_else(no_editing_session)?;
     session.delete_note(note_index).await?;
     Ok(session.page().clone())
+}
+
+#[tauri::command]
+pub async fn recognize_region(
+    info_url: String,
+    xywh: [u32; 4],
+    fetcher: State<'_, honkoku_iiif::Fetcher>,
+) -> Result<Vec<honkoku_core::recognition::Prediction>, AppError> {
+    let image_error = |_| AppError {
+        kind: "iiif".into(),
+        message: "原本の切り抜きを取得できません。".into(),
+    };
+    fetcher.allow_url(&info_url).map_err(image_error)?;
+    let cached = fetcher.get(&info_url).await.map_err(image_error)?;
+    let bytes = cached.read().await.map_err(image_error)?;
+    let info: Value = serde_json::from_slice(&bytes).map_err(|_| AppError {
+        kind: "iiif".into(),
+        message: "原本の画像情報を読み取れません。".into(),
+    })?;
+    let upstream = recognition_crop_url(&info, &info_url, xywh)?;
+    fetcher.allow_url(&upstream).map_err(image_error)?;
+    let crop = fetcher.get(&upstream).await.map_err(image_error)?;
+    let bytes = crop.read().await.map_err(image_error)?;
+    honkoku_core::recognition::predict(&bytes)
+        .await
+        .map_err(|error| {
+            let timeout = matches!(&error, honkoku_core::Error::Http(e) if e.is_timeout());
+            AppError {
+                kind: if timeout { "timeout" } else { "recognition" }.into(),
+                message: if timeout {
+                    "文字認識が時間内に完了しませんでした。"
+                } else {
+                    "文字認識の結果を取得できません。"
+                }
+                .into(),
+            }
+        })
+}
+
+fn recognition_crop_url(info: &Value, info_url: &str, xywh: [u32; 4]) -> Result<String, AppError> {
+    let [x, y, w, h] = xywh;
+    if w == 0 || h == 0 || !info_url.ends_with("/info.json") {
+        return Err(AppError {
+            kind: "invalid".into(),
+            message: "認識する範囲を選んでください。".into(),
+        });
+    }
+    if x as u64 + w as u64 > info["width"].as_u64().unwrap_or(0)
+        || y as u64 + h as u64 > info["height"].as_u64().unwrap_or(0)
+    {
+        return Err(AppError {
+            kind: "invalid".into(),
+            message: "認識範囲が原本の外にあります。".into(),
+        });
+    }
+    let width = (u64::from(w) * 64)
+        .div_ceil(u64::from(w.min(h)))
+        .max(u64::from(w));
+    let url = format!(
+        "{}/{x},{y},{w},{h}/{width},/0/default.jpg",
+        info_url.trim_end_matches("/info.json")
+    );
+    glyph_service_url(info, info_url, &url)
+}
+
+#[cfg(test)]
+mod recognition_region_tests {
+    use super::*;
+    #[test]
+    fn crops_use_full_image_pixels_and_upscale_both_orientations() {
+        let url = "https://example.org/image/info.json";
+        let info = json!({"width":1000,"height":2000,"@context":"http://iiif.io/api/image/3/context.json"});
+        assert_eq!(
+            recognition_crop_url(&info, url, [10, 20, 20, 100]).unwrap(),
+            "https://example.org/image/10,20,20,100/^64,/0/default.jpg"
+        );
+        assert_eq!(
+            recognition_crop_url(&info, url, [10, 20, 100, 20]).unwrap(),
+            "https://example.org/image/10,20,100,20/^320,/0/default.jpg"
+        );
+        assert_eq!(
+            recognition_crop_url(&info, url, [10, 20, 80, 120]).unwrap(),
+            "https://example.org/image/10,20,80,120/80,/0/default.jpg"
+        );
+        assert!(recognition_crop_url(&info, url, [990, 20, 20, 100]).is_err());
+        assert!(recognition_crop_url(&info, url, [10, 20, 0, 100]).is_err());
+    }
 }

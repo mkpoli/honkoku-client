@@ -55,8 +55,8 @@ export function fixtureEdit(
   entry: Entry,
   events: TimelineItem[],
 ) {
-  if (!actor) throw { kind: "signedOut", message: "ログインしてください。" };
-  const mine = page.status === "editing" && page.tempEditedBy === actor.uid;
+  const mine =
+    !!actor && page.status === "editing" && page.tempEditedBy === actor.uid;
   if (command === "page_lock_state")
     return {
       page: structuredClone(page),
@@ -67,6 +67,7 @@ export function fixtureEdit(
       syncMode: page.syncMode ?? false,
       updateTime: page.updatedAt ?? "",
     };
+  if (!actor) throw { kind: "signedOut", message: "ログインしてください。" };
   if (command === "page_lock") {
     if (page.status === "editing")
       throw { kind: "conflict", message: "このコマは編集中です。" };
@@ -107,6 +108,18 @@ export function fixtureEdit(
     }
     if (command === "page_save") {
       const options = args.options as SaveOptions;
+      if (options.isApproval !== undefined) {
+        const approvers = page.approvedBy ?? [];
+        if (
+          options.isApproval &&
+          !approvers.includes(actor.uid) &&
+          approvers.length >= 2
+        )
+          throw { kind: "invalid", message: "チェックできるのは2人までです。" };
+        page.approvedBy = options.isApproval
+          ? [...new Set([...approvers, actor.uid])]
+          : approvers.filter((uid) => uid !== actor.uid);
+      }
       const count = addedCount(page.text, page.tempText ?? "");
       const isReview =
         page.requestReview === true && page.editedBy !== actor.uid;

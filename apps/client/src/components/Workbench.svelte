@@ -26,6 +26,7 @@
   import type { LocalOcrPage } from "@honkoku/client-api/types";
   import {
     createEditor,
+    insertText,
     fromMarkup,
     TextSelection,
     textareaSource,
@@ -63,6 +64,7 @@
   import NotesDrawer from "./NotesDrawer.svelte";
   import NoteOverlays from "./NoteOverlays.svelte";
   import type { Rectangle } from "./glyph-regions";
+  import { graphemes } from "./glyph-regions";
   import Facsimile from "./Facsimile.svelte";
   import Thumbnail from "./Thumbnail.svelte";
   let {
@@ -325,6 +327,7 @@
   }
   let glyphOpen = $state(false),
     glyphCharacter = $state("");
+  let recognizing = $state(false);
   let clipping = $state(false);
   let notesOpen = $state(false),
     annotationMode = $state(false),
@@ -394,6 +397,109 @@
   $effect(() => {
     if (!editing) annotationMode = false;
   });
+  let syncMode = $state(false);
+  let approvalChange = $state(false);
+  let approved = $derived(
+    !!session && !!page.approvedBy?.includes(session.uid),
+  );
+  let canApprove = $derived(
+    page.prevStatus === "completed" &&
+      page.editedBy !== session?.uid &&
+      (page.approvedBy?.length ?? 0) < 2,
+  );
+  let reviewName = $state("名前を確認中");
+  $effect(() => {
+    const uid = sessionUid;
+    try {
+      syncMode = localStorage.getItem(`honkoku.sync.${uid}`) === "true";
+    } catch {
+      syncMode = false;
+    }
+  });
+  function toggleSync() {
+    syncMode = !syncMode;
+    try {
+      localStorage.setItem(`honkoku.sync.${sessionUid}`, String(syncMode));
+    } catch {}
+  }
+  $effect(() => {
+    const uid =
+      page.requestReview && page.editedBy !== sessionUid
+        ? page.editedBy
+        : undefined;
+    let cancelled = false;
+    reviewName = uid ? "名前を確認中" : "名前不明";
+    if (uid)
+      void user(uid)
+        .then((u) => {
+          if (!cancelled) reviewName = u.displayName;
+        })
+        .catch(() => {
+          if (!cancelled) reviewName = "名前不明";
+        });
+    return () => {
+      cancelled = true;
+    };
+  });
+  $effect(() => {
+    const entryId = currentEntryId,
+      pageIndex = index,
+      uid = sessionUid;
+    const watching = !editing && !busy && !verifying && !pagesPending;
+    if (!watching) return;
+    let cancelled = false,
+      pending = false;
+    const timer = setInterval(async () => {
+      if (pending) return;
+      pending = true;
+      try {
+        const state = await pageLockState(entryId, pageIndex);
+        if (!cancelled && uid === sessionUid && state.page) onpage(state.page);
+      } catch {
+        /* The last received text remains visible while reconnecting. */
+      } finally {
+        pending = false;
+      }
+    }, 3000);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  });
+  function insertCandidate(character: string) {
+    if (!editing || busy || composing || verifying || !editorInstance) return;
+    const raw = document.querySelector<HTMLTextAreaElement>(
+      ".editor-raw-textarea",
+    );
+    if (raw) {
+      const position = raw.selectionStart;
+      source = textareaSource(
+        source,
+        raw.value.slice(0, position) +
+          character +
+          raw.value.slice(raw.selectionEnd),
+      );
+      saveState = "未保存の変更";
+      remember();
+      queue?.request(draftPayload());
+      void tick().then(() => {
+        raw.focus();
+        raw.setSelectionRange(
+          position + character.length,
+          position + character.length,
+        );
+      });
+    } else {
+      editorInstance.run(insertText(character));
+    }
+  }
+  let lineCharacterCounts = $derived(
+    Object.fromEntries(
+      alignment.flatMap((line, i) =>
+        line === null ? [] : [[line, graphemes(columns[i].text).length]],
+      ),
+    ),
+  );
 
   let glyphTimer: ReturnType<typeof setTimeout>;
   function glyphChange(character: string, open: boolean) {
@@ -402,6 +508,7 @@
       glyphCharacter = character;
       glyphOpen = true;
       clipping = false;
+      recognizing = false;
       historyOpen = false;
       bibliographyOpen = false;
     } else if (glyphOpen)
@@ -412,6 +519,7 @@
     currentEntryId;
     sessionUid;
     clipping = false;
+    recognizing = false;
     annotationMode = false;
     notesOpen = false;
     highlightedNote = null;
@@ -553,6 +661,7 @@
   }
   function begin(locked: Page, restore = false, verified = true) {
     celebration = undefined;
+    approvalChange = false;
     clearTimeout(toastTimer);
     lastOptions = savedOptions();
     onpage(locked);
@@ -568,7 +677,7 @@
       ? `下書き保存${new Date(locked.updatedAt ?? Date.now()).toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })}`
       : "未保存の変更";
     share = locked.share ?? false;
-    completed = lastOptions?.status === "completed";
+    completed = locked.prevStatus === "completed";
     requestReview = lastOptions?.requestReview ?? false;
     comment = lastOptions?.comment ?? "";
     if (!verified) return;
@@ -616,7 +725,7 @@
     queue?.request(draftPayload());
   }
   function start() {
-    act(async () => begin(await pageLock(entry.id, index, false)));
+    act(async () => begin(await pageLock(entry.id, index, syncMode)));
   }
   function save(options: SaveOptions) {
     if (composing || !editing) return;
@@ -1045,6 +1154,15 @@
       <span class="edit-status caption" aria-live="polite">{saveState}</span>
     </div>
     <div class="toolbar-actions">
+      {#if page.requestReview && page.editedBy !== session?.uid}<span
+          class="caption review-chip">添削希望・{reviewName}</span
+        >{/if}
+      {#if page.approvedBy?.length}<span class="caption"
+          >✓{page.approvedBy.length}／2</span
+        >{/if}
+      {#if page.status === "editing" && page.syncMode}<span class="caption"
+          >共有中</span
+        >{/if}
       {#if editing}
         <div class="save-control">
           <button
@@ -1063,6 +1181,7 @@
                   status: completed ? "completed" : "initiated",
                   share,
                   requestReview,
+                  isApproval: approvalChange ? !approved : undefined,
                   comment,
                 });
               }}
@@ -1078,7 +1197,19 @@
                 ><input
                   type="checkbox"
                   bind:checked={requestReview}
-                />レビュー依頼</label
+                  onchange={(event) => {
+                    if (event.currentTarget.checked) share = true;
+                  }}
+                />添削希望</label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  bind:checked={approvalChange}
+                  disabled={!approved && !canApprove}
+                />{approved
+                  ? "チェックを取り消す"
+                  : "チェック済みにする"}</label
               >
               <label class="save-comment"
                 >コメント<input type="text" bind:value={comment} /></label
@@ -1112,11 +1243,23 @@
               </div>
             </div>{/if}
         </div>
-      {:else if session && page.status !== "editing"}<button
-          class="primary"
-          disabled={busy || pagesPending || verifying}
-          onclick={start}>編集開始</button
-        >{/if}
+      {:else if session && page.status !== "editing"}<div
+          class="edit-start-control"
+          role="group"
+          aria-label="編集の開始"
+        >
+          <button
+            class="primary"
+            disabled={busy || pagesPending || verifying}
+            onclick={start}>編集開始</button
+          >
+          <button
+            class="caption"
+            aria-pressed={syncMode}
+            disabled={busy || verifying}
+            onclick={toggleSync}>共有モード</button
+          >
+        </div>{/if}
 
       <button
         aria-pressed={notesOpen}
@@ -1126,6 +1269,7 @@
           glyphOpen = false;
           annotationMode = false;
           clipping = false;
+          recognizing = false;
         }}
         >注釈{#if noteCount}<span class="count">{noteCount}</span>{/if}</button
       >
@@ -1145,6 +1289,7 @@
           bibliographyOpen = false;
           glyphOpen = false;
           clipping = false;
+          recognizing = false;
         }}>履歴</button
       >
       <div class="workbench-menu">
@@ -1195,6 +1340,7 @@
                 historyOpen = false;
                 glyphOpen = false;
                 clipping = false;
+                recognizing = false;
                 menuOpen = false;
               }}>書誌情報</button
             >
@@ -1286,9 +1432,10 @@
       modes={[
         {
           label: "移動",
-          active: !clipping && !annotationMode,
+          active: !clipping && !annotationMode && !recognizing,
           select: () => {
             clipping = false;
+            recognizing = false;
             annotationMode = false;
           },
         },
@@ -1297,6 +1444,7 @@
           active: clipping,
           disabled: !session || !canvases[index]?.infoJsonUrl,
           select: () => {
+            recognizing = false;
             clipping = !clipping;
             annotationMode = false;
             notesOpen = false;
@@ -1311,11 +1459,30 @@
           select: () => {
             annotationMode = !annotationMode;
             clipping = false;
+            recognizing = false;
             notesOpen = false;
             glyphOpen = false;
           },
         },
+        {
+          label: "認識",
+          active: recognizing,
+          disabled: !canvases[index]?.infoJsonUrl,
+          select: () => {
+            clipping = false;
+            annotationMode = false;
+            recognizing = true;
+            notesOpen = false;
+            glyphOpen = false;
+            historyOpen = false;
+            bibliographyOpen = false;
+          },
+        },
       ]}
+      oninsert={editing && !busy && !composing && !verifying
+        ? insertCandidate
+        : undefined}
+      {lineCharacterCounts}
       canvas={canvases[index]}
       pending={canvasesRegion.pending && !canvases[index]}
       region={canvasesRegion}
@@ -1333,7 +1500,7 @@
           notes={annotationNotes}
           visible={showAnnotations}
           highlighted={highlightedNote}
-          selecting={clipping || annotationMode}
+          selecting={clipping || annotationMode || recognizing}
         />
         {#if notesOpen}{#key page.id}<NotesDrawer
               bind:this={notesDrawer}
@@ -1393,6 +1560,7 @@
             onclose={() => (clipping = false)}
             onsaved={() => {
               clipping = false;
+              recognizing = false;
               notice = "クリップを保存しました。";
             }}
           />{/if}
