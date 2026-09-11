@@ -2370,3 +2370,52 @@ export async function checkRankingSelf(
     `Ranking checks passed (${theme}): self row, scroll, pulse, sorts, pinned rank, missing field, sign-out.`,
   );
 }
+
+export async function checkHistory(browser: Browser, origin: string, theme: "light" | "dark") {
+  const context=await browser.newContext({viewport:{width:1600,height:1000},locale:"ja-JP",colorScheme:theme,reducedMotion:"reduce"});
+  await context.addInitScript(theme=>localStorage.setItem("honkoku.theme",theme),theme);
+  const page=await context.newPage();
+  const errors:string[]=[];
+  page.on("pageerror",e=>errors.push(e.message));
+  try {
+    await page.goto(`${origin}/#/entries/${entry}/pages/3`);
+    await page.locator('main[aria-busy="false"]').waitFor();
+    await page.getByRole("button",{name:"履歴",exact:true}).click();
+    await page.locator('.history-save').nth(3).waitFor();
+    assert.equal(await page.locator('.history-save').count(),4);
+    await page.locator('.history-save').first().click();
+    assert.equal(await page.locator('.history-diff ins').innerText(),'里');
+    assert.equal(await page.locator('.history-diff del').innerText(),'山');
+    await page.evaluate(()=>document.fonts.ready);
+    await page.screenshot({path:resolve(import.meta.dir,`../../.local/shots/20-history-${theme}.png`)});
+    await page.getByLabel('横書きで見る',{exact:true}).check();
+    assert.equal(await page.locator('.history-diff').evaluate(el=>getComputedStyle(el).writingMode),'horizontal-tb');
+    await page.getByRole('button',{name:'編集を開始して復元',exact:true}).click();
+    await page.locator('.workbench-editor .ProseMirror').waitFor();
+    await page.getByRole('button',{name:'原文表示',exact:true}).click();
+    assert.equal(await page.locator('.editor-raw-textarea').inputValue(),'秋の空\n里に雪あり');
+    await page.getByRole('button',{name:'元に戻す',exact:true}).click();
+    assert.notEqual(await page.locator('.editor-raw-textarea').inputValue(),'秋の空\n里に雪あり');
+    await page.locator('.history-save').nth(1).click();
+    await page.getByRole('button',{name:'復元',exact:true}).click();
+    assert.equal(await page.locator('.editor-raw-textarea').inputValue(),'秋の空\n山に雪あり');
+    await page.getByLabel('現在の内容と比較',{exact:true}).check();
+    assert.equal(await page.locator('.history-diff ins, .history-diff del').count(),0);
+    await page.getByRole('button',{name:'履歴を閉じる',exact:true}).click();
+    await page.getByRole('button',{name:'表示設定',exact:true}).click();
+    await page.getByRole('button',{name:'書誌情報',exact:true}).click();
+    await page.locator('.bibliography-drawer').getByText('著者未詳',{exact:true}).waitFor();
+    assert.match(await page.locator('.bibliography-drawer').innerText(),/安政二年（1855年）/);
+    if(theme==='light') await page.screenshot({path:resolve(import.meta.dir,'../../.local/shots/20-bibliography-light.png')});
+    await page.goto(`${origin}/#/help/markup`);
+    await page.locator('.markup-element').nth(17).waitFor();
+    const {elements}=await import('../../packages/markup/elements');
+    assert.equal(await page.locator('.markup-element').count(),elements.length);
+    for(const element of elements) await page.locator('.markup-help').getByRole('heading',{name:element.name,exact:true}).waitFor();
+    if(theme==='light') await page.screenshot({path:resolve(import.meta.dir,'../../.local/shots/20-markup-help-light.png')});
+    await page.goto(`${origin}/#/projects/ainu/guidelines`);
+    await page.locator('.guidelines .markdown').first().waitFor();
+    assert.match(await page.locator('.guidelines').innerText(),/ガイドライン/);
+    assert.deepEqual(errors,[]);
+  } finally {await context.close();}
+}

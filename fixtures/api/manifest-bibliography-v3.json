@@ -1,0 +1,82 @@
+{
+  "@context": "http://iiif.io/api/presentation/3/context.json",
+  "id": "https://example.org/manifest",
+  "type": "Manifest",
+  "label": {
+    "en": [
+      "Manuscript"
+    ],
+    "ja": [
+      "蝦夷地の記録"
+    ]
+  },
+  "metadata": [
+    {
+      "label": {
+        "en": [
+          "Author"
+        ],
+        "ja": [
+          "著者"
+        ]
+      },
+      "value": {
+        "en": [
+          "Unknown"
+        ],
+        "ja": [
+          "著者未詳"
+        ]
+      }
+    },
+    {
+      "label": {
+        "ja": [
+          "成立年"
+        ]
+      },
+      "value": {
+        "ja": [
+          "安政二年（1855年）"
+        ]
+      }
+    }
+  ],
+  "requiredStatement": {
+    "label": {
+      "ja": [
+        "提供"
+      ]
+    },
+    "value": {
+      "ja": [
+        "大学図書館デジタルアーカイブ"
+      ]
+    }
+  },
+  "rights": "https://creativecommons.org/publicdomain/mark/1.0/",
+  "logo": {
+    "id": "/logo.svg"
+  },
+  "homepage": [
+    {
+      "id": "https://example.org/record",
+      "label": {
+        "ja": [
+          "資料の詳細"
+        ]
+      }
+    }
+  ],
+  "seeAlso": [
+    {
+      "id": "https://example.org/catalog.xml",
+      "label": {
+        "ja": [
+          "書誌データ"
+        ]
+      }
+    }
+  ],
+  "items": []
+}

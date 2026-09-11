@@ -1,5 +1,6 @@
 import { checkInlineEditor } from "./editor-checks";
 import {
+  checkHistory,
   checkRankingSelf,
   checkGlyphs,
   checkKunten,
@@ -168,6 +169,7 @@ try {
       throw Error("Vite did not start on the assigned port.");
   }
   browser = await chromium.launch({ headless: true });
+  for (const theme of ["light", "dark"] as const) await checkHistory(browser, origin, theme);
   for (const theme of ["light", "dark"] as const)
     await checkRankingSelf(browser, origin, theme);
   for (const theme of ["light", "dark"] as const) await checkGlyphs(browser,origin,theme);
