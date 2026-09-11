@@ -181,6 +181,8 @@ try {
     process.exit(0);
   }
   for (const theme of ["light", "dark"] as const)
+    await checkWorkbenchParity(browser, origin, theme);
+  for (const theme of ["light", "dark"] as const)
     await checkRankingSelf(browser, origin, theme);
   for (const theme of ["light", "dark"] as const)
     await checkGlyphs(browser, origin, theme);
@@ -195,8 +197,6 @@ try {
   for (const theme of ["light", "dark"] as const)
     await checkSearch(browser, origin, theme);
   await checkRegionTimeout(browser, origin);
-  for (const theme of ["light", "dark"] as const)
-    await checkWorkbenchParity(browser, origin, theme);
   for (const theme of ["light", "dark"] as const)
     await checkInlineEditor(browser, origin, theme);
   for (const theme of ["light", "dark"] as const)

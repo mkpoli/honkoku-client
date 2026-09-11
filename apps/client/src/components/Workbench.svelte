@@ -298,7 +298,7 @@
     const entryId = currentEntryId,
       pageIndex = index,
       uid = sessionUid;
-    const watching = !editing && page.status === "editing";
+    const watching = !editing && !busy && !verifying && !pagesPending;
     if (!watching) return;
     let cancelled = false,
       pending = false;

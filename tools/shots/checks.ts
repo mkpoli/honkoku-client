@@ -2548,7 +2548,22 @@ export async function checkRecognition(
     await page.getByRole("button", { name: "保存を確定", exact: true }).click();
     await page.getByRole("button", { name: "編集開始", exact: true }).waitFor();
     assert.equal(await page.getByText("✓1／2", { exact: true }).count(), 0);
-    // Simulate another account publishing temporary text after the reader opens.
+    // Discover sharing that starts after a read-only page is already open.
+    await page.evaluate(async (entryId) => {
+      const { fixtureInvoke } = await import("/src/dev/fixtures.ts");
+      const pages = (await fixtureInvoke("list_pages", {
+        entryId,
+      })) as import("../../packages/client-api/types").Page[];
+      Object.assign(
+        pages.find((p) => p.index === 8)!,
+        { status: "completed", syncMode: false, text: "保存済みの本文" },
+      );
+      location.hash = `#/entries/${entryId}/pages/8`;
+    }, entry);
+    await page
+      .locator(".transcription-reader")
+      .getByText("保存済みの本文", { exact: false })
+      .waitFor();
     await page.evaluate(async (entryId) => {
       const { fixtureInvoke } = await import("/src/dev/fixtures.ts");
       const pages = (await fixtureInvoke("list_pages", {
@@ -2563,7 +2578,6 @@ export async function checkRecognition(
           tempText: "共有する本文",
         },
       );
-      location.hash = `#/entries/${entryId}/pages/8`;
     }, entry);
     await page
       .locator(".transcription-reader")
