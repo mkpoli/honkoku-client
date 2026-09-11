@@ -34,6 +34,7 @@
     "allow-page-lock",
     "allow-page-draft",
     "allow-page-draft-notes",
+    "allow-page-note-delete",
     "allow-history-open",
     "allow-history-recent",
     "allow-history-clear",

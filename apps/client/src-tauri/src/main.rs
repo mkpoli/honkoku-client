@@ -283,6 +283,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             commands::page_lock,
             commands::page_draft,
             commands::page_draft_notes,
+            commands::page_note_delete,
             commands::history_open,
             commands::history_recent,
             commands::history_clear,

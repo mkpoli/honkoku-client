@@ -32,6 +32,14 @@ The site sends this every three seconds while the editor is open. Reads the page
 
 The server's answer carries the new `updateTime`, which becomes the precondition for the next write.
 
+The desktop draft writer includes `tempNotes` in this same commit so text and note changes travel together. A text-only caller copies `tempNotes` from the freshly read page.
+
+### Note transactions
+
+The bundle's `Myn` reads the page, requires `status == "editing"`, and updates only `tempNotes` with the supplied array. `jyn` reads the current `tempNotes` array, replaces the selected index with `null` when it is in bounds, and writes the array back. Neither transaction transforms `updatedAt`. The desktop additionally checks that `tempEditedBy` matches the signed-in account and uses the read `updateTime` precondition.
+
+A note stores `id` (empty string for a new note), `type` (`note`, `memo`, `transcription`, or `other`), `content`, `markdown` (the same text), `createdBy`, `createdAt`, and `updatedAt`. Both dates are Firestore timestamps created on the client. Updates preserve the original ID, author, and creation date. Optional `image` stores the upstream IIIF URL `service/x,y,w,h/300,/0/default.jpg`; optional `xywh` stores `[x,y,w,h]` in rounded full-image pixels. New notes append to the array; presentation order does not change stored indices.
+
 ## 3. Save
 
 Reads the page and `projects/{projectId}`. Requires `status == "editing"`. One commit with three writes:
