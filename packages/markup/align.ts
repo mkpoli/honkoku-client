@@ -8,7 +8,7 @@ export function plainColumn(source: string): string {
       // Older transcriptions include single-part or otherwise noneditable shells.
       if (node.kind === "raw") {
         const shell =
-          /^《(割書|振り仮名|見せ消ち|圏点|右線|題|箱|場所)：([\s\S]*)》$/.exec(
+          /^《(割書|振り仮名|見せ消ち|圏点|右線|題|箱|場所|注記|人物|日時)：([\s\S]*)》$/.exec(
             node.source,
           );
         if (shell) {

@@ -40,7 +40,7 @@ test("malformed syntax, empty segments and mixed endings", () => {
     "一\r\n二\r三\n",
   ])
     expect(serialize(parse(text))).toBe(text);
-  expect(parseLine("《割書：a《題：b》｜c》")[0].kind).toBe("raw");
+  expect(parseLine("《割書：a《題：b》｜c》")[0].kind).toBe("warigaki");
   expect(parseLine("《割書：a｜b｜c｜d｜e》")[0].kind).toBe("raw");
 });
 test("all specified constructs and site legacy ruby", () => {
@@ -128,5 +128,7 @@ test("compound fields split only at their own separators", () => {
     "《振り仮名：《割書：一｜二》｜あ》",
     "《割書：《割書：一｜二》｜三》",
   ])
-    expect(parseLine(source)[0].kind).toBe("raw");
+    expect(parseLine(source)[0].kind).toBe(
+      source.startsWith("《割書") ? "warigaki" : "ruby",
+    );
 });

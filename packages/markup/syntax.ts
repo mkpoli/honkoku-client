@@ -10,6 +10,9 @@ export type SyntaxKind =
   | "title"
   | "box"
   | "place"
+  | "note"
+  | "person"
+  | "date"
   | "editorial"
   | "divider"
   | "gap"
@@ -43,6 +46,9 @@ const constructs: Record<string, [SyntaxKind, number, number]> = {
   題: ["title", 1, 1],
   箱: ["box", 1, 1],
   場所: ["place", 1, 1],
+  注記: ["note", 1, 1],
+  人物: ["person", 1, 1],
+  日時: ["date", 1, 1],
 };
 /** Editable children of each compound field. */
 export function allowsChild(parent: string, child: string): boolean {
@@ -59,9 +65,10 @@ export function allowsChild(parent: string, child: string): boolean {
   )
     return true;
   if (parent === "column") return child !== "comment" && child !== "divider";
-  if (parent === "warigaki") return child === "ruby" || child === "misekechi";
-  if (parent === "misekechi") return child === "ruby";
-  return false;
+  return (
+    Object.values(constructs).some(([kind]) => kind === parent) &&
+    Object.values(constructs).some(([kind]) => kind === child)
+  );
 }
 export function splitFields(source: string): string[] {
   const fields: string[] = [];

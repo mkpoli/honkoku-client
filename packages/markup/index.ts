@@ -17,7 +17,10 @@ export type Inline =
         | "rightLine"
         | "title"
         | "box"
-        | "place";
+        | "place"
+        | "note"
+        | "person"
+        | "date";
       text: string;
     }
   | {
@@ -121,6 +124,10 @@ export function renderInline(nodes: Inline[]): string {
         case "title":
         case "box":
         case "place":
+        case "note":
+        case "person":
+        case "date":
+          return `<span class="markup-${node.kind} editor-${node.kind}">${renderInline(parseInline(node.text))}</span>`;
         case "editorial":
         case "comment":
         case "glyph":
