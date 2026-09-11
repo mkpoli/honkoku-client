@@ -1038,7 +1038,7 @@ export async function checkQuietWorkbench(
     await raw.evaluate((element: HTMLTextAreaElement) =>
       element.setSelectionRange(1, 1),
     );
-    await button("注記").click();
+    await page.getByRole("toolbar", { name: "翻刻の編集", exact: true }).getByRole("button", { name: "注記", exact: true }).click();
     await page
       .getByLabel("注記の内容", { exact: true })
       .fill("合字は「より」を表す。");
@@ -1069,7 +1069,7 @@ export async function checkQuietWorkbench(
     await raw.evaluate((element: HTMLTextAreaElement) =>
       element.setSelectionRange(4, 4),
     );
-    await button("注記").click();
+    await page.getByRole("toolbar", { name: "翻刻の編集", exact: true }).getByRole("button", { name: "注記", exact: true }).click();
     await page.getByLabel("注記の内容", { exact: true }).fill("二つ目の注記");
     await page.keyboard.press("Escape");
     assert.equal(await raw.inputValue(), "前＃1後＃2");
@@ -2013,12 +2013,7 @@ export async function checkKunten(
     await set("故");
     const kana = page.getByRole("toolbar", { name: "送り仮名", exact: true });
     await kana.getByRole("button", { name: "送り仮名", exact: true }).hover();
-    assert.equal(
-      await kana
-        .locator(".palette-glyphs > button:not(.palette-action)")
-        .count(),
-      24,
-    );
+    assert.equal(await kana.locator(".palette-glyphs > button:not(.palette-action)").count(), (await import("../../packages/editor/presets")).presets.送り仮名.length);
     await kana.getByRole("button", { name: "送り仮名ニ", exact: true }).click();
     assert.equal(await source(), "故￣ニ");
     await page.keyboard.press("ArrowDown");

@@ -906,3 +906,103 @@ export async function checkCaretContexts(
     await context.close();
   }
 }
+
+export async function checkPaletteTerms(browser: Browser, origin: string, theme: "light" | "dark") {
+  const { resolve } = await import("node:path");
+  const context = await browser.newContext({ viewport: { width: 1600, height: 1000 }, locale: "ja-JP", colorScheme: theme, reducedMotion: "reduce" });
+  await context.addInitScript((value) => localStorage.setItem("honkoku.theme", value), theme);
+  const page = await context.newPage();
+  page.setDefaultTimeout(15000);
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  const group = (name: string) => page.getByRole("toolbar", { name, exact: true });
+  const open = async (name: string) => { await group(name).getByRole("button", { name, exact: true }).hover(); };
+  try {
+    await page.goto(origin + "/#/spike/editor");
+    await page.locator(".vertical-editor").waitFor();
+    await reset(page, "春夏秋");
+    await select(page, 4);
+    await open("注記");
+    await group("注記").getByRole("button", { name: "注記朱書", exact: true }).click();
+    assert.equal(await source(page), "春夏秋【朱書】");
+    await reset(page, "春夏秋");
+    await select(page, 2, 3);
+    await open("注記");
+    await group("注記").getByRole("button", { name: "選択を注記に", exact: true }).click();
+    assert.equal(await source(page), "春【夏】秋");
+    await reset(page, "春");
+    await select(page, 2);
+    await open("注記");
+    await group("注記").getByRole("button", { name: "選択を注記に", exact: true }).click();
+    await page.keyboard.insertText("頭注");
+    assert.equal(await source(page), "春【頭注】");
+    await open("注記");
+    await reset(page, "春");
+    await select(page, 2);
+    const input = group("注記").getByRole("textbox", { name: "その他の注記" });
+    await input.fill("筆者注");
+    await input.press("Enter");
+    assert.ok((await source(page)).includes("【筆者注】"));
+    await page.reload();
+    await page.locator(".vertical-editor").waitFor();
+    await open("注記");
+    await group("注記").getByRole("button", { name: "注記筆者注", exact: true }).waitFor();
+    await group("注記").getByRole("button", { name: "注記筆者注を忘れる", exact: true }).click();
+    if (theme === "light") {
+      await open("注記");
+      await group("注記").locator(".palette-glyphs").evaluate((el) => { el.scrollTop = 0; });
+      await page.screenshot({ path: resolve(".local/shots/22-palette-notes-light.png") });
+    }
+    await reset(page, "は");
+    await select(page, 2);
+    await open("記号");
+    await group("記号").getByRole("button", { name: "記号濁点", exact: true }).click();
+    assert.equal(await source(page), "は\u3099");
+    await reset(page, "京都と京都");
+    await open("この資料");
+    await group("この資料").getByRole("button", { name: "京都", exact: true }).waitFor();
+    await select(page, 6);
+    await page.keyboard.insertText("と松前藩と松前藩");
+    await open("この資料");
+    await group("この資料").getByRole("button", { name: "松前藩", exact: true }).waitFor();
+    await reset(page, "かな");
+    await open("この資料");
+    await group("この資料").getByText("資料内の語はまだありません", { exact: true }).waitFor();
+
+    const entry = "0916dafb80cdc48ca7687afcad4a4f35";
+    await page.evaluate(async (entryId) => {
+      const { fixtureInvoke } = await import("/src/dev/fixtures.ts");
+      const pages = await fixtureInvoke("list_pages", { entryId }) as { index: number; text: string }[];
+      for (const p of pages) p.text = p.index === 3
+        ? "蝦夷紀行\n松前藩より江戸へ至る\n最上徳内の記録"
+        : p.index === 4 ? "松前藩にて最上徳内に会ふ" : "";
+    }, entry);
+    await page.goto(`${origin}/#/entries/${entry}/pages/3`);
+    await page.getByRole("button", { name: "編集開始", exact: true }).click();
+    await page.locator(".vertical-editor").waitFor();
+    await open("この資料");
+    const terms = group("この資料").locator(".palette-glyphs button");
+    await terms.first().waitFor();
+    assert.ok(await terms.count() > 0);
+    assert.match(await terms.first().getAttribute("title") ?? "", /資料内\d[\d,]*回/u);
+    await page.evaluate(() => document.fonts.ready);
+    await page.waitForLoadState("networkidle", { timeout: 20000 });
+    await page.evaluate(() => import("/src/dev/viewer-harness.ts"));
+    await page.waitForFunction(() => {
+      const viewer = window.honkokuViewer();
+      return viewer && viewer.world.getItemCount() > 0 && viewer.getFullyLoaded();
+    });
+    await page.screenshot({ path: resolve(`.local/shots/22-palette-terms-${theme}.png`) });
+    await page.getByRole("button", { name: "原文表示", exact: true }).click();
+    const raw = page.getByRole("textbox", { name: "原文を編集", exact: true });
+    await raw.fill((await raw.inputValue()) + "\n松前城と松前城");
+    await open("この資料");
+    await group("この資料").getByRole("button", { name: "松前城", exact: true }).waitFor();
+    await page.getByRole("button", { name: "原文表示", exact: true }).click();
+
+    assert.deepEqual(errors, []);
+    console.log(`Palette checks passed (${theme}): inline notes, empty shell, custom notes, combining mark, fixture entry terms, live edits, empty terms.`);
+  } finally {
+    await context.close();
+  }
+}

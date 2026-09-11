@@ -1383,6 +1383,8 @@
           <VerticalEditor
             {horizontal}
             accountId={session?.uid}
+            otherPageTexts={pages.filter((p) => p.id !== page.id).map((p) => p.text)}
+            pageId={page.id}
             bind:this={editor}
             bind:source
             onready={(instance) => (editorInstance = instance)}
