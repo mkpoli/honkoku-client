@@ -2386,6 +2386,7 @@ export async function checkHistory(browser: Browser, origin: string, theme: "lig
     await page.locator('.history-save').first().click();
     assert.equal(await page.locator('.history-diff ins').innerText(),'里');
     assert.equal(await page.locator('.history-diff del').innerText(),'山');
+    await viewerReady(page);
     await page.evaluate(()=>document.fonts.ready);
     await page.screenshot({path:resolve(import.meta.dir,`../../.local/shots/20-history-${theme}.png`)});
     await page.getByLabel('横書きで見る',{exact:true}).check();
@@ -2417,5 +2418,6 @@ export async function checkHistory(browser: Browser, origin: string, theme: "lig
     await page.locator('.guidelines .markdown').first().waitFor();
     assert.match(await page.locator('.guidelines').innerText(),/ガイドライン/);
     assert.deepEqual(errors,[]);
+    console.log(`History checks passed (${theme}): saves, diff, restore, undo, bibliography, markup reference, guidelines.`);
   } finally {await context.close();}
 }
