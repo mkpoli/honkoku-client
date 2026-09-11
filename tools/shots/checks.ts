@@ -3158,13 +3158,13 @@ export async function checkTextScale(
 
     assert.deepEqual(errors, []);
     if (theme === "light") {
-      await page.getByRole("button", { name: "原文表示", exact: true }).click();
+      await page.getByRole("button", { name: "記法", exact: true }).click();
       await page
         .getByRole("textbox", { name: "原文を編集", exact: true })
         .fill(
           `【右丁】\n\n${"讀＿レ￣ム".repeat(35)}\n《割書：一二三四｜五六》＃1`,
         );
-      await page.getByRole("button", { name: "原文表示", exact: true }).click();
+      await page.getByRole("button", { name: "記法", exact: true }).click();
       await page.waitForTimeout(400);
       assert.deepEqual(
         await page
@@ -3173,21 +3173,21 @@ export async function checkTextScale(
         ["L1", "L2", "L3", "L4"],
       );
       await assertFits();
-      await page.getByRole("button", { name: "原文表示", exact: true }).click();
+      await page.getByRole("button", { name: "記法", exact: true }).click();
       await page.setViewportSize({ width: 1600, height: 700 });
       for (const source of ["■".repeat(35), "《箱：字》".repeat(30)]) {
         await page.getByRole("textbox", { name: "原文を編集", exact: true }).fill(source);
-        await page.getByRole("button", { name: "原文表示", exact: true }).click();
+        await page.getByRole("button", { name: "記法", exact: true }).click();
         await page.waitForTimeout(400);
         assert.ok(await fontSize() > 8.5);
         await assertFits();
-        await page.getByRole("button", { name: "原文表示", exact: true }).click();
+        await page.getByRole("button", { name: "記法", exact: true }).click();
       }
       await page.setViewportSize({ width: 1600, height: 1000 });
       await page
         .getByRole("textbox", { name: "原文を編集", exact: true })
         .fill("山".repeat(200));
-      await page.getByRole("button", { name: "原文表示", exact: true }).click();
+      await page.getByRole("button", { name: "記法", exact: true }).click();
       await page.waitForTimeout(400);
       assert.equal(await fontSize(), 8.5);
       assert.equal(
