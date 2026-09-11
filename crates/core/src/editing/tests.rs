@@ -788,3 +788,25 @@ async fn notes_draft_rejects_a_lost_lock() -> Result<()> {
     }
     Ok(())
 }
+
+#[tokio::test]
+async fn anonymous_reader_receives_live_text_without_owning_lock() -> Result<()> {
+    let server = MockServer::start().await;
+    let mut document = page_reads()[0].clone();
+    document["fields"]["status"] = json!({"stringValue":"editing"});
+    document["fields"]["syncMode"] = json!({"booleanValue":true});
+    document["fields"]["tempText"] = json!({"stringValue":"共有する本文"});
+    Mock::given(method("POST"))
+        .and(path("/documents:batchGet"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!([{"found":document}])))
+        .expect(1)
+        .mount(&server)
+        .await;
+    let client =
+        HonkokuClient::with_endpoints(&server.uri(), &format!("{}/documents", server.uri()))?;
+    let state = client.page_lock_state(ENTRY, 20).await?;
+    assert!(!state.is_mine);
+    assert!(state.sync_mode);
+    assert_eq!(state.page.temp_text.as_deref(), Some("共有する本文"));
+    Ok(())
+}
