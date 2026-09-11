@@ -245,6 +245,7 @@
     hoveredLine === null ? currentColumn : alignment.indexOf(hoveredLine),
   );
   let editor = $state<VerticalEditor>();
+  let notationMode = $state(false);
   let transcription = $state<Transcription>();
   function columnChange(index: number) {
     currentColumn = index;
@@ -1380,7 +1381,9 @@
           class="workbench-editor"
           inert={busy || verifying}
         >
+          {#if notationMode}<div class="pane-toolbar"><span class="caption muted">記法で編集中</span></div>{/if}
           <VerticalEditor
+            onnotationchange={(active) => (notationMode = active)}
             {horizontal}
             accountId={session?.uid}
             otherPageTexts={pages.filter((p) => p.id !== page.id).map((p) => p.text)}

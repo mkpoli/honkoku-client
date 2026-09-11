@@ -1215,7 +1215,6 @@ main {
   height: auto;
   white-space: pre-wrap;
 }
-.markup-editorial,
 .markup-reference {
   color: var(--link);
 }

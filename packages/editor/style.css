@@ -185,9 +185,6 @@
   border: 1px solid currentColor;
   padding: 2px;
 }
-.editor-place {
-  text-decoration: underline dotted;
-}
 /* Both sides reserve the longer run's height in the vertical column. */
 .kunten-mark {
   display: inline-block;
@@ -532,4 +529,120 @@
   padding: 2px 2px;
   font-size: 15px;
   line-height: 24px;
+}
+
+/* Inline annotations share geometry and colour in the editor and reading view. */
+.inline-annotation {
+  --annotation-color: var(--accent);
+  display: inline;
+  font-size: 0.72em;
+  line-height: inherit;
+  color: var(--annotation-color);
+  background: color-mix(in srgb, var(--annotation-color) 10%, transparent);
+  border-radius: 2px;
+  padding: 0 1px;
+  white-space: nowrap;
+}
+.inline-annotation.editor-place {
+  --annotation-color: var(--gold);
+}
+.inline-annotation.editor-person {
+  --annotation-color: var(--link);
+}
+.inline-annotation.editor-date {
+  --annotation-color: var(--success);
+}
+.inline-annotation-bracket {
+  color: var(--text-muted);
+}
+.inline-note-ellipsis {
+  display: none;
+}
+.inline-annotation[data-note-collapsed="true"]:not(.editor-caret-small):not(
+    :has(.editor-caret-small)
+  )
+  .inline-note-tail {
+  display: none;
+}
+.inline-annotation[data-note-collapsed="true"]:not(.editor-caret-small):not(
+    :has(.editor-caret-small)
+  )
+  > .inline-note-ellipsis {
+  display: inline;
+}
+.editor-notation {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  background: var(--surface-inset);
+}
+.editor-notation > .editor-raw-textarea,
+.editor-notation-mirror {
+  position: absolute;
+  inset: 0;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  padding: 20px;
+  font: 400 16px/28px var(--editor-font);
+  letter-spacing: normal;
+  text-align: start;
+  text-indent: 0;
+  tab-size: 8;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  direction: ltr;
+  writing-mode: horizontal-tb;
+}
+.editor-notation-mirror {
+  overflow: hidden;
+  pointer-events: none;
+  color: var(--text);
+}
+/* Keep the empty final line measurable without adding to the source text. */
+.editor-notation-mirror::after {
+  content: "\200b";
+}
+.editor-notation > .editor-raw-textarea {
+  overflow: auto;
+  background: transparent;
+  color: transparent;
+  caret-color: var(--accent);
+}
+.editor-notation > .editor-raw-textarea::selection {
+  background: color-mix(in srgb, var(--link) 25%, transparent);
+}
+.notation-punctuation,
+.notation-label,
+.notation-block,
+.notation-comment {
+  color: var(--text-muted);
+}
+.notation-note {
+  color: var(--accent);
+}
+.notation-ruby-reading,
+.notation-place {
+  color: var(--gold);
+}
+.notation-return,
+.notation-okurigana,
+.notation-person {
+  color: var(--link);
+}
+.notation-date {
+  color: var(--success);
+}
+.notation-reference,
+.notation-gap {
+  color: var(--text-muted);
+  background: color-mix(in srgb, var(--text-muted) 10%, transparent);
+}
+.notation-divider {
+  font-weight: 700;
 }

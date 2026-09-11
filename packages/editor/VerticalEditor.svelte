@@ -28,7 +28,7 @@
   import { palette, glyphLabel, glyphName } from "./palette";
   import { insertEditorial, insertCombiningMark } from "./palette-commands";
   import { createResponsiveTermScorer, loadCorpusDF, type DocumentTerm } from "./terms";
-  import { transcriptionColumns } from "@honkoku/markup";
+  import { transcriptionColumns, tokenizeSource } from "@honkoku/markup";
   import "prosemirror-view/style/prosemirror.css";
   import "./style.css";
   let {
@@ -38,6 +38,7 @@
     oncolumnchange,
     highlightedColumn = -1,
     horizontal = false,
+    onnotationchange,
     onnote,
     onglyph,
     accountId,
@@ -53,6 +54,7 @@
     oncolumnchange?: (index: number) => void;
     highlightedColumn?: number;
     horizontal?: boolean;
+    onnotationchange?: (active: boolean) => void;
     onupdate?: (update: EditorUpdate) => void;
     onready?: (editor: ReturnType<typeof createEditor>) => void;
   } = $props();
@@ -62,6 +64,40 @@
     composing = $state(false);
   let rawInput = $state<HTMLTextAreaElement>(null!);
   let rawRange = { from: 0, to: 0 };
+  // Textarea values normalize all line endings to LF; saved source stays lossless.
+  let notationSource = $derived(source.replace(/\r\n?/g, "\n"));
+  let notationSpans = $derived(tokenizeSource(notationSource));
+  let mirror = $state<HTMLPreElement>(null!);
+  function alignMirror() {
+    if (!rawInput || !mirror) return;
+    mirror.style.width = `${rawInput.clientWidth}px`;
+    mirror.style.height = `${rawInput.clientHeight}px`;
+    mirror.scrollTop = rawInput.scrollTop;
+    mirror.scrollLeft = rawInput.scrollLeft;
+  }
+  function measureNotation(element: HTMLTextAreaElement) {
+    const observer = new ResizeObserver(alignMirror);
+    observer.observe(element);
+    alignMirror();
+    return { destroy: () => observer.disconnect() };
+  }
+  $effect(() => {
+    void notationSpans;
+    void raw;
+    void tick().then(alignMirror);
+  });
+  $effect(() => onnotationchange?.(raw));
+  async function toggleNotation() {
+    if (composing) return;
+    if (raw) captureRaw();
+    raw = !raw;
+    await tick();
+    if (raw) {
+      rawInput.focus();
+      rawInput.setSelectionRange(rawRange.from, rawRange.to);
+      alignMirror();
+    } else editor?.view.focus();
+  }
   type Construct = "振り仮名" | "割書" | "見せ消ち" | "注記";
   const commands: Construct[] = ["振り仮名", "割書", "見せ消ち", "注記"];
   let status = $state("");
@@ -341,6 +377,12 @@
       !(event.ctrlKey || event.metaKey)
     )
       return;
+    if (event.shiftKey && event.key.toLowerCase() === "m") {
+      event.preventDefault();
+      event.stopPropagation();
+      void toggleNotation();
+      return;
+    }
     const title = (
       { r: "振り仮名", w: "割書", m: "見せ消ち", n: "注記" } as const
     )[event.key.toLowerCase() as "r"];
@@ -479,10 +521,8 @@
     <button
       disabled={composing}
       aria-pressed={raw}
-      onclick={() => {
-        raw = !raw;
-        if (!raw) requestAnimationFrame(() => editor?.view.focus());
-      }}>原文表示</button
+      title="記法のまま編集（Ctrl+Shift+M）"
+      onclick={toggleNotation}>記法</button
     >
   </div>
   {#if status}<p class="editor-status" role="status">{status}</p>{/if}
@@ -621,7 +661,12 @@
     <div class="transcription editor-scroll" class:horizontal hidden={raw}>
       <div bind:this={host} class="editor-mount"></div>
     </div>
-    {#if raw}<textarea
+    {#if raw}<div class="editor-notation">
+      <pre bind:this={mirror} class="editor-notation-mirror" aria-hidden="true">{#each notationSpans as span}<span class={`notation-${span.kind}`}>{span.source}</span>{/each}</pre>
+      <textarea
+        use:measureNotation
+        onscroll={alignMirror}
+        spellcheck="false"
         bind:this={rawInput}
         class="editor-raw-textarea"
         aria-label="原文を編集"
@@ -635,7 +680,7 @@
         value={source}
         oninput={(event) =>
           editor?.setSource(textareaSource(source, event.currentTarget.value))}
-      ></textarea>{/if}
+      ></textarea></div>{/if}
   </div>
 </div>
 {#if note}

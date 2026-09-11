@@ -12,6 +12,7 @@
   import { editorFixture } from "./editor-fixture";
   let source = $state(editorFixture.text);
   let reading = $state(false);
+  let notationMode = $state(false);
   let serialized = $state(toMarkup(fromMarkup(editorFixture.text)));
   let column = $state(0),
     composing = $state(false);
@@ -40,9 +41,10 @@
     <section class="panel transcription-panel">
       <div class="pane-toolbar">
         <h2>翻刻</h2>
-        <span class="caption muted">↑↓文字　←→列　Enter改行</span>
+        <span class="caption muted">{notationMode ? "記法で編集中" : "↑↓文字　←→列　Enter改行"}</span>
       </div>
       <VerticalEditor
+        onnotationchange={(active) => (notationMode = active)}
         accountId="fixture-editor"
         bind:source
         onupdate={update}

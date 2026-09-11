@@ -249,10 +249,21 @@ test("a selected kana run becomes katakana okurigana after the preceding charact
   ];
   for (const [source, from, to, expected] of cases) {
     const e = editor(source);
-    const tr = e.state.tr.setSelection(TextSelection.create(e.state.doc, from, to));
+    const tr = e.state.tr.setSelection(
+      TextSelection.create(e.state.doc, from, to),
+    );
     e.dispatch(tr);
     const done = okuriganaFromSelection(e.state, e.dispatch);
     expect(done).toBe(expected !== false);
     if (expected !== false) expect(e.source).toBe(expected);
+  }
+});
+
+test("edited legacy semantic fields keep their original delimiters", () => {
+  for (const source of ["〔日本橋〕", "｛内蔵助｝", "＜安政二年＞"]) {
+    const doc = fromMarkup(source);
+    const state = EditorState.create({ doc });
+    const tr = state.tr.insertText("新", 3, 4);
+    expect(toMarkup(tr.doc)).toBe(source[0] + "新" + source.slice(2));
   }
 });
