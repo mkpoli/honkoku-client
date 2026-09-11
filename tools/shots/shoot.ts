@@ -1,4 +1,4 @@
-import { checkPaletteTerms, checkInlineEditor } from "./editor-checks";
+import { checkPaletteTerms, checkInlineEditor, checkNotesStyle } from "./editor-checks";
 import {
   checkCaretContexts,
   checkHistory,
@@ -175,6 +175,19 @@ try {
       throw Error("Vite did not start on the assigned port.");
   }
   browser = await chromium.launch({ headless: true });
+  for (const theme of ["light", "dark"] as const)
+    await checkNotesStyle(browser, origin, theme);
+  if (process.env.HONKOKU_SHOTS_NOTES_STYLE_ONLY === "1") {
+    const webkitBrowser = await webkit.launch({ headless: true });
+    try {
+      for (const theme of ["light", "dark"] as const)
+        await checkNotesStyle(webkitBrowser, origin, theme, "-webkit");
+    } finally { await webkitBrowser.close(); }
+    await browser.close();
+    browser = undefined;
+    await stopServer();
+    process.exit(0);
+  }
   for (const theme of ["light", "dark"] as const) await checkPaletteTerms(browser, origin, theme);
   if (process.env.HONKOKU_SHOTS_TERMS_ONLY === "1") {
     await browser.close();
@@ -235,6 +248,7 @@ try {
     await checkAlignment(browser, origin, theme);
   const webkitBrowser = await webkit.launch({ headless: true });
   try {
+    await checkNotesStyle(webkitBrowser, origin, "light", "-webkit");
     await checkCaretContexts(webkitBrowser, origin, "light", "-webkit");
     await checkGlyphs(webkitBrowser, origin, "light", "-webkit");
     await checkInlineEditor(webkitBrowser, origin, "light", "-webkit");

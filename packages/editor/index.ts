@@ -3,6 +3,7 @@ import {
   Schema,
   type Node as PMNode,
   type NodeSpec,
+  type DOMOutputSpec,
 } from "prosemirror-model";
 import {
   EditorState,
@@ -21,6 +22,8 @@ import {
   parse,
   parseLine,
   allowsChild,
+  inlineBrackets,
+  notePreview,
   type SyntaxNode,
 } from "@honkoku/markup";
 export { undo, redo, TextSelection, NodeSelection };
@@ -43,6 +46,35 @@ const annotationNames = Object.fromEntries(
     ([kind]) => !["return", "okurigana"].includes(kind),
   ),
 );
+function smallAnnotationDOM(kind: string, text?: string): DOMOutputSpec[] {
+  const [open, close] = inlineBrackets[kind];
+  return [
+    [
+      "span",
+      { class: "inline-annotation-bracket", contenteditable: "false" },
+      open,
+    ],
+    [
+      "span",
+      { class: "inline-annotation-body" },
+      text === undefined ? 0 : notePreview(text),
+    ],
+    ...(text === undefined && kind === "note"
+      ? [
+          [
+            "span",
+            { class: "inline-note-ellipsis", contenteditable: "false" },
+            "…",
+          ] as DOMOutputSpec,
+        ]
+      : []),
+    [
+      "span",
+      { class: "inline-annotation-bracket", contenteditable: "false" },
+      close,
+    ],
+  ];
+}
 const nodes: Record<string, NodeSpec> = {
   doc: { content: "column+", attrs: { newline: { default: "\n" } } },
   column: {
@@ -104,13 +136,18 @@ const nodes: Record<string, NodeSpec> = {
               "aria-label": `注記${Number(node.attrs.source.slice(1).normalize("NFKC"))}`,
             }
           : {}),
-        class: `editor-source-anchor editor-token markup-${node.attrs.kind === "gap" ? "glyph" : node.attrs.kind}`,
+        class: `editor-source-anchor editor-token markup-${node.attrs.kind === "gap" ? "glyph" : node.attrs.kind}${node.attrs.kind === "editorial" ? " inline-annotation editor-editorial" : ""}`,
+        ...(node.attrs.kind === "editorial"
+          ? { title: node.attrs.source.slice(1, -1) }
+          : {}),
         "data-source": node.attrs.source,
         "data-kind": node.attrs.kind,
         "data-context-label": contextName(node),
         contenteditable: "false",
       },
-      node.attrs.source,
+      ...(node.attrs.kind === "editorial"
+        ? smallAnnotationDOM("editorial", node.attrs.source.slice(1, -1))
+        : [node.attrs.source]),
     ],
     parseDOM: [
       {
@@ -146,17 +183,20 @@ for (const name of [...Object.keys(annotationNames), "return", "okurigana"]) {
     toDOM: (node) => [
       name === "ruby" ? "ruby" : "span",
       {
-        class: `editor-annotation editor-${name}`,
+        class: `editor-annotation editor-${name}${inlineBrackets[name] ? " inline-annotation" : ""}`,
         "data-annotation": name,
         "data-form": node.attrs.form,
         "data-context-label": contextName(node),
         ...(name === "return" ? { contenteditable: "false" } : {}),
       },
-      0,
+      ...(inlineBrackets[name] ? smallAnnotationDOM(name) : [0 as const]),
     ],
     parseDOM: [
       {
         tag: `[data-annotation="${name}"]`,
+        ...(inlineBrackets[name]
+          ? { contentElement: ".inline-annotation-body" }
+          : {}),
         getAttrs: (e) => ({ form: e.getAttribute("data-form") ?? "bracket" }),
       },
     ],
@@ -225,7 +265,14 @@ function inlineSource(node: PMNode): string {
     JSON.stringify(values) === JSON.stringify(node.attrs.originalParts)
   )
     return node.attrs.original;
-  if (node.type.name === "return") return `＿${values[0]}`;
+  if (node.attrs.form === "legacy" && inlineBrackets[node.type.name]) {
+    const [open, close] = inlineBrackets[node.type.name];
+    return `${open}${values[0]}${close}`;
+  }
+  if (node.type.name === "return")
+    return node.attrs.form === "legacy"
+      ? `｛＿${values[0]}｝`
+      : `＿${values[0]}`;
   if (node.type.name === "okurigana") return `￣${values[0]}`;
   if (node.type.name === "ruby" && node.attrs.form === "legacy")
     return `${node.attrs.original?.startsWith("／") ? "／" : ""}${values[0]}（${values.slice(1).join("｜")}）`;
@@ -511,7 +558,9 @@ export const okuriganaFromSelection: Command = (state, dispatch) => {
   const kana = state.doc
     .textBetween(from, to, "\ufffc", "\ufffc")
     .normalize("NFC")
-    .replace(/[ぁ-ゖ]/gu, (c) => String.fromCodePoint(c.codePointAt(0)! + 0x60));
+    .replace(/[ぁ-ゖ]/gu, (c) =>
+      String.fromCodePoint(c.codePointAt(0)! + 0x60),
+    );
   if (!/^[ァ-ヶ]{1,8}$/u.test(kana) || !$from.nodeBefore) return false;
   const node = annotation("okurigana", [kana]);
   const tr = closeHistory(state.tr).replaceWith(from, to, node);
@@ -703,6 +752,30 @@ function decorations(doc: PMNode): DecorationSet {
     }
   });
   doc.descendants((node, pos) => {
+    if (node.type.name === "note") {
+      const content = node.textContent;
+      if (notePreview(content) !== content) {
+        let remaining = notePreview(content).slice(0, -1).length;
+        let tail = -1;
+        node.descendants((child, offset) => {
+          if (!child.isText || tail >= 0) return;
+          if (remaining < child.nodeSize) tail = pos + 1 + offset + remaining;
+          else remaining -= child.nodeSize;
+        });
+        if (tail >= 0)
+          decorations.push(
+            Decoration.inline(tail, pos + node.nodeSize - 2, {
+              class: "inline-note-tail",
+            }),
+          );
+      }
+      decorations.push(
+        Decoration.node(pos, pos + node.nodeSize, {
+          title: content,
+          "data-note-collapsed": String(notePreview(content) !== content),
+        }),
+      );
+    }
     if (node.type.name !== "source") return;
     if (node.attrs.kind === "divider") {
       const $pos = doc.resolve(pos);
@@ -865,8 +938,7 @@ export function createEditor(
   let composing = false;
   let pendingSource: string | undefined;
   let composingContext:
-    | { from: number; node: PMNode; emptyDoc: PMNode }
-    | undefined;
+    { from: number; node: PMNode; emptyDoc: PMNode } | undefined;
   const decorationPlugin: Plugin<DecorationSet> = new Plugin<DecorationSet>({
     state: {
       init: (_, state) => decorations(state.doc),

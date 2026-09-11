@@ -74,9 +74,24 @@ test("unlabelled leading and trailing breaks remain empty columns", () => {
   ]);
 });
 
-test("legacy catalog wrappers render in the reading view without punctuation shells", async () => {
-  const {renderReadingLine}=await import('./index');
-  expect(renderReadingLine('｛人物｝〔場所〕＜日時＞')).toBe('人物場所日時');
-  expect(renderReadingLine('讀｛＿レ｝')).toContain('kunten-return');
-  expect(renderReadingLine('【｛注釈｝】')).toContain('｛注釈｝');
+test("legacy catalog wrappers render with semantic inline shells", async () => {
+  const { renderReadingLine } = await import("./index");
+  for (const kind of ["person", "place", "date"])
+    expect(renderReadingLine("｛人物｝〔場所〕＜日時＞")).toContain(
+      `markup-${kind}`,
+    );
+  expect(renderReadingLine("讀｛＿レ｝")).toContain("kunten-return");
+  expect(renderReadingLine("【｛注釈｝】")).toContain("｛注釈｝");
+});
+
+test("structured note previews count field text rather than notation", async () => {
+  const { renderReadingLine } = await import("./index");
+  const short = renderReadingLine("《注記：《題：一二三四五六七八九十》》");
+  expect(short).toContain('title="一二三四五六七八九十"');
+  expect(short).toContain("editor-title");
+  expect(short).not.toContain("…");
+  const long = renderReadingLine(
+    "《注記：《題：一二三四五六七八九十一二三》》",
+  );
+  expect(long).toContain('inline-annotation-body">一二三四五六…</span>');
 });
