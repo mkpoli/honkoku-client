@@ -304,7 +304,10 @@
                 ? environment.device.toLowerCase() === "cuda"
                   ? "CUDA"
                   : environment.device.toUpperCase()
-                : "未確認"}
+                : "未確認"}{#if environment?.cuda_error}<span
+                  class="caption muted ocr-cuda-error"
+                  >CUDAを使えません：{environment.cuda_error}</span
+                >{/if}
             </dd>
           </div>
         </dl>

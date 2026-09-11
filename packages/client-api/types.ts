@@ -336,6 +336,7 @@ export interface OcrStatus {
   models_ready: boolean;
   model_version: string;
   cuda_available: boolean;
+  cuda_error?: string | null;
 }
 export interface OcrProgress {
   id: number;

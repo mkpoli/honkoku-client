@@ -1,5 +1,13 @@
 //! Local OCR environment, persistent protocol worker, and canvas result flow.
 mod environment;
+/// Builds a subprocess command; on Windows the child gets no console window of its own.
+pub(crate) fn command(program: impl AsRef<std::ffi::OsStr>) -> tokio::process::Command {
+    #[allow(unused_mut)]
+    let mut command = tokio::process::Command::new(program);
+    #[cfg(windows)]
+    command.creation_flags(0x0800_0000);
+    command
+}
 mod page;
 mod sidecar;
 pub use environment::OcrEnvironment;
@@ -31,6 +39,8 @@ pub struct OcrStatus {
     pub models_ready: bool,
     pub model_version: String,
     pub cuda_available: bool,
+    #[serde(default)]
+    pub cuda_error: Option<String>,
     #[serde(default)]
     pub environment_ready: bool,
 }

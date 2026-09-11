@@ -44,7 +44,7 @@ impl OcrEnvironment {
             .is_some_and(|record| record.use_gpu)
     }
     pub async fn driver_available() -> bool {
-        Command::new("nvidia-smi")
+        crate::command("nvidia-smi")
             .stdout(Stdio::null())
             .stderr(Stdio::null())
             .status()
@@ -61,7 +61,7 @@ impl OcrEnvironment {
         Ok(path)
     }
     pub async fn setup(&self, requested_gpu: bool, progress: ProgressHandler) -> Result<()> {
-        if !Command::new("uv")
+        if !crate::command("uv")
             .arg("--version")
             .stdout(Stdio::null())
             .stderr(Stdio::null())
@@ -84,29 +84,41 @@ impl OcrEnvironment {
         if record.exists() {
             std::fs::remove_file(&record)?;
         }
-        let mut create = Command::new("uv");
+        let mut create = crate::command("uv");
         create
             .args(["venv", "--python", "3.12", "--allow-existing"])
             .arg(self.directory.join("venv"));
         stream(create, progress.clone()).await?;
         // Both wheels own the same import directory; uninstall before switching providers.
-        let mut remove = Command::new("uv");
+        let mut remove = crate::command("uv");
         remove
             .args(["pip", "uninstall", "--python"])
             .arg(self.python())
             .args(["onnxruntime", "onnxruntime-gpu"]);
         stream(remove, progress.clone()).await?;
-        let mut install = Command::new("uv");
+        let mut install = crate::command("uv");
         install
             .args(["pip", "install", "--python"])
-            .arg(self.python())
-            .arg(if use_gpu {
-                "honkoku-ocr-py[gpu]==0.3.0"
-            } else {
-                "honkoku-ocr-py[cpu]==0.3.0"
-            });
+            .arg(self.python());
+        if use_gpu {
+            // onnxruntime-gpu 1.29 links CUDA 13; the runtime wheels for CUDA 13 carry no
+            // "-cu13" suffix except cuDNN, and onnxruntime.preload_dlls() finds them.
+            install.args([
+                "honkoku-ocr-py==0.3.0",
+                "onnxruntime-gpu>=1.29",
+                "nvidia-cuda-runtime",
+                "nvidia-cublas",
+                "nvidia-cudnn-cu13",
+                "nvidia-cufft",
+                "nvidia-curand",
+                "nvidia-cuda-nvrtc",
+                "nvidia-nvjitlink",
+            ]);
+        } else {
+            install.arg("honkoku-ocr-py[cpu]==0.3.0");
+        }
         stream(install, progress).await?;
-        let output = Command::new("uv")
+        let output = crate::command("uv")
             .args(["pip", "list", "--format", "json", "--python"])
             .arg(self.python())
             .output()

@@ -26,6 +26,36 @@ def progress(request_id, stage, done, total, message):
               total=total, message=message))
 
 
+cuda_probe_result = None
+
+
+def cuda_probe():
+    """Creates a one-node session on the CUDA provider without CPU fallback."""
+    global cuda_probe_result
+    if cuda_probe_result is not None:
+        return cuda_probe_result
+    try:
+        import onnxruntime as ort
+        from onnx import TensorProto, helper
+        ort.preload_dlls()
+        graph = helper.make_graph(
+            [helper.make_node("Identity", ["x"], ["y"])], "probe",
+            [helper.make_tensor_value_info("x", TensorProto.FLOAT, [1])],
+            [helper.make_tensor_value_info("y", TensorProto.FLOAT, [1])])
+        model = helper.make_model(graph, opset_imports=[helper.make_opsetid("", 17)])
+        model.ir_version = 9
+        options = ort.SessionOptions()
+        options.log_severity_level = 3
+        options.add_session_config_entry("session.disable_cpu_ep_fallback", "1")
+        session = ort.InferenceSession(model.SerializeToString(), options,
+                                       providers=["CUDAExecutionProvider"])
+        usable = "CUDAExecutionProvider" in session.get_providers()
+        cuda_probe_result = (usable, None if usable else "CUDAExecutionProviderを作成できません。")
+    except Exception as error:
+        cuda_probe_result = (False, re.sub(r"\s+", " ", str(error))[:400])
+    return cuda_probe_result
+
+
 def status():
     from honkoku_ocr import models
     from honkoku_ocr.doctor import runtime_report
@@ -35,11 +65,13 @@ def status():
         models.ensure(offline=True, quiet=True, digest=True)
     except (OSError, RuntimeError):
         ready = False
-    cuda = runtime["cuda"]
+    wanted = os.environ.get("HONKOKU_OCR_DEVICE") == "cuda"
+    usable, cuda_error = cuda_probe() if wanted and runtime["cuda"] else (False, None)
     return dict(version=importlib.metadata.version("honkoku-ocr-py"),
-                device="cuda" if cuda and os.environ.get("HONKOKU_OCR_DEVICE") == "cuda" else "cpu",
+                device="cuda" if wanted and usable else "cpu",
                 models_ready=ready, model_version=models.DEFAULT_VERSION,
-                cuda_available=cuda)
+                cuda_available=bool(runtime["cuda"]) and usable,
+                cuda_error=cuda_error)
 
 
 def handle(request, cancelled):
