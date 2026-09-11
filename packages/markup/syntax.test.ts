@@ -130,3 +130,15 @@ test("compound fields split only at their own separators", () => {
   ])
     expect(parseLine(source)[0].kind).toBe("raw");
 });
+
+test("an okurigana run ends where the katakana ends, as on the site", () => {
+  const kinds = (source: string) =>
+    parseLine(source).map((node) => `${node.kind}:${node.source}`);
+  expect(kinds("辺￣ニはゑそ")).toEqual([
+    "text:辺",
+    "okurigana:￣ニ",
+    "text:はゑそ",
+  ]);
+  expect(kinds("讀￣ムー")).toEqual(["text:讀", "okurigana:￣ム", "text:ー"]);
+  expect(kinds("地￣へ罷越")).toEqual(["text:地", "raw:￣", "text:へ罷越"]);
+});

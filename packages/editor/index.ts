@@ -525,7 +525,7 @@ const isKunten = (node: PMNode | null | undefined) =>
 export const insertOkurigana =
   (kana: string): Command =>
   (state, dispatch) => {
-    if (!/^[ァ-ヶー]{1,8}$/u.test(kana) || !canInsert(state, "okurigana"))
+    if (!/^[ァ-ヶ]{1,8}$/u.test(kana) || !canInsert(state, "okurigana"))
       return false;
     const { $to, to } = state.selection;
     if (!$to.nodeBefore) return false;
@@ -546,7 +546,7 @@ export const okuriganaFromSelection: Command = (state, dispatch) => {
     .textBetween(from, to, "\ufffc", "\ufffc")
     .normalize("NFC")
     .replace(/[ぁ-ゖ]/gu, (c) => String.fromCodePoint(c.codePointAt(0)! + 0x60));
-  if (!/^[ァ-ヶー]{1,8}$/u.test(kana) || !$from.nodeBefore) return false;
+  if (!/^[ァ-ヶ]{1,8}$/u.test(kana) || !$from.nodeBefore) return false;
   const node = annotation("okurigana", [kana]);
   const tr = closeHistory(state.tr).replaceWith(from, to, node);
   dispatch?.(
@@ -567,7 +567,7 @@ export const extendOkurigana =
   (text: string): Command =>
   (state, dispatch) => {
     const { empty, $from, from } = state.selection;
-    if (!empty || !/^[ァ-ヶー]+$/u.test(text)) return false;
+    if (!empty || !/^[ァ-ヶ]+$/u.test(text)) return false;
     const previous = $from.nodeBefore;
     if (previous?.type.name === "okurigana") {
       const node = annotation("okurigana", [parts(previous)[0] + text]);
@@ -606,14 +606,14 @@ export const normalizeTypedOkurigana: Command = (state, dispatch) => {
   const { empty, $from, from } = state.selection;
   const text = $from.nodeBefore;
   if (!empty || !text?.isText || $from.parent.type.name === "raw") return false;
-  const prefixed = /￣([ァ-ヶー]+)$/u.exec(text.text!);
+  const prefixed = /￣([ァ-ヶ]+)$/u.exec(text.text!);
   let start: number;
   let kana: string;
   if (prefixed) {
     start = from - prefixed[0].length;
     kana = prefixed[1];
   } else {
-    if (!/^[ァ-ヶー]+$/u.test(text.text!)) return false;
+    if (!/^[ァ-ヶ]+$/u.test(text.text!)) return false;
     const previous = $from.parent.childBefore(
       $from.parentOffset - text.nodeSize,
     ).node;

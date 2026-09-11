@@ -1687,12 +1687,13 @@ button.line-overlay.line-hidden {
   pointer-events: none;
 }
 
-.reading .topbar {
-  height: 44px;
+.toolbar-leading {
+  display: flex;
+  align-items: center;
   gap: 12px;
-  padding: 6px 16px;
+  min-width: 0;
 }
-.reading .topbar > .status {
+.toolbar-leading > .status {
   font-size: 13px;
   white-space: nowrap;
 }
@@ -2073,6 +2074,9 @@ button.line-overlay.line-hidden {
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   flex-wrap: nowrap;
   min-height: 54px;
+  padding: 4px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
 }
 .page-position {
   display: flex;
@@ -2128,11 +2132,28 @@ button.line-overlay.line-hidden {
   border-radius: 6px;
   padding: 4px 8px;
 }
+.workbench {
+  position: relative;
+}
 .workbench-notification {
-  background: var(--surface-inset);
-  padding: 4px 12px;
-  min-height: 26px;
-  flex-shrink: 0;
+  position: absolute;
+  top: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 6;
+  padding: 4px 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 8%);
+  pointer-events: none;
+  white-space: nowrap;
+}
+.page-position .edit-status {
+  min-height: 14px;
+  line-height: 14px;
+  font-size: 11px;
+  color: var(--text-muted);
 }
 .facsimile-panel {
   position: relative;

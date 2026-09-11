@@ -674,42 +674,32 @@ export async function checkAlignment(
     await page.goto(
       `${origin}/#/entries/${fixture.page.entryId}/pages/${fixture.page.index}`,
     );
-    const toggle = page.getByRole("button", { name: "行枠", exact: true });
-    await toggle.waitFor();
     await page.waitForFunction(
       (count) => document.querySelectorAll(".line-overlay").length === count,
       model.lines.length,
     );
-    assert.equal(await toggle.getAttribute("aria-pressed"), "false");
     assert.equal(await page.locator(".line-overlay:visible").count(), 0);
-    await toggle.click();
-    assert.equal(
-      await page.locator(".line-overlay:visible").count(),
-      model.lines.length,
-    );
-    const third = page.locator('.line-overlay[data-line-index="2"]');
-    await third.click();
     const expectedColumn = matches.indexOf(2);
     assert.ok(expectedColumn >= 0);
+    await page.goto(
+      `${origin}/#/entries/${fixture.page.entryId}/pages/${fixture.page.index}?column=${expectedColumn}`,
+    );
+    const third = page.locator('.line-overlay[data-line-index="2"]');
+    await third.waitFor({ state: "visible" });
+    assert.equal(await page.locator(".line-overlay:visible").count(), 1);
     assert.equal(
       await page
         .locator(".transcription-reader .alignment-active-column")
         .getAttribute("data-column-index"),
       String(expectedColumn),
     );
-    await page.mouse.move(0, 0);
-    await page.waitForTimeout(2100);
-    assert.equal(
-      await page
-        .locator(".transcription-reader .alignment-active-column")
-        .count(),
-      0,
-    );
-    await third.click();
     await page.getByRole("button", { name: "編集開始", exact: true }).click();
     const editor = page.getByRole("textbox", { name: "翻刻本文", exact: true });
     await editor.waitFor();
-    await third.click();
+    await page
+      .locator(`.editor-mount [data-column-index="${expectedColumn}"]`)
+      .first()
+      .click();
     await page.mouse.move(0, 0);
     await page.waitForFunction(
       (index) =>
@@ -739,17 +729,17 @@ export async function checkAlignment(
         .getAttribute("data-column-index"),
       String(expectedColumn - 1),
     );
-    assert.deepEqual(
-      await third.boundingBox(),
-      before,
-      "visible lines do not pan the image",
-    );
     await page.keyboard.press("ArrowLeft");
     await page.waitForFunction(
       () =>
         document
           .querySelector(".line-overlay.highlighted")
           ?.getAttribute("data-line-index") === "2",
+    );
+    assert.deepEqual(
+      await third.boundingBox(),
+      before,
+      "visible lines do not pan the image",
     );
     await page.getByRole("button", { name: "拡大", exact: true }).click();
     await page.waitForTimeout(300);
@@ -793,7 +783,12 @@ export async function checkAlignment(
       "caret panning preserves zoom",
     );
     await page.getByRole("button", { name: "全体", exact: true }).click();
-    await third.click();
+    const focusColumn = () =>
+      page
+        .locator(`.editor-mount [data-column-index="${expectedColumn}"]`)
+        .first()
+        .click();
+    await focusColumn();
     await page.mouse.move(0, 0);
     await page.getByRole("button", { name: "表示設定", exact: true }).click();
     await page
@@ -809,14 +804,12 @@ export async function checkAlignment(
     await page
       .getByRole("button", { name: "左右を入れ替え", exact: false })
       .click();
-    await toggle.click();
     assert.equal(
       await page.locator(".line-overlay:visible").count(),
       1,
-      "current line remains visible with frames off",
+      "only the current line is visible",
     );
-    await toggle.click();
-    await third.click();
+    await focusColumn();
     await page.mouse.move(0, 0);
     await page.waitForFunction(() => {
       const column = document
@@ -841,13 +834,9 @@ export async function checkAlignment(
     await page.getByRole("button", { name: "破棄する", exact: true }).click();
     await page.getByRole("button", { name: "次のコマ", exact: true }).click();
     await page.waitForURL(`**/pages/${fixture.page.index + 1}`);
-    await page.waitForFunction(() =>
-      [...document.querySelectorAll("button")].some(
-        (button) => button.textContent === "行枠" && button.disabled,
-      ),
+    await page.waitForFunction(
+      () => document.querySelectorAll(".line-overlay").length === 0,
     );
-    assert.equal(await toggle.isDisabled(), true);
-    assert.equal(await page.locator(".line-overlay").count(), 0);
     assert.deepEqual(errors, []);
     console.log(
       `Alignment checks passed (${theme}${suffix}): ${model.lines.length} overlays, ${matches.filter((v) => v !== null).length}/${matches.length} matched columns, selection, caret, zoom, pan, swap, visibility, page cleanup.`,
@@ -871,11 +860,6 @@ async function checkOcr(browser: Browser, origin: string) {
     assert.equal(await page.locator(".ocr-line").count(), fixture.lines.length);
     await page.waitForFunction(
       (count) => document.querySelectorAll(".line-overlay").length === count,
-      fixture.lines.length,
-    );
-    await page.getByRole("button", { name: "行枠", exact: true }).click();
-    assert.equal(
-      await page.locator(".line-overlay:visible").count(),
       fixture.lines.length,
     );
     await page
@@ -976,11 +960,17 @@ export async function checkQuietWorkbench(
     await page.goto(`${origin}/#/entries/${entry}/pages/3`);
     await button("編集開始").waitFor();
     await page.waitForLoadState("networkidle");
-    assert.equal(await page.locator(".topbar input").count(), 1);
+    assert.equal(await page.locator(".topbar").count(), 0);
+    assert.equal(await page.locator(".workbench-toolbar .search").count(), 0);
     assert.ok(
-      !(await page.locator(".topbar").innerText()).includes("みんなで翻刻"),
+      !(await page.locator(".workbench-toolbar").innerText()).includes(
+        "みんなで翻刻",
+      ),
     );
-    assert.equal(await page.locator(".topbar .breadcrumb a").count(), 4);
+    assert.equal(
+      await page.locator(".workbench-toolbar .breadcrumb a").count(),
+      4,
+    );
     assert.match(
       await page.locator(".workbench-toolbar .page-count").innerText(),
       /4／18/,
@@ -1762,12 +1752,7 @@ export async function checkSearch(
         '.transcription-reader [data-column-index="2"].alignment-active-column',
       )
       .waitFor();
-    await page
-      .getByRole("textbox", { name: "翻刻を検索", exact: true })
-      .fill("蝦夷");
-    await page
-      .getByRole("textbox", { name: "翻刻を検索", exact: true })
-      .press("Enter");
+    await page.goto(`${origin}/#/search?q=${encodeURIComponent("蝦夷")}`);
     await page.locator(".kwic-row").first().waitFor();
     await page
       .getByRole("textbox", { name: "検索語句", exact: true })
@@ -2010,7 +1995,7 @@ export async function checkKunten(
     await set("故");
     const kana = page.getByRole("toolbar", { name: "送り仮名", exact: true });
     await kana.getByRole("button", { name: "送り仮名", exact: true }).hover();
-    assert.equal(await kana.locator(".palette-glyphs > button").count(), 24);
+    assert.equal(await kana.locator(".palette-glyphs > button:not(.palette-action)").count(), 24);
     await kana.getByRole("button", { name: "送り仮名ニ", exact: true }).click();
     assert.equal(await source(), "故￣ニ");
     const input = kana.getByRole("textbox", { name: "その他の送り仮名" });

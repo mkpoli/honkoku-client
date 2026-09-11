@@ -410,30 +410,14 @@
   </nav>
 {/snippet}
 
-<div class="app-shell" class:reading={workbench}>
-  <header class="topbar">
-    {#if workbench}
-      {@render breadcrumbs()}
-      {@const current = pages.find((p) => p.index === route.pageIndex)}
-      {#if current}<span class="status {statusClass(current.status)}"
-          >{status(current.status).symbol}{status(current.status).label}</span
-        >{/if}
-    {:else}
-      <a class="brand" href="#/">みんなで翻刻</a>
-    {/if}
-    <label class="search top-search"
-      ><span aria-hidden="true">⌕</span><input
-        aria-label="翻刻を検索"
-        placeholder={isHome
-          ? "プロジェクトを絞り込み・Enterで全文検索"
-          : "翻刻を検索"}
-        onkeydown={(event) => {
-          if (event.key === "Enter" && !event.isComposing)
-            location.hash = href({ search: true, query: search });
-        }}
-        bind:value={search}
-      /></label
-    >
+{#snippet workbenchLeading()}
+  {@render breadcrumbs()}
+  {@const current = pages.find((p) => p.index === route.pageIndex)}
+  {#if current}<span class="status {statusClass(current.status)}"
+      >{status(current.status).symbol}{status(current.status).label}</span
+    >{/if}
+{/snippet}
+{#snippet topControls()}
     <div class="top-controls">
       <div class="theme-switch" role="radiogroup" aria-label="表示テーマ">
         {#each themeOptions as option (option.value)}
@@ -506,7 +490,26 @@
           }}>ログイン</button
         >{/if}
     </div>
-  </header>
+{/snippet}
+
+<div class="app-shell" class:reading={workbench}>
+  {#if !workbench}<header class="topbar">
+      <a class="brand" href="#/">みんなで翻刻</a>
+    <label class="search top-search"
+      ><span aria-hidden="true">⌕</span><input
+        aria-label="翻刻を検索"
+        placeholder={isHome
+          ? "プロジェクトを絞り込み・Enterで全文検索"
+          : "翻刻を検索"}
+        onkeydown={(event) => {
+          if (event.key === "Enter" && !event.isComposing)
+            location.hash = href({ search: true, query: search });
+        }}
+        bind:value={search}
+      /></label
+    >
+      {@render topControls()}
+    </header>{/if}
   {#if !workbench}{@render breadcrumbs()}{/if}
   {#if loginError && !signInDialog}<div class="message error" role="alert">
       {loginError}<button onclick={() => (loginError = "")} aria-label="閉じる"
@@ -543,6 +546,8 @@
               {profile}
               bind:search
             />{:else if entry}{#if workbench && pages.some((p) => p.index === route.pageIndex)}<Workbench
+                leading={workbenchLeading}
+                trailing={topControls}
                 {entry}
                 {pages}
                 {canvases}
