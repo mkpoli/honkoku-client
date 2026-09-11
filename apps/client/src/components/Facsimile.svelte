@@ -257,10 +257,14 @@
       element.tabIndex = showLines || active ? 0 : -1;
     }
   });
+  let pannedLine: number | null = null;
   $effect(() => {
     const v = viewer,
-      line = lineModel.lines.find((line) => line.index === highlightedLine);
+      target = highlightedLine,
+      line = lineModel.lines.find((line) => line.index === target);
     if (!v || !opened || !line || !v.world.getItemCount()) return;
+    if (target === pannedLine) return;
+    pannedLine = target;
     const rect = v.world
       .getItemAt(0)
       .imageToViewportRectangle(line.x, line.y, line.width, line.height);
@@ -271,16 +275,17 @@
       rect.getBottomRight(),
     ].map((p) => v.viewport.pixelFromPoint(p, true));
     const size = v.viewport.getContainerSize();
-    if (
-      points.every(
-        (p) => p.x >= 0 && p.x <= size.x && p.y >= 0 && p.y <= size.y,
-      )
-    )
-      return;
     const lowX = Math.min(...points.map((p) => p.x)),
       highX = Math.max(...points.map((p) => p.x));
     const lowY = Math.min(...points.map((p) => p.y)),
       highY = Math.max(...points.map((p) => p.y));
+    const visibleWidth = Math.min(highX, size.x) - Math.max(lowX, 0),
+      visibleHeight = Math.min(highY, size.y) - Math.max(lowY, 0);
+    const visible =
+      visibleWidth > 0 && visibleHeight > 0
+        ? (visibleWidth * visibleHeight) / ((highX - lowX) * (highY - lowY))
+        : 0;
+    if (visible >= 0.3) return;
     const offset = (low: number, high: number, extent: number) =>
       high - low > extent
         ? (low + high - extent) / 2
