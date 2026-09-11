@@ -254,6 +254,7 @@
           {project.title}
         </h1>
         <p>主催：{organizer}</p>
+        <a href={href({projectId:project.id,guidelines:true})}>翻刻ガイドライン</a>
         {#if project.description}<p class="description muted">
             {project.description}
           </p>{/if}

@@ -174,3 +174,18 @@ export function renderInline(nodes: Inline[]): string {
 }
 
 export { alignColumns, transcriptionColumns, plainColumn } from "./align";
+export { diffSource } from "./diff";
+export { exportTranscription } from "./export";
+export type { ExportFormat, ExportPage } from "./export";
+export { elements } from "./elements";
+
+/** Render legacy semantic wrappers without changing the saved source or editor tree. */
+export function renderReadingLine(source: string): string {
+  const nodes=parseLine(source);
+  const normalized=source.replace(/｛＿([レ一二三上中下甲乙丙丁天地人])｝|｛([^｛｝]+)｝|〔([^〔〕]+)〕|＜([^＜＞]+)＞/gu,
+    (whole:string, mark:string|undefined, person:string|undefined, place:string|undefined, date:string|undefined, offset:number)=> {
+      if(nodes.some(n=>n.from<=offset && n.to>=offset+whole.length && n.kind!=="text" && n.kind!=="raw")) return whole;
+      return mark ? `＿${mark}` : person ?? place ?? date ?? whole;
+    });
+  return renderInline(parseInline(normalized));
+}

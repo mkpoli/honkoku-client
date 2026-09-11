@@ -73,3 +73,10 @@ test("unlabelled leading and trailing breaks remain empty columns", () => {
     [],
   ]);
 });
+
+test("legacy catalog wrappers render in the reading view without punctuation shells", async () => {
+  const {renderReadingLine}=await import('./index');
+  expect(renderReadingLine('｛人物｝〔場所〕＜日時＞')).toBe('人物場所日時');
+  expect(renderReadingLine('讀｛＿レ｝')).toContain('kunten-return');
+  expect(renderReadingLine('【｛注釈｝】')).toContain('｛注釈｝');
+});

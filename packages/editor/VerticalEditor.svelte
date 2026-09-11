@@ -379,6 +379,7 @@
         onclick={() => insertConstruct(title)}>{title}</button
       >
     {/each}
+    <a class="markup-help-link" href="#/help/markup" aria-label="特殊記法の解説">？</a>
     <span class="editor-toolbar-spacer"></span>
     <button disabled={composing || !canUndo} onclick={() => editor?.run(undo)}
       >元に戻す</button

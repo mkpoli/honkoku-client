@@ -3,6 +3,8 @@ import { href, parseRoute } from "./routes";
 test("all public routes round trip including page zero", () => {
   for (const route of [
     {},
+    { markupHelp:true },
+    { projectId:"資料", guidelines:true },
     { projectId: "ainu" },
     { projectId: "ainu", collectionId: "資料" },
     { entryId: "entry" },
