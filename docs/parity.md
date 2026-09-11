@@ -9,16 +9,16 @@ Status: ○ present, △ partial, × absent.
 | Feature | Site | Client | Direction |
 |---|---|---|---|
 | Start, finish, discard editing with the server lock | ○ | ○ | Editing survives page changes; no 編集を再開 step. |
-| Realtime sharing mode at start (`syncMode`) | ○ | △ shown, not selectable | Offer it as a toggle on 編集開始. |
+| Realtime sharing mode at start (`syncMode`) | ○ | ○ | Per-account toggle on 編集開始; readers refresh live drafts every three seconds. |
 | Save options: 翻刻完了, タイムラインで共有, コメント | ○ | ○ | Inline popover instead of a dialog. |
-| Save option 添削希望 (`requestReview`) | ○ | × | Add to the popover; show 添削希望 on timeline items. |
-| Two-reviewer approval (`isApproval`, `approvedBy`, at most two) | ○ | × | Show approval state on the page and offer the check in the popover when the project uses it. |
+| Save option 添削希望 (`requestReview`) | ○ | ○ | Inline save option, requester chip, and timeline tags. |
+| Two-reviewer approval (`isApproval`, `approvedBy`, at most two) | ○ | ○ | Page counts and inline approval/withdrawal. The site enables approval for a previously completed page edited by another account; its bundle has no project-level gate. |
 | Tabs 画像 / 閲覧 / 入力 | ○ | ○ | Both panes visible at once; facsimile side selectable. |
 | OCR tab: NDL, みんなで翻刻OCR, copy result, saved result | ○ | ○ plus local GPU OCR | |
 | 編集履歴 tab: past saves from `timelineEvents`, diff dialog | ○ | × | Side panel with inline character diff and restore into the editor. |
 | 注釈 tab: typed notes with optional image regions, create, edit, delete, kept in `tempNotes` while editing | ○ | ○ | Facsimile drawer with thumbnails, region selection, and overlays; inline 注記 remain available. |
 | 翻訳 tab (crowd translation module) | ○ | × | Later, with the proofreading module. |
-| Viewer modes: normal, 画像を保存 (clip), 注釈・翻刻を追加 (region note), AI recognition (range select, Metom or in-browser model) | ○ | △ clip only | Add 認識 and 注釈 modes; candidates appear beside the facsimile with keyboard picks, no dialog. |
+| Viewer modes: normal, 画像を保存 (clip), 注釈・翻刻を追加 (region note), AI recognition (range select, Metom or in-browser model) | ○ | ○ | Move, clip, region notes, and Metom recognition; candidates support caret insertion and OCR-line segments. |
 | Toggle annotation overlays | ○ | ○ | 注釈表示 in the workbench display menu. |
 | Full-size image download | ○ | × | Native save dialog through the IIIF fetcher. |
 | Special-mark palette: 振り仮名, 踊り字, 縦横切替 | ○ | ○ plus 合字, 変体仮名, 欠字, 返り点, 送り仮名, 常用字, 常用句, 記号, 集字 | |
@@ -37,7 +37,7 @@ Status: ○ present, △ partial, × absent.
 |---|---|---|---|
 | Project list with 公式 / ユーザー / 非公開 / 参加中, search | ○ | ○ plus grouping and sort | |
 | Timeline: すべて / 参加中 | ○ | ○ | |
-| Timeline filter 添削希望のみ | ○ | × | Add with the 添削希望 save option. |
+| Timeline filter 添削希望のみ | ○ | ○ | Filters loaded events with `requestReview`, matching the site. |
 | Ranking by ポイント / 文字数 / いいね | ○ | ○ plus own row and 自分の順位 | |
 | Profile panel: level, points, 文字数, いいね, 石 | ○ | △ no 石 | Add 石. |
 | Project progress totals (総入力文字数, 翻刻完了画像, 翻刻完了史料, ユーザー数) | ○ | × | Small panel on the home dashboard. |

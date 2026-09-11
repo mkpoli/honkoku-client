@@ -78,6 +78,7 @@
     "allow-page-history",
     "allow-entry-bibliography",
     "allow-save-transcription",
-    "allow-save-full-image"
+    "allow-save-full-image",
+    "allow-recognize-region"
   ]
 }

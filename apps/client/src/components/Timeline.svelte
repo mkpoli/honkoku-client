@@ -23,11 +23,15 @@
     onitems?: (items: TimelineItem[]) => void;
   } = $props();
   let tab = $state("all");
+  let reviewOnly = $state(false);
   $effect(() => {
     if (projectId) tab = "project";
   });
   const region = new Region<TimelineItem[]>();
   let items = $derived(region.value ?? []);
+  let visible = $derived(
+    items.filter((item) => !reviewOnly || item.event.requestReview === true),
+  );
   let loading = $derived(region.pending);
   let error = $derived(region.error);
   let more = $state(true);
@@ -87,8 +91,15 @@
         onclick={() => (tab = "project")}>このプロジェクト</button
       >{/if}
   </div>
+  {#if !projectId}<div class="chips">
+      <button
+        aria-pressed={reviewOnly}
+        class:active={reviewOnly}
+        onclick={() => (reviewOnly = !reviewOnly)}>添削希望のみ表示</button
+      >
+    </div>{/if}
   <div class="timeline-items scroll">
-    {#each items as item (item.event.id)}
+    {#each visible as item (item.event.id)}
       <article class="activity">
         <div class="activity-main">
           <Avatar user={item.actor} small={compact} />
@@ -99,6 +110,9 @@
                 >{relative(item.event.createdAt, now)}</time
               >
             </div>
+            {#if item.event.isReview || item.event.requestReview}<span
+                class="caption review-chip">添削希望</span
+              >{/if}
             <a
               class="activity-action"
               href={href({

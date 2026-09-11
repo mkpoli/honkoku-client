@@ -92,18 +92,27 @@ export const pageSave = (
   entryId: string,
   index: number,
   options: import("./types").SaveOptions = {},
-) => invoke<import("./types").SavedPage>("page_save", { entryId, index, options });
+) =>
+  invoke<import("./types").SavedPage>("page_save", { entryId, index, options });
 export const pageDiscard = (entryId: string, index: number) =>
   invoke<void>("page_discard", { entryId, index });
 export const pageLockState = (entryId: string, index: number) =>
-  invoke<import("./types").PageLockState>("page_lock_state", { entryId, index });
+  invoke<import("./types").PageLockState>("page_lock_state", {
+    entryId,
+    index,
+  });
 
 export async function onWindowClose(
-  handler: (event: { preventDefault: () => void }, close: () => Promise<void>) => void | Promise<void>,
+  handler: (
+    event: { preventDefault: () => void },
+    close: () => Promise<void>,
+  ) => void | Promise<void>,
 ) {
   const { getCurrentWindow } = await import("@tauri-apps/api/window");
   const appWindow = getCurrentWindow();
-  return appWindow.onCloseRequested((event) => handler(event, () => appWindow.close()));
+  return appWindow.onCloseRequested((event) =>
+    handler(event, () => appWindow.close()),
+  );
 }
 
 export const sessionSignIn = (provider: import("./types").SignInProvider) =>
@@ -120,9 +129,14 @@ export async function onSignInClosed(handler: () => void) {
 }
 
 export const listEntrySummaries = (collectionId: string) =>
-  invoke<import("./types").EntrySummary[]>("list_entry_summaries", { collectionId });
+  invoke<import("./types").EntrySummary[]>("list_entry_summaries", {
+    collectionId,
+  });
 export const collectionProgress = (collectionId: string, refresh = false) =>
-  invoke<import("./types").CollectionProgress>("collection_progress", { collectionId, refresh });
+  invoke<import("./types").CollectionProgress>("collection_progress", {
+    collectionId,
+    refresh,
+  });
 export const entryProgress = (entryIds: string[]) =>
   invoke<import("./types").EntryProgress[]>("entry_progress", { entryIds });
 
@@ -166,48 +180,92 @@ export const pageDraftTextAndNotes = (
   text: string,
   notes: Array<import("./types").JsonValue | null>,
 ) => invoke<Page>("page_draft", { entryId, index, text, notes });
-export const historyOpen = (entryId: string, index: number) => invoke<void>("history_open", { entryId, index });
-export const historyRecent = (limit = 8) => invoke<import("./types").RecentWork[]>("history_recent", { limit });
+export const historyOpen = (entryId: string, index: number) =>
+  invoke<void>("history_open", { entryId, index });
+export const historyRecent = (limit = 8) =>
+  invoke<import("./types").RecentWork[]>("history_recent", { limit });
 export const historyClear = () => invoke<void>("history_clear");
 
-export const ocrDiagnostics = () => invoke<import("./types").OcrDiagnostics>("ocr_diagnostics");
+export const ocrDiagnostics = () =>
+  invoke<import("./types").OcrDiagnostics>("ocr_diagnostics");
 export const ocrDoctor = () => invoke<string>("ocr_doctor");
-export const ocrRepairModels = () => invoke<import("./types").OcrStatus>("ocr_repair_models");
+export const ocrRepairModels = () =>
+  invoke<import("./types").OcrStatus>("ocr_repair_models");
 export const editingPages = () => invoke<Page[]>("editing_pages");
-export const projectPageActivity = (projectId: string) => invoke<Record<string, string>>("project_page_activity", { projectId });
+export const projectPageActivity = (projectId: string) =>
+  invoke<Record<string, string>>("project_page_activity", { projectId });
 export interface ReadRegion {
-  kind: "projects" | "project" | "collections" | "collection" | "entry" | "pages" | "entries" | "collectionProgress" | "entryProgress";
+  kind:
+    | "projects"
+    | "project"
+    | "collections"
+    | "collection"
+    | "entry"
+    | "pages"
+    | "entries"
+    | "collectionProgress"
+    | "entryProgress";
   id?: string;
   ids?: string[];
 }
-export const regionCached = <T>(resource: ReadRegion) => invoke<T | null>("region_cached", { resource });
-export const regionRefresh = <T>(resource: ReadRegion) => invoke<T>("region_refresh", { resource });
+export const regionCached = <T>(resource: ReadRegion) =>
+  invoke<T | null>("region_cached", { resource });
+export const regionRefresh = <T>(resource: ReadRegion) =>
+  invoke<T>("region_refresh", { resource });
 export async function searchStatus(): Promise<import("./types").SearchStatus> {
   if (isTauri()) return invoke("search_status");
-  return { present: true, commit: null, page_count: 0, last_build: null, size: 0 };
+  return {
+    present: true,
+    commit: null,
+    page_count: 0,
+    last_build: null,
+    size: 0,
+  };
 }
-export const searchChooseDump = () => invoke<string | null>("search_choose_dump");
+export const searchChooseDump = () =>
+  invoke<string | null>("search_choose_dump");
 export const searchBuild = (dumpPath?: string, cloneDump = false) =>
-  invoke<import("./types").SearchStatus>("search_build", { dumpPath, cloneDump });
+  invoke<import("./types").SearchStatus>("search_build", {
+    dumpPath,
+    cloneDump,
+  });
 export const searchSync = () => invoke<number>("search_sync");
-export async function searchQuery(query: import("./types").SearchQuery): Promise<import("./types").SearchResults> {
+export async function searchQuery(
+  query: import("./types").SearchQuery,
+): Promise<import("./types").SearchResults> {
   if (isTauri()) return invoke("search_query", { query });
   const { fixtureSearch } = await import("../../apps/client/src/dev/search");
   return fixtureSearch(query);
 }
-export async function onSearchProgress(handler: (progress: import("./types").SearchProgress) => void) {
+export async function onSearchProgress(
+  handler: (progress: import("./types").SearchProgress) => void,
+) {
   if (!isTauri()) return () => {};
   const { listen } = await import("@tauri-apps/api/event");
-  return listen<import("./types").SearchProgress>("search-progress", (event) => handler(event.payload));
+  return listen<import("./types").SearchProgress>("search-progress", (event) =>
+    handler(event.payload),
+  );
 }
-export async function onSearchError(handler: (error: import("./types").AppError) => void) {
+export async function onSearchError(
+  handler: (error: import("./types").AppError) => void,
+) {
   if (!isTauri()) return () => {};
   const { listen } = await import("@tauri-apps/api/event");
-  return listen<import("./types").AppError>("search-error", (event) => handler(event.payload));
+  return listen<import("./types").AppError>("search-error", (event) =>
+    handler(event.payload),
+  );
 }
 
-export const glyphAttestations = (character: string, project: string | null = null, limit = 100) =>
-  invoke<import("./types").GlyphAttestations>("glyph_attestations", { character, project, limit });
+export const glyphAttestations = (
+  character: string,
+  project: string | null = null,
+  limit = 100,
+) =>
+  invoke<import("./types").GlyphAttestations>("glyph_attestations", {
+    character,
+    project,
+    limit,
+  });
 export const clipsList = () => invoke<import("./types").Clip[]>("clips_list");
 export const clipCreate = (input: import("./types").ClipInput) =>
   invoke<import("./types").Clip>("clip_create", { input });
@@ -215,7 +273,19 @@ export const clipDelete = (id: string) => invoke<void>("clip_delete", { id });
 export const glyphImageUrl = (infoUrl: string, url: string) =>
   invoke<string>("glyph_image_url", { infoUrl, url });
 
-export const pageHistory = (entryId: string, index: number, limit = 100) => invoke<TimelineItem[]>("page_history", {entryId, index, limit});
-export const entryBibliography = (entryId: string) => invoke<Record<string, unknown>>("entry_bibliography", {entryId});
-export const saveTranscription = (name: string, format: "txt" | "xml" | "tex", content: string) => invoke<boolean>("save_transcription", {name, format, content});
-export const saveFullImage = (entryId: string, index: number) => invoke<boolean>("save_full_image", {entryId, index});
+export const pageHistory = (entryId: string, index: number, limit = 100) =>
+  invoke<TimelineItem[]>("page_history", { entryId, index, limit });
+export const entryBibliography = (entryId: string) =>
+  invoke<Record<string, unknown>>("entry_bibliography", { entryId });
+export const saveTranscription = (
+  name: string,
+  format: "txt" | "xml" | "tex",
+  content: string,
+) => invoke<boolean>("save_transcription", { name, format, content });
+export const saveFullImage = (entryId: string, index: number) =>
+  invoke<boolean>("save_full_image", { entryId, index });
+export const recognizeRegion = (
+  infoUrl: string,
+  xywh: [number, number, number, number],
+) =>
+  invoke<import("./types").Prediction[]>("recognize_region", { infoUrl, xywh });

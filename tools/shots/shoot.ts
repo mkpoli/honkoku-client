@@ -1,6 +1,8 @@
-import { checkInlineEditor, checkCaretContexts } from "./editor-checks";
+import { checkInlineEditor } from "./editor-checks";
 import {
+  checkCaretContexts,
   checkHistory,
+  checkRecognition,
   checkRankingSelf,
   checkNotes,
   checkGlyphs,
@@ -173,10 +175,11 @@ try {
       throw Error("Vite did not start on the assigned port.");
   }
   browser = await chromium.launch({ headless: true });
-  for (const theme of ["light", "dark"] as const) await checkHistory(browser, origin, theme);
+  for (const theme of ["light", "dark"] as const)
+    await checkHistory(browser, origin, theme);
   if (process.env.HONKOKU_SHOTS_HISTORY_ONLY === "1") {
     await browser.close();
-    browser=undefined;
+    browser = undefined;
     await stopServer();
     process.exit(0);
   }
@@ -190,6 +193,17 @@ try {
   }
   for (const theme of ["light", "dark"] as const)
     await checkCaretContexts(browser, origin, theme);
+  for (const theme of ["light", "dark"] as const)
+    await checkRecognition(browser, origin, theme);
+  if (process.env.HONKOKU_SHOTS_RECOGNITION_ONLY === "1") {
+    await browser.close();
+    browser = undefined;
+    await stopServer();
+    process.exit(0);
+  }
+  await checkInteractions(browser, origin);
+  for (const theme of ["light", "dark"] as const)
+    await checkWorkbenchParity(browser, origin, theme);
   for (const theme of ["light", "dark"] as const)
     await checkRankingSelf(browser, origin, theme);
   for (const theme of ["light", "dark"] as const)
@@ -206,8 +220,6 @@ try {
     await checkSearch(browser, origin, theme);
   await checkRegionTimeout(browser, origin);
   for (const theme of ["light", "dark"] as const)
-    await checkWorkbenchParity(browser, origin, theme);
-  for (const theme of ["light", "dark"] as const)
     await checkInlineEditor(browser, origin, theme);
   for (const theme of ["light", "dark"] as const)
     await checkBrowsePolish(browser, origin, theme);
@@ -218,7 +230,7 @@ try {
   const webkitBrowser = await webkit.launch({ headless: true });
   try {
     await checkCaretContexts(webkitBrowser, origin, "light", "-webkit");
-    await checkGlyphs(webkitBrowser,origin,"light","-webkit");
+    await checkGlyphs(webkitBrowser, origin, "light", "-webkit");
     await checkInlineEditor(webkitBrowser, origin, "light", "-webkit");
     await checkQuietWorkbench(webkitBrowser, origin, "light", "-webkit");
     await checkAlignment(webkitBrowser, origin, "light", "-webkit");
@@ -226,7 +238,6 @@ try {
   } finally {
     await webkitBrowser.close();
   }
-  await checkInteractions(browser, origin);
   for (const theme of ["light", "dark"] as const) {
     const context = await browser.newContext({
       viewport: { width: 1600, height: 1000 },

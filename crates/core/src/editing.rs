@@ -202,14 +202,19 @@ impl HonkokuClient {
             .ok_or_else(|| Error::Invalid("Project not found".into()))
     }
     pub async fn page_lock_state(&self, entry_id: &str, index: u32) -> Result<PageLockState> {
-        let uid = self.signed_in_uid().await?;
+        let uid = if self.session.is_some() {
+            Some(self.signed_in_uid().await?)
+        } else {
+            None
+        };
         let document = self.read_edit_page(entry_id, index).await?;
         let page = document.page()?;
         Ok(PageLockState {
             page: page.clone(),
             page_id: page.id,
             is_mine: page.status == PageStatus::Editing
-                && page.temp_edited_by.as_deref() == Some(&uid),
+                && uid.is_some()
+                && page.temp_edited_by.as_deref() == uid.as_deref(),
             status: page.status,
             temp_edited_by: page.temp_edited_by,
             sync_mode: page.sync_mode.unwrap_or(false),

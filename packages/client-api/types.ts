@@ -1,18 +1,8 @@
 export type JsonValue =
-  | null
-  | boolean
-  | number
-  | string
-  | JsonValue[]
-  | { [key: string]: JsonValue };
+  null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue };
 export type Timestamp = string;
 export type PageStatus =
-  | "default"
-  | "initiated"
-  | "editing"
-  | "completed"
-  | "frozen"
-  | (string & {});
+  "default" | "initiated" | "editing" | "completed" | "frozen" | (string & {});
 export type Label = string | Record<string, string[]>;
 export type Keywords = string | string[];
 
@@ -469,4 +459,9 @@ export interface Clip extends ClipInput {
   transcriptionId: string;
   projectId: string;
   createdAt: string;
+}
+
+export interface Prediction {
+  character: string;
+  probability: number;
 }

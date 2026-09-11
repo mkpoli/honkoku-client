@@ -151,8 +151,9 @@
               alt={`コマ${p.index + 1}の原本`}
             />
             <div>
-              <strong>{p.index + 1}</strong><span
-                class="status {statusClass(p.status)}"
+              <strong>{p.index + 1}</strong>{#if p.approvedBy?.length}<span
+                  class="caption">✓{p.approvedBy.length}／2</span
+                >{/if}<span class="status {statusClass(p.status)}"
                 >{status(p.status).symbol}{status(p.status).label}</span
               >
             </div>
