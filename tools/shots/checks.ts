@@ -834,7 +834,9 @@ export async function checkAlignment(
     await page.getByRole("button", { name: "破棄する", exact: true }).click();
     await page.getByRole("button", { name: "次のコマ", exact: true }).click();
     await page.waitForURL(`**/pages/${fixture.page.index + 1}`);
-    assert.equal(await page.locator(".line-overlay").count(), 0);
+    await page.waitForFunction(
+      () => document.querySelectorAll(".line-overlay").length === 0,
+    );
     assert.deepEqual(errors, []);
     console.log(
       `Alignment checks passed (${theme}${suffix}): ${model.lines.length} overlays, ${matches.filter((v) => v !== null).length}/${matches.length} matched columns, selection, caret, zoom, pan, swap, visibility, page cleanup.`,
