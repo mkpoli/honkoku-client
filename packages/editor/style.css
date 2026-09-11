@@ -500,3 +500,36 @@
     transition: none;
   }
 }
+
+.palette-page-notes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  flex-basis: 100%;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.palette-page-notes > span {
+  flex-basis: 100%;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.palette-empty {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.palette-category[aria-label="この資料"] .palette-glyphs,
+.palette-category[aria-label="注記"] .palette-glyphs {
+  left: auto;
+  right: 0;
+}
+
+.palette-page-notes button {
+  min-width: 0;
+  padding: 2px 4px;
+  font-size: 15px;
+  line-height: 24px;
+}

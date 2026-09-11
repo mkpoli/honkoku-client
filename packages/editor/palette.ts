@@ -1,4 +1,4 @@
-import { presets } from "./presets";
+import { presets, pageNotes } from "./presets";
 export const palette = [
   {
     label: "踊り字",
@@ -16,7 +16,7 @@ export const palette = [
       "〵",
     ],
   },
-  { label: "合字", characters: ["ゟ", "ヿ", "〆"] },
+  { label: "合字", characters: ["ゟ", "ヿ", "〆", "𪜈", "𬼀", "𬻿"] },
   { label: "変体仮名", characters: ["𛀀", "𛀁", "𛀂", "𛀆", "𛀙", "𛁛", "𬼂"] },
   { label: "欠字", characters: ["■", "□", "〓"] },
   {
@@ -41,7 +41,52 @@ export const palette = [
   { label: "常用字", characters: presets.常用字.map((p) => p.text) },
   { label: "常用句", characters: presets.常用句.map((p) => p.text) },
   {
+    label: "この資料",
+    characters: [],
+  },
+  {
+    label: "注記",
+    characters: presets.注記
+      .filter((p) => !pageNotes.includes(p.text))
+      .map((p) => p.text),
+  },
+  {
     label: "記号",
-    characters: ["・", "○", "●", "△", "※", "／", "「", "」", "〔", "〕"],
+    characters: [
+      "・",
+      "○",
+      "●",
+      "△",
+      "※",
+      "／",
+      "「",
+      "」",
+      "〔",
+      "〕",
+      "゙",
+      "゚",
+      "。",
+      "、",
+      "！",
+      "？",
+      "　",
+      " ",
+      "◯",
+      "—",
+      "…",
+    ],
   },
 ] as const;
+
+const glyphLabels: Record<string, string> = {
+  "\u3099": "◌゙",
+  "\u309a": "◌゚",
+  "　": "全角スペース",
+  " ": "半角スペース",
+};
+const glyphNames: Record<string, string> = {
+  "\u3099": "濁点",
+  "\u309a": "半濁点",
+};
+export const glyphLabel = (text: string) => glyphLabels[text] ?? text;
+export const glyphName = (text: string) => glyphNames[text] ?? glyphLabel(text);

@@ -17,6 +17,7 @@
     type EditorUpdate,
   } from "./index";
   import {
+    pageNotes,
     loadPresets,
     normalizePreset,
     presets,
@@ -24,7 +25,9 @@
     isPresetGroup,
     type PresetGroup,
   } from "./presets";
-  import { palette } from "./palette";
+  import { palette, glyphLabel, glyphName } from "./palette";
+  import { insertEditorial, insertCombiningMark } from "./palette-commands";
+  import { createResponsiveTermScorer, loadCorpusDF, type DocumentTerm } from "./terms";
   import { transcriptionColumns } from "@honkoku/markup";
   import "prosemirror-view/style/prosemirror.css";
   import "./style.css";
@@ -38,8 +41,12 @@
     onnote,
     onglyph,
     accountId,
+    otherPageTexts = [],
+    pageId = "",
   }: {
     source: string;
+    otherPageTexts?: string[];
+    pageId?: string;
     onglyph?: (character: string, open: boolean) => void;
     accountId?: string;
     onnote?: (content: string | null, index?: number) => number;
@@ -63,14 +70,38 @@
   let noteInput = $state<HTMLTextAreaElement>(null!);
   let openCategory = $state<string | null>(null);
   let localNoteCount = 0;
+  let documentTerms = $state<DocumentTerm[]>([]);
+  let termsError = $state(false);
+  const scoreEntry = createResponsiveTermScorer();
+  let termsRequested = $state(false);
+  $effect(() => {
+    if (openCategory === "この資料") termsRequested = true;
+  });
+  $effect(() => {
+    const texts = [...otherPageTexts, source];
+    void pageId;
+    if (!termsRequested || composing) return;
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      void loadCorpusDF().then(async (corpus) => {
+        const terms = await scoreEntry(texts, corpus, () => cancelled);
+        if (!cancelled && terms) {
+          documentTerms = terms;
+          termsError = false;
+        }
+      }).catch(() => { if (!cancelled) termsError = true; });
+    }, 500);
+    return () => { cancelled = true; clearTimeout(timer); };
+  });
   let customText = $state("");
   let customPresets = $state<Record<PresetGroup, string[]>>({
+    注記: [],
     送り仮名: [],
     常用字: [],
     常用句: [],
   });
   $effect(() => {
-    const values = { 送り仮名: [], 常用字: [], 常用句: [] } as Record<
+    const values = { 注記: [], 送り仮名: [], 常用字: [], 常用句: [] } as Record<
       PresetGroup,
       string[]
     >;
@@ -100,6 +131,7 @@
   }
   function addPreset(group: PresetGroup, text: string, focus = true) {
     if (group === "送り仮名") return addOkurigana(text, focus);
+    if (group === "注記") return addEditorial(text, focus);
     insertGlyph(text, false, focus);
     return true;
   }
@@ -109,7 +141,7 @@
     const text = normalizePreset(group, customText);
     if (!text) {
       status =
-        group === "送り仮名"
+        group === "注記" ? "注記を12文字以内で入力してください。" : group === "送り仮名"
           ? "かなを8文字以内で入力してください。"
           : group === "常用字"
             ? "漢字を1文字入力してください。"
@@ -221,6 +253,35 @@
       void insertRaw(text, focus);
     } else
       editor?.run(structured ? insertSource(text) : insertText(text), focus);
+  }
+  function addEditorial(text?: string, focus = true) {
+    if (composing) return false;
+    if (raw) {
+      captureRaw();
+      const value = text ?? selectedText();
+      if (/[【】\r\n]/u.test(value)) {
+        status = "括弧や改行を含まない文字を選択してください。";
+        return false;
+      }
+      void insertRaw(`【${value}】`, focus, value ? value.length + 2 : 1);
+    } else if (!editor?.run(insertEditorial(text), focus)) {
+      status = "ここには注記を入れられません。";
+      return false;
+    }
+    status = "";
+    return true;
+  }
+  function addSymbol(text: string, structured: boolean, focus: boolean) {
+    if (/^[\u3099\u309a]$/u.test(text)) {
+      if (raw) {
+        captureRaw();
+        if (!rawRange.to || /[\r\n]/u.test(rawInput.value[rawRange.to - 1])) return;
+        rawRange = { from: rawRange.to, to: rawRange.to };
+        void insertRaw(text, focus);
+      } else if (!editor?.run(insertCombiningMark(text), focus)) {
+        status = "文字の後に濁点・半濁点を入れてください。";
+      }
+    } else insertGlyph(text, structured, focus);
   }
   async function insertConstruct(title: Construct) {
     if (composing) return;
@@ -451,7 +512,7 @@
         {#if openCategory === group.label}<div
             class="palette-glyphs"
             class:palette-kanji={group.label === "常用字"}
-            class:palette-expressions={group.label === "常用句"}
+            class:palette-expressions={["常用句", "注記", "この資料"].includes(group.label)}
             role="group"
             aria-label={`${group.label}の文字`}
           >
@@ -467,27 +528,46 @@
                   if (event.detail === 0) event.currentTarget.focus();
                 }}>選択を送り仮名に</button
               >{/if}
+            {#if group.label === "注記"}
+              <button class="palette-action" disabled={composing}
+                onmousedown={(event) => event.preventDefault()}
+                onclick={(event) => addEditorial(undefined, event.detail !== 0)}>選択を注記に</button>
+              <div class="palette-page-notes" role="group" aria-label="頁注">
+                <span>頁注</span>
+                {#each pageNotes as text}<button disabled={composing} aria-label={`注記${text}`}
+                  title={`${presets.注記.find((p) => p.text === text)?.count.toLocaleString("ja-JP")}件`}
+                  onmousedown={(event) => event.preventDefault()}
+                  onclick={(event) => addEditorial(text, event.detail !== 0)}>{text}</button>{/each}
+              </div>
+            {/if}
+            {#if group.label === "この資料"}
+              {#each documentTerms as term}<button disabled={composing} aria-label={term.text}
+                title={`資料内${term.tf.toLocaleString("ja-JP")}回`}
+                onmousedown={(event) => event.preventDefault()}
+                onclick={(event) => insertGlyph(term.text, false, event.detail !== 0)}>{term.text}</button>
+              {:else}<p class="palette-empty" role="status">{termsError ? "資料内の語を読み込めませんでした。" : "資料内の語はまだありません"}</p>{/each}
+            {/if}
             {#each group.characters as character}<button
                 disabled={composing}
                 aria-label={group.label === "常用句"
                   ? character
-                  : `${group.label}${character}`}
+                  : `${group.label}${glyphName(character)}`}
                 title={isPresetGroup(group.label)
                   ? `${presets[group.label].find((p) => p.text === character)?.count.toLocaleString("ja-JP")}件`
                   : undefined}
                 onmousedown={(event) => event.preventDefault()}
                 onclick={(event) => {
-                  if (group.label === "送り仮名")
-                    addOkurigana(character, event.detail !== 0);
+                  if (isPresetGroup(group.label))
+                    addPreset(group.label, character, event.detail !== 0);
                   else
-                    insertGlyph(
+                    addSymbol(
                       character,
                       group.label === "欠字" || group.label === "返り点",
                       event.detail !== 0,
                     );
                   openCategory = group.label;
                   if (event.detail === 0) event.currentTarget.focus();
-                }}>{character}</button
+                }}>{glyphLabel(character)}</button
               >{/each}
             {#if isPresetGroup(group.label)}
               {@const label = group.label}
@@ -514,7 +594,7 @@
                 class="palette-custom-input"
                 aria-label={`その他の${label}`}
                 placeholder="その他"
-                maxlength={label === "送り仮名"
+                maxlength={label === "注記" ? 24 : label === "送り仮名"
                   ? 8
                   : label === "常用字"
                     ? 2
