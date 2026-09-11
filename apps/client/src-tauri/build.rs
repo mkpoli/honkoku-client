@@ -3,6 +3,7 @@ fn main() {
         tauri_build::AppManifest::new().commands(&[
             "glyph_attestations",
             "glyph_image_url",
+            "recognize_region",
             "clips_list",
             "clip_create",
             "clip_delete",

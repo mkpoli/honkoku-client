@@ -4,6 +4,7 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
+base64 = "0.22"
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
@@ -20,8 +21,13 @@ rand = "=0.9.5"
 similar = "=2.7.0"
 
 [dev-dependencies]
+honkoku-iiif = { path = "../iiif" }
 wiremock = "=0.6.5"
 
 [[example]]
 name = "glyphs-verify"
 path = "../../tools/shots/glyphs-live.rs"
+
+[[example]]
+name = "recognition-live"
+path = "../../tools/shots/recognition-live.rs"

@@ -73,6 +73,7 @@
     "allow-clips-list",
     "allow-clip-create",
     "allow-clip-delete",
-    "allow-glyph-image-url"
+    "allow-glyph-image-url",
+    "allow-recognize-region"
   ]
 }

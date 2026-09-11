@@ -9,6 +9,7 @@ pub mod history;
 pub mod home;
 pub mod model;
 pub mod progress;
+pub mod recognition;
 
 use reqwest::{Client, Method, Url};
 use serde::{Serialize, de::DeserializeOwned};

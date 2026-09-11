@@ -209,3 +209,6 @@ export const clipCreate = (input: import("./types").ClipInput) =>
 export const clipDelete = (id: string) => invoke<void>("clip_delete", { id });
 export const glyphImageUrl = (infoUrl: string, url: string) =>
   invoke<string>("glyph_image_url", { infoUrl, url });
+
+export const recognizeRegion = (infoUrl: string, xywh: [number, number, number, number]) =>
+  invoke<import("./types").Prediction[]>("recognize_region", { infoUrl, xywh });

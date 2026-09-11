@@ -467,3 +467,5 @@ export interface Clip extends ClipInput {
   projectId: string;
   createdAt: string;
 }
+
+export interface Prediction { character: string; probability: number; }
