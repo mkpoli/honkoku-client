@@ -860,7 +860,9 @@ export function createEditor(
   onUpdate: (update: EditorUpdate) => void = () => {},
   oncolumnchange: (index: number) => void = () => {},
   onstatus: (message: string) => void = () => {},
+  oncolumnhover: (index: number) => void = () => {},
 ) {
+  let showLineNumbers = false;
   let current = source;
   let composing = false;
   let pendingSource: string | undefined;
@@ -893,6 +895,27 @@ export function createEditor(
         const values: Decoration[] = [];
         state.doc.forEach((node, pos, sourceIndex) => {
           const index = columns.findIndex((c) => c.sourceIndex === sourceIndex);
+          if (showLineNumbers)
+            values.push(
+              Decoration.widget(
+                pos + 1,
+                () => {
+                  const label = document.createElement("span");
+                  label.className = "text-line-number";
+                  label.textContent = `L${sourceIndex + 1}`;
+                  label.contentEditable = "false";
+                  label.addEventListener("mouseenter", () => oncolumnhover(index));
+                  label.addEventListener("mouseleave", () => oncolumnhover(-1));
+                  return label;
+                },
+                { side: -1, key: `line-${sourceIndex}-${index}`, ignoreSelection: true },
+              ),
+            );
+          values.push(
+            Decoration.node(pos, pos + node.nodeSize, {
+              "data-source-index": String(sourceIndex),
+            }),
+          );
           if (index >= 0)
             values.push(
               Decoration.node(pos, pos + node.nodeSize, {
@@ -1361,6 +1384,11 @@ export function createEditor(
     setSource,
     focusColumn,
     setHighlightedColumn,
+    setLineNumbers(value: boolean) {
+      if (showLineNumbers === value) return;
+      showLineNumbers = value;
+      view.dispatch(view.state.tr.setMeta("addToHistory", false));
+    },
     destroy: () => {
       stopDrag();
       view.destroy();

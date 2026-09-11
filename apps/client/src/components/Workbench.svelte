@@ -32,6 +32,7 @@
     textareaSource,
   } from "@honkoku/editor";
   import Transcription from "./Transcription.svelte";
+  import { automaticTextScale, longestColumnLength, textScalePadding } from "../../../../packages/markup/scale";
   import {
     date,
     label as entryLabel,
@@ -238,20 +239,106 @@
       lineModel.lines,
     ),
   );
+  let showLineNumbers = $state(false);
+  let automaticScale = $state(true);
+  let manualScale = $state(1);
+  let paneHeight = $state(0);
+  let longest = $state(0);
+  let scalePadding = $state(34);
+  let autoFit = $derived(
+    automaticTextScale(paneHeight, longest, 17, scalePadding),
+  );
+  let textScale = $derived(automaticScale ? autoFit.scale : manualScale);
+  $effect(() => {
+    const text = editing ? source : displayedSource;
+    const timer = setTimeout(() => {
+      longest = longestColumnLength(text);
+      scalePadding = textScalePadding(text);
+    }, 200);
+    return () => clearTimeout(timer);
+  });
+  $effect(() => {
+    const uid = sessionUid ?? "guest";
+    let saved;
+    try {
+      saved = JSON.parse(
+        localStorage.getItem(`honkoku.text-view.${uid}`) ?? "null",
+      );
+    } catch {}
+    showLineNumbers = saved?.lineNumbers === true;
+    automaticScale = saved?.automatic !== false;
+    manualScale =
+      typeof saved?.scale === "number" && Number.isFinite(saved.scale)
+        ? Math.min(2, Math.max(0.5, Math.round(saved.scale * 10) / 10))
+        : 1;
+  });
+  function rememberTextView() {
+    try {
+      localStorage.setItem(
+        `honkoku.text-view.${sessionUid ?? "guest"}`,
+        JSON.stringify({
+          lineNumbers: showLineNumbers,
+          automatic: automaticScale,
+          scale: manualScale,
+        }),
+      );
+    } catch {}
+  }
+  function changeScale(delta: number) {
+    const step =
+      delta > 0
+        ? Math.floor(textScale * 10 + 1e-8)
+        : Math.ceil(textScale * 10 - 1e-8);
+    manualScale = Math.min(2, Math.max(0.5, (step + delta) / 10));
+    automaticScale = false;
+    rememberTextView();
+  }
+  function textWheel(element: HTMLElement) {
+    const wheel = (event: WheelEvent) => {
+      if (!event.ctrlKey || !event.deltaY) return;
+      event.preventDefault();
+      changeScale(event.deltaY < 0 ? 1 : -1);
+    };
+    element.addEventListener("wheel", wheel, { passive: false });
+    return { destroy: () => element.removeEventListener("wheel", wheel) };
+  }
+  let lineNumbers = $derived(
+    alignment.flatMap((lineIndex, columnIndex) =>
+      lineIndex === null
+        ? []
+        : [
+            {
+              lineIndex,
+              sourceIndex: columns[columnIndex].sourceIndex,
+            },
+          ],
+    ),
+  );
   let currentColumn = $state(-1);
   let hoveredLine = $state<number | null>(null);
+  let hoveredSourceIndex = $state<number>();
   let selectedLine = $derived(hoveredLine ?? alignment[currentColumn] ?? null);
   let highlightedColumn = $derived(
-    hoveredLine === null ? currentColumn : alignment.indexOf(hoveredLine),
+    hoveredLine === null
+      ? currentColumn
+      : hoveredSourceIndex === undefined
+        ? alignment.indexOf(hoveredLine)
+        : columns.findIndex(
+            (column) => column.sourceIndex === hoveredSourceIndex,
+          ),
   );
   let editor = $state<VerticalEditor>();
   let transcription = $state<Transcription>();
   function columnChange(index: number) {
     currentColumn = index;
     hoveredLine = null;
+    hoveredSourceIndex = undefined;
   }
-  function selectLine(lineIndex: number) {
-    const column = alignment.indexOf(lineIndex);
+  function selectLine(lineIndex: number, sourceIndex?: number) {
+    const column =
+      sourceIndex === undefined
+        ? alignment.indexOf(lineIndex)
+        : columns.findIndex((column) => column.sourceIndex === sourceIndex);
     if (column < 0) return;
     columnChange(column);
     if (editing) editor?.focusColumn(column);
@@ -1100,6 +1187,21 @@
   });
 </script>
 
+{#snippet scaleControls()}
+  <div class="zoom-controls text-scale-controls" role="group" aria-label="本文の倍率">
+    {#if automaticScale && autoFit.wraps}<small class="caption muted">折り返しあり</small>{/if}
+    <button aria-label="本文を縮小" disabled={textScale <= 0.5} onclick={() => changeScale(-1)}>−</button>
+    <span class="numeric">{Math.round(textScale * 100)}%</span>
+    <button aria-label="本文を拡大" disabled={textScale >= 2} onclick={() => changeScale(1)}>＋</button>
+    <button aria-pressed={automaticScale} onclick={() => {
+      automaticScale = !automaticScale;
+      if (!automaticScale) manualScale = Math.min(2, Math.max(0.5, Math.round(autoFit.scale * 10) / 10));
+      rememberTextView();
+    }}>自動</button>
+  </div>
+{/snippet}
+
+
 <div class="workbench">
   <RegionNotice region={pagesRegion} />
   {#if lockSlow || lockFailed}<div class="region-notice caption">
@@ -1299,6 +1401,11 @@
           onclick={() => (menuOpen = !menuOpen)}>⋯</button
         >
         {#if menuOpen}<div class="menu-options">
+            <button aria-pressed={showLineNumbers} onclick={() => {
+              showLineNumbers = !showLineNumbers;
+              rememberTextView();
+              menuOpen = false;
+            }}>行番号</button>
             <button
               aria-pressed={showAnnotations}
               onclick={() => {
@@ -1372,7 +1479,9 @@
         aria-label="端末に残っている本文"></textarea>
     </details>{/if}
   <div class="workbench-panes" class:swapped>
-    <section class="panel transcription-panel" use:references>
+    <section class="panel transcription-panel" class:show-line-numbers={showLineNumbers}
+      class:auto-columns={automaticScale && !autoFit.wraps}
+      style:--text-scale={textScale} use:textWheel use:references>
       {#if pagesPending}<Skeleton
           shape="columns"
           count={8}
@@ -1381,6 +1490,9 @@
           inert={busy || verifying}
         >
           <VerticalEditor
+            {scaleControls}
+            {showLineNumbers}
+            onheight={(height) => (paneHeight = height)}
             {horizontal}
             accountId={session?.uid}
             otherPageTexts={pages.filter((p) => p.id !== page.id).map((p) => p.text)}
@@ -1391,12 +1503,19 @@
             onupdate={update}
             onglyph={glyphChange}
             oncolumnchange={columnChange}
+            oncolumnhover={(index) => {
+              hoveredLine = alignment[index] ?? null;
+              hoveredSourceIndex = columns[index]?.sourceIndex;
+            }}
             {highlightedColumn}
             onnote={changeNote}
           />
         </div>{:else}
+        <div class="pane-toolbar reader-toolbar">{@render scaleControls()}</div>
         <div class="transcription-reader">
           <Transcription
+            {showLineNumbers}
+            onheight={(height) => (paneHeight = height)}
             bind:this={transcription}
             source={displayedSource}
             {horizontal}
@@ -1491,9 +1610,11 @@
       pageNumber={index + 1}
       bind:half
       {lineModel}
+      {showLineNumbers}
+      {lineNumbers}
       highlightedLine={selectedLine}
       onlineselect={selectLine}
-      onlinehover={(line) => (hoveredLine = line)}
+      onlinehover={(line, sourceIndex) => { hoveredLine = line; hoveredSourceIndex = sourceIndex; }}
     >
       {#snippet children(viewer)}
         <NoteOverlays

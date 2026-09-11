@@ -2242,3 +2242,96 @@ button.line-overlay.line-hidden {
   border-color: var(--accent);
   color: var(--accent);
 }
+
+.transcription-panel {
+  --line-number-gutter: 0px;
+}
+.transcription-panel.show-line-numbers {
+  --line-number-gutter: 18px;
+}
+.transcription-panel .transcription,
+.transcription-panel .editor-raw-textarea {
+  font-size: calc(17px * var(--text-scale, 1));
+  line-height: 1.7;
+}
+.transcription-panel .transcription-column {
+  position: relative;
+  min-width: 1.7em;
+  padding-left: 0.235em;
+  padding-right: 0.235em;
+  box-sizing: content-box;
+  margin-top: var(--line-number-gutter);
+  height: var(--column-height);
+}
+.transcription-panel .vertical-editor .transcription-column {
+  min-block-size: 1.7em;
+}
+.transcription-panel.auto-columns .transcription-column {
+  white-space: pre;
+  overflow-wrap: normal;
+}
+.transcription-panel .columns {
+  padding-top: var(--line-number-gutter);
+}
+.transcription-panel .columns .transcription-column {
+  margin-top: 0;
+}
+.transcription-panel .column-group {
+  min-width: 1.7em;
+  padding-left: 0.47em;
+  padding-right: 0.47em;
+}
+.transcription-panel .markup-reference {
+  font-size: 0.765em;
+  line-height: 1.385;
+  padding: 0 0.23em;
+}
+.transcription-panel .markup-comment {
+  font-size: 0.7em;
+}
+.text-line-number {
+  position: absolute;
+  top: -18px;
+  right: 0;
+  writing-mode: horizontal-tb;
+  font: 400 10px/14px "Noto Sans JP", var(--font-sans);
+  color: var(--text-muted);
+  white-space: nowrap;
+  user-select: none;
+  cursor: pointer;
+}
+.header-line-number {
+  position: static;
+  margin-right: 4px;
+}
+.text-scale-controls {
+  margin-left: auto;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.text-scale-controls button[aria-pressed="true"] {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+.transcription-panel .horizontal .transcription-column {
+  height: auto;
+  margin-top: var(--line-number-gutter);
+}
+button.line-number-badge {
+  padding: 0 3px;
+  min-width: 16px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--surface);
+  color: var(--text-muted);
+  font: 400 10px/14px "Noto Sans JP", var(--font-sans);
+  white-space: nowrap;
+}
+button.line-number-badge.highlighted {
+  color: var(--accent-text);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.transcription-panel .transcription {
+  gap: 0.94em;
+}

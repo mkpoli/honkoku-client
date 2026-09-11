@@ -1,5 +1,6 @@
 <script lang="ts">
   import "../../../../packages/editor/style.css";
+  import { measureColumns } from "../../../../packages/editor/measure-columns";
   import { onDestroy } from "svelte";
   import {
     renderReadingLine,
@@ -7,12 +8,16 @@
   } from "@honkoku/markup";
   let {
     source,
+    showLineNumbers = false,
+    onheight,
     horizontal = false,
     half = $bindable(""),
     highlightedColumn = -1,
     oncolumnchange,
   }: {
     source: string;
+    showLineNumbers?: boolean;
+    onheight?: (height: number) => void;
     horizontal?: boolean;
     half?: string;
     highlightedColumn?: number;
@@ -32,21 +37,23 @@
     );
     const groups: {
       label: string;
-      columns: { html: string; index: number; indent?:number }[];
+      sourceIndex?: number;
+      columns: { html: string; sourceIndex: number; index: number; indent?:number }[];
     }[] = [];
-    let group = { label: "", columns: [] as { html: string; index: number; indent?:number }[] };
+    let group: (typeof groups)[number] = { label: "", columns: [] as { html: string; sourceIndex: number; index: number; indent?:number }[] };
     const blocks: number[]=[];
     for (const [sourceIndex, line] of source.split(/\r\n|\r|\n/).entries()) {
       const block=/^％(表紙|字下げ[一二三])$/.exec(line);
-      if(block) { blocks.push(({一:1,二:2,三:3} as Record<string,number>)[block[1].slice(-1)] ?? 0); continue; }
-      if(line==="％" && blocks.length) {blocks.pop(); continue;}
+      if(block) { blocks.push(({一:1,二:2,三:3} as Record<string,number>)[block[1].slice(-1)] ?? 0); group.columns.push({html: "", sourceIndex, index: indices.get(sourceIndex) ?? -1}); continue; }
+      if(line==="％" && blocks.length) {blocks.pop(); group.columns.push({html: "", sourceIndex, index: indices.get(sourceIndex) ?? -1}); continue;}
       const marker = /^\s*【([右左]丁)】\s*$/.exec(line);
       if (marker) {
         if (group.columns.length || group.label) groups.push(group);
-        group = { label: marker[1], columns: [] };
+        group = { label: marker[1], sourceIndex, columns: [] };
       } else
         group.columns.push({
           html: renderReadingLine(line),
+          sourceIndex,
           indent: blocks.at(-1) ?? 0,
           index: indices.get(sourceIndex) ?? -1,
         });
@@ -71,20 +78,6 @@
       oncolumnchange?.(-1);
     }, 2000);
   }
-  function measureColumns(element: HTMLElement) {
-    const apply = () => {
-      if (element.clientHeight > 0)
-        element.style.setProperty(
-          "--column-height",
-          `${element.clientHeight}px`,
-        );
-    };
-    const observer = new ResizeObserver(apply);
-    observer.observe(element);
-    if (element.parentElement) observer.observe(element.parentElement);
-    apply();
-    return { destroy: () => observer.disconnect() };
-  }
   onDestroy(() => clearTimeout(timer));
 </script>
 
@@ -99,12 +92,13 @@
           class="column-label"
           class:active={half === group.label}
           onclick={() => (half = half === group.label ? "" : group.label)}
-          >{group.label}</button
+          >{#if showLineNumbers}<span class="text-line-number header-line-number">L{group.sourceIndex! + 1}</span>{/if}{group.label}</button
         >{/if}
-      <div class="columns" use:measureColumns>
+      <div class="columns" use:measureColumns={{ onheight, lineNumbers: showLineNumbers }}>
         {#each group.columns as column}
           <div
             class="transcription-column"
+            data-source-index={column.sourceIndex}
             class:editor-active-column={currentColumn === column.index && column.index >= 0}
             class:alignment-active-column={column.index >= 0 &&
               highlightedColumn === column.index}
@@ -138,6 +132,7 @@
               }
             }}
           >
+            {#if showLineNumbers}<span class="text-line-number">L{column.sourceIndex + 1}</span>{/if}
             {@html column.html}
           </div>
         {/each}

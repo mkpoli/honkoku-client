@@ -25,6 +25,8 @@
     lineModel = { engine: null, lines: [], estimated: false },
     highlightedLine = null,
     showLines = false,
+    showLineNumbers = false,
+    lineNumbers = [],
     onlinehover,
     onlineselect,
   }: {
@@ -45,8 +47,10 @@
     lineModel?: PageLines | LocalPageLines;
     highlightedLine?: number | null;
     showLines?: boolean;
-    onlinehover?: (index: number | null) => void;
-    onlineselect?: (index: number) => void;
+    showLineNumbers?: boolean;
+    lineNumbers?: { lineIndex: number; sourceIndex: number }[];
+    onlinehover?: (index: number | null, sourceIndex?: number) => void;
+    onlineselect?: (index: number, sourceIndex?: number) => void;
   } = $props();
   let recognitionMode = $derived(modes.find((mode) => mode.label === "認識"));
   let recognizing = $derived(!!recognitionMode?.active);
@@ -63,6 +67,7 @@
   let opened = $state(false);
   let imageReady = $state(false);
   let overlayElements = $state<HTMLButtonElement[]>([]);
+  let badgeElements = $state<HTMLButtonElement[]>([]);
   let fallback = $state(false),
     imageFailed = $state(false),
     scale = $state(100),
@@ -247,6 +252,62 @@
         element.remove();
       });
     };
+  });
+  $effect(() => {
+    const v = viewer;
+    if (!showLineNumbers || !opened || !v?.world.getItemCount()) {
+      badgeElements = [];
+      return;
+    }
+    const trackers: OpenSeadragon.MouseTracker[] = [];
+    const elements: HTMLButtonElement[] = [];
+    for (const line of lineModel.lines) {
+      const aligned = lineNumbers.filter((number) => number.lineIndex === line.index);
+      const numbers = aligned.length ? aligned : [{ sourceIndex: -1, lineIndex: line.index }];
+      for (const [offset, number] of numbers.entries()) {
+        const element = document.createElement("button");
+        element.type = "button";
+        element.className = "line-number-badge";
+        element.dataset.lineIndex = String(line.index);
+        if (number.sourceIndex >= 0) element.dataset.sourceIndex = String(number.sourceIndex);
+        element.textContent = number.sourceIndex >= 0 ? `L${number.sourceIndex + 1}` : "·";
+        element.setAttribute("aria-label", number.sourceIndex >= 0 ? `本文のL${number.sourceIndex + 1}` : `対応する本文なし：原本の行${line.index + 1}`);
+        element.style.marginLeft = `${offset * 28}px`;
+        trackers.push(new OpenSeadragon.MouseTracker({
+          element,
+          enterHandler: () => onlinehover?.(line.index, number.sourceIndex >= 0 ? number.sourceIndex : undefined),
+          leaveHandler: () => onlinehover?.(null),
+          clickHandler: (event) => { if (event.quick) onlineselect?.(line.index, number.sourceIndex >= 0 ? number.sourceIndex : undefined); },
+        }));
+        element.addEventListener("focus", () => onlinehover?.(line.index, number.sourceIndex >= 0 ? number.sourceIndex : undefined));
+        element.addEventListener("blur", () => onlinehover?.(null));
+        element.addEventListener("keydown", (event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            onlineselect?.(line.index, number.sourceIndex >= 0 ? number.sourceIndex : undefined);
+          }
+        });
+        v.addOverlay({
+          element,
+          location: v.world.getItemAt(0).imageToViewportCoordinates(line.x, line.y),
+          placement: OpenSeadragon.Placement.BOTTOM_LEFT,
+          checkResize: true,
+        });
+        elements.push(element);
+      }
+    }
+    badgeElements = elements;
+    return () => {
+      trackers.forEach((tracker) => tracker.destroy());
+      elements.forEach((element) => { v.removeOverlay(element); element.remove(); });
+    };
+  });
+  $effect(() => {
+    for (const element of badgeElements) {
+      const active = Number(element.dataset.lineIndex) === highlightedLine;
+      element.classList.toggle("highlighted", active);
+      element.setAttribute("aria-pressed", String(active));
+    }
   });
   $effect(() => {
     for (const element of overlayElements) {

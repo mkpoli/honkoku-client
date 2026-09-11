@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { onMount, untrack, tick } from "svelte";
+  import { onMount, untrack, tick, type Snippet } from "svelte";
+  import { measureColumns } from "./measure-columns";
   import {
     historyKey,
     caretContext,
@@ -33,9 +34,13 @@
   import "./style.css";
   let {
     source = $bindable(""),
+    scaleControls,
+    onheight,
+    showLineNumbers = false,
     onupdate,
     onready,
     oncolumnchange,
+    oncolumnhover,
     highlightedColumn = -1,
     horizontal = false,
     onnote,
@@ -44,6 +49,9 @@
     otherPageTexts = [],
     pageId = "",
   }: {
+    scaleControls?: Snippet;
+    onheight?: (height: number) => void;
+    showLineNumbers?: boolean;
     source: string;
     otherPageTexts?: string[];
     pageId?: string;
@@ -51,6 +59,7 @@
     accountId?: string;
     onnote?: (content: string | null, index?: number) => number;
     oncolumnchange?: (index: number) => void;
+    oncolumnhover?: (index: number) => void;
     highlightedColumn?: number;
     horizontal?: boolean;
     onupdate?: (update: EditorUpdate) => void;
@@ -433,6 +442,7 @@
         if (ready) notifyColumn(index);
       },
       (message) => (status = message),
+      (index) => oncolumnhover?.(index),
     );
     editor = instance;
     ready = true;
@@ -456,6 +466,9 @@
   }
   $effect(() => {
     editor?.setHighlightedColumn(highlightedColumn);
+  });
+  $effect(() => {
+    editor?.setLineNumbers(showLineNumbers);
   });
 </script>
 
@@ -484,6 +497,7 @@
         if (!raw) requestAnimationFrame(() => editor?.view.focus());
       }}>原文表示</button
     >
+    {@render scaleControls?.()}
   </div>
   {#if status}<p class="editor-status" role="status">{status}</p>{/if}
   <section class="editor-palette" aria-label="特殊記号">
@@ -618,7 +632,12 @@
     {/if}
   </section>
   <div class="editor-body" class:editor-raw-mode={raw}>
-    <div class="transcription editor-scroll" class:horizontal hidden={raw}>
+    <div
+      class="transcription editor-scroll"
+      class:horizontal
+      hidden={raw}
+      use:measureColumns={{ onheight, lineNumbers: showLineNumbers }}
+    >
       <div bind:this={host} class="editor-mount"></div>
     </div>
     {#if raw}<textarea
