@@ -486,6 +486,7 @@ pub async fn page_draft(
     entry_id: String,
     index: u32,
     text: String,
+    notes: Option<Vec<Value>>,
     state: State<'_, AppState>,
     editing: State<'_, EditingState>,
 ) -> Result<Page, AppError> {
@@ -493,7 +494,7 @@ pub async fn page_draft(
     let live = editing
         .session(&connection.client, &entry_id, index)
         .await?;
-    live.drafts.request(&text)?;
+    live.drafts.request_with_notes(&text, notes)?;
     let mut guard = live.session.lock().await;
     let session = guard.as_mut().ok_or_else(no_editing_session)?;
     session.flush_drafts(false).await?;
@@ -1095,4 +1096,22 @@ mod glyph_image_tests {
             crop
         );
     }
+}
+
+#[tauri::command]
+pub async fn page_note_delete(
+    entry_id: String,
+    index: u32,
+    note_index: usize,
+    state: State<'_, AppState>,
+    editing: State<'_, EditingState>,
+) -> Result<Page, AppError> {
+    let connection = state.connection.read().await;
+    let live = editing
+        .session(&connection.client, &entry_id, index)
+        .await?;
+    let mut guard = live.session.lock().await;
+    let session = guard.as_mut().ok_or_else(no_editing_session)?;
+    session.delete_note(note_index).await?;
+    Ok(session.page().clone())
 }

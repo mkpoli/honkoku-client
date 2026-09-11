@@ -235,6 +235,8 @@ export interface DailyProgress {
   projects: Record<string, ProjectProgress>;
 }
 export interface PageNote {
+  image?: string;
+  xywh?: [number, number, number, number];
   id?: string;
   type?: string;
   content: string;

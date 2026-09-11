@@ -150,17 +150,22 @@ export async function onOcrProgress(
   );
 }
 
-/** Native drafts retain notes locally until the command supports a notes field. */
-export const pageDraftWithNotes = (
-  entryId: string, index: number, text: string, notes: Array<import("./types").JsonValue | null>,
-) => isTauri() ? pageDraft(entryId, index, text) : invoke<Page>("page_draft", { entryId, index, text, notes });
-
-export const pageDraftNotes = (entryId: string, index: number, notes: Array<import("./types").JsonValue | null>) =>
-  invoke<Page>("page_draft_notes", { entryId, index, notes });
-export async function pageDraftTextAndNotes(entryId: string, index: number, text: string, notes: Array<import("./types").JsonValue | null>) {
-  await pageDraft(entryId, index, text);
-  return pageDraftNotes(entryId, index, notes);
-}
+export const pageDraftNotes = (
+  entryId: string,
+  index: number,
+  notes: Array<import("./types").JsonValue | null>,
+) => invoke<Page>("page_draft_notes", { entryId, index, notes });
+export const pageNoteDelete = (
+  entryId: string,
+  index: number,
+  noteIndex: number,
+) => invoke<Page>("page_note_delete", { entryId, index, noteIndex });
+export const pageDraftTextAndNotes = (
+  entryId: string,
+  index: number,
+  text: string,
+  notes: Array<import("./types").JsonValue | null>,
+) => invoke<Page>("page_draft", { entryId, index, text, notes });
 export const historyOpen = (entryId: string, index: number) => invoke<void>("history_open", { entryId, index });
 export const historyRecent = (limit = 8) => invoke<import("./types").RecentWork[]>("history_recent", { limit });
 export const historyClear = () => invoke<void>("history_clear");

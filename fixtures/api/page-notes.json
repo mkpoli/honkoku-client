@@ -1,0 +1,364 @@
+{
+  "id": "0916dafb80cdc48ca7687afcad4a4f35_3",
+  "projectId": "ainu",
+  "entryId": "0916dafb80cdc48ca7687afcad4a4f35",
+  "index": 3,
+  "syncMode": false,
+  "notes": [
+    {
+      "id": "",
+      "type": "memo",
+      "content": "地名の読みは別本と照合する。",
+      "markdown": "地名の読みは別本と照合する。",
+      "createdBy": "B5KzM2KmjxXlvUVHiQdEO6Xth9J2",
+      "createdAt": "2026-09-10T01:00:00Z",
+      "updatedAt": "2026-09-10T01:00:00Z"
+    },
+    {
+      "id": "",
+      "type": "other",
+      "content": "参考：[国立国会図書館](https://www.ndl.go.jp/)\n資料の成立年代を確認。",
+      "markdown": "参考：[国立国会図書館](https://www.ndl.go.jp/)\n資料の成立年代を確認。",
+      "createdBy": "B5KzM2KmjxXlvUVHiQdEO6Xth9J2",
+      "createdAt": "2026-09-10T02:00:00Z",
+      "updatedAt": "2026-09-10T02:00:00Z"
+    },
+    {
+      "id": "",
+      "type": "note",
+      "content": "欄外の書入れ。\n本文より細い筆で記されている。",
+      "markdown": "欄外の書入れ。\n本文より細い筆で記されている。",
+      "createdBy": "B5KzM2KmjxXlvUVHiQdEO6Xth9J2",
+      "createdAt": "2026-09-10T03:00:00Z",
+      "updatedAt": "2026-09-10T03:00:00Z",
+      "image": "https://da2.library.ryukoku.ac.jp/image/?IIIF=/17%2F170161%2F170161-0004.tif/880,180,180,300/300,/0/default.jpg",
+      "xywh": [
+        880,
+        180,
+        180,
+        300
+      ]
+    }
+  ],
+  "canvasId": "https://da.library.ryukoku.ac.jp/iiif/170161/1/canvas/4",
+  "annotations": [],
+  "createdAt": {
+    "_seconds": 1776276182,
+    "_nanoseconds": 537000000
+  },
+  "ocr": {
+    "ndl": {
+      "text": "しと夫ゟ酒杯さたへ色〳〵の且云恵教を以て其心を\n慰めけれは漸に翁心して従ひ行へといふに至り大に\n力を得て船洋を窺ふの間日数十一日にして漸風波れ\n穏なれハ同月廿五日此所を出て九月三日トワシヨカウに至り\n付ぬるに是より奥地ハ異俗の夷城く入事既に深く\n且日を追て寒威増劇に強き貯糧し又多からされ\nは強夷しきりに帰りさらんと云てたゆへからさる勢\n一将れは己事を得すらて終に船もゝ返し九月十四日り\nヨナイに帰り着ぬ去にても此志を空して徒に帰り\nさらん事の口惜けれハ如何にもして帰上の凍合する\nさらん事の口惜けれは如何\nを待水上を経歴して奥地に至るへしと思ひ十月十四日\nまて夷家に稟宿しけるに日を追て積雪山をなすと\nいへとも海上更に凍合セされハ如何に思ふ共奥地\nに至るへき術なく旦日々食糧も残少々なり終に\n雑具を約して船と共に夷家に託し置六夷を牽\nひて積雷をおかし陸行して十一月廿六日トンナイ小帰\nり至り夷家に高宿して其年を踰へ巳年正月廿\n八日まて此所に滞留し食料の貯なと問へて廿九\n日此所を書又奥地に向しに二月二日ウシヨロに至る是ゟ\n奥地ハ悉〳〵両州附属の夷感なれハ初島の夷恐怖",
+      "createdAt": {
+        "_seconds": 1776326642,
+        "_nanoseconds": 900000000
+      },
+      "textBlocks": [
+        {
+          "x": 1181,
+          "y": 194,
+          "width": 46,
+          "height": 687,
+          "confidence": 0.8696073293685913,
+          "classId": 0,
+          "text": {
+            "text": "しと夫ゟ酒杯さたへ色〳〵の且云恵教を以て其心を",
+            "confidence": 0.9,
+            "rawPredictions": []
+          },
+          "readingOrder": 1
+        },
+        {
+          "x": 1130,
+          "y": 186,
+          "width": 42,
+          "height": 703,
+          "confidence": 0.8851856589317322,
+          "classId": 0,
+          "text": {
+            "text": "慰めけれは漸に翁心して従ひ行へといふに至り大に",
+            "confidence": 0.9,
+            "rawPredictions": []
+          },
+          "readingOrder": 2
+        },
+        {
+          "x": 1081,
+          "y": 190,
+          "width": 40,
+          "height": 694,
+          "confidence": 0.8951619863510132,
+          "classId": 0,
+          "text": {
+            "text": "力を得て船洋を窺ふの間日数十一日にして漸風波れ",
+            "confidence": 0.9,
+            "rawPredictions": []
+          },
+          "readingOrder": 3
+        },
+        {
+          "x": 1026,
+          "y": 186,
+          "width": 47,
+          "height": 700,
+          "confidence": 0.8531134128570557,
+          "classId": 0,
+          "text": {
+            "text": "穏なれハ同月廿五日此所を出て九月三日トワシヨカウに至り",
+            "confidence": 0.9,
+            "rawPredictions": []
+          },
+          "readingOrder": 4
+        },
+        {
+          "x": 978,
+          "y": 183,
+          "width": 42,
+          "height": 701,
+          "confidence": 0.8631696701049805,
+          "classId": 0,
+          "text": {
+            "text": "付ぬるに是より奥地ハ異俗の夷城く入事既に深く",
+            "confidence": 0.9,
+            "rawPredictions": []
+          },
+          "readingOrder": 5
+        },
+        {
+          "x": 928,
+          "y": 181,
+          "width": 40,
+          "height": 700,
+          "confidence": 0.8911908864974976,
+          "classId": 0,
+          "text": {
+            "text": "且日を追て寒威増劇に強き貯糧し又多からされ",
+            "confidence": 0.9,
+            "rawPredictions": []
+          },
+          "readingOrder": 6
+        },
+        {
+          "x": 874,
+          "y": 182,
+          "width": 44,
+          "height": 701,
+          "confidence": 0.8738057613372803,
+          "classId": 0,
+          "text": {
+            "text": "は強夷しきりに帰りさらんと云てたゆへからさる勢",
+            "confidence": 0.9,
+            "rawPredictions": []
+          },
+          "readingOrder": 7
+        },
+        {
+          "x": 823,
+          "y": 176,
+          "width": 41,
+          "height": 705,
+          "confidence": 0.8775372505187988,
+          "classId": 0,
+          "text": {
+            "text": "一将れは己事を得すらて終に船もゝ返し九月十四日り",
+            "confidence": 0.9,
+            "rawPredictions": []
+          },
+          "readingOrder": 8
+        },
+        {
+          "x": 773,
+          "y": 181,
+          "width": 38,
+          "height": 697,
+          "confidence": 0.8675534725189209,
+          "classId": 0,
+          "text": {
+            "text": "ヨナイに帰り着ぬ去にても此志を空して徒に帰り",
+            "confidence": 0.9,
+            "rawPredictions": []
+          },
+          "readingOrder": 9
+        },
+        {
+          "x": 721,
+          "y": 178,
+          "width": 43,
+          "height": 704,
+          "confidence": 0.868796706199646,
+          "classId": 0,
+          "text": {
+            "text": "さらん事の口惜けれハ如何にもして帰上の凍合する",
+            "confidence": 0.9,
+            "rawPredictions": []
+          },
+          "readingOrder": 10
+        },
+        {
+          "x": 723,
+          "y": 180,
+          "width": 42,
+          "height": 358,
+          "confidence": 0.360289990901947,
+          "classId": 0,
+          "text": {
+            "text": "さらん事の口惜けれは如何",
+            "confidence": 0.9,
+            "rawPredictions": []
+          },
+          "readingOrder": 11
+        },
+        {
+          "x": 572,
+          "y": 184,
+          "width": 37,
+          "height": 694,
+          "confidence": 0.8897777795791626,
+          "classId": 0,
+          "text": {
+            "text": "を待水上を経歴して奥地に至るへしと思ひ十月十四日",
+            "confidence": 0.9,
+            "rawPredictions": []
+          },
+          "readingOrder": 12
+        },
+        {
+          "x": 520,
+          "y": 185,
+          "width": 39,
+          "height": 696,
+          "confidence": 0.8832350969314575,
+          "classId": 0,
+          "text": {
+            "text": "まて夷家に稟宿しけるに日を追て積雪山をなすと",
+            "confidence": 0.9,
+            "rawPredictions": []
+          },
+          "readingOrder": 13
+        },
+        {
+          "x": 467,
+          "y": 184,
+          "width": 44,
+          "height": 692,
+          "confidence": 0.8800552487373352,
+          "classId": 0,
+          "text": {
+            "text": "いへとも海上更に凍合セされハ如何に思ふ共奥地",
+            "confidence": 0.9,
+            "rawPredictions": []
+          },
+          "readingOrder": 14
+        },
+        {
+          "x": 416,
+          "y": 185,
+          "width": 41,
+          "height": 696,
+          "confidence": 0.8644336462020874,
+          "classId": 0,
+          "text": {
+            "text": "に至るへき術なく旦日々食糧も残少々なり終に",
+            "confidence": 0.9,
+            "rawPredictions": []
+          },
+          "readingOrder": 15
+        },
+        {
+          "x": 365,
+          "y": 180,
+          "width": 39,
+          "height": 709,
+          "confidence": 0.8842843770980835,
+          "classId": 0,
+          "text": {
+            "text": "雑具を約して船と共に夷家に託し置六夷を牽",
+            "confidence": 0.9,
+            "rawPredictions": []
+          },
+          "readingOrder": 16
+        },
+        {
+          "x": 311,
+          "y": 181,
+          "width": 44,
+          "height": 707,
+          "confidence": 0.8804488778114319,
+          "classId": 0,
+          "text": {
+            "text": "ひて積雷をおかし陸行して十一月廿六日トンナイ小帰",
+            "confidence": 0.9,
+            "rawPredictions": []
+          },
+          "readingOrder": 17
+        },
+        {
+          "x": 260,
+          "y": 184,
+          "width": 44,
+          "height": 701,
+          "confidence": 0.8677456974983215,
+          "classId": 0,
+          "text": {
+            "text": "り至り夷家に高宿して其年を踰へ巳年正月廿",
+            "confidence": 0.9,
+            "rawPredictions": []
+          },
+          "readingOrder": 18
+        },
+        {
+          "x": 207,
+          "y": 196,
+          "width": 45,
+          "height": 682,
+          "confidence": 0.8596010208129883,
+          "classId": 0,
+          "text": {
+            "text": "八日まて此所に滞留し食料の貯なと問へて廿九",
+            "confidence": 0.9,
+            "rawPredictions": []
+          },
+          "readingOrder": 19
+        },
+        {
+          "x": 160,
+          "y": 190,
+          "width": 40,
+          "height": 693,
+          "confidence": 0.879670262336731,
+          "classId": 0,
+          "text": {
+            "text": "日此所を書又奥地に向しに二月二日ウシヨロに至る是ゟ",
+            "confidence": 0.9,
+            "rawPredictions": []
+          },
+          "readingOrder": 20
+        },
+        {
+          "x": 105,
+          "y": 187,
+          "width": 45,
+          "height": 693,
+          "confidence": 0.8785586357116699,
+          "classId": 0,
+          "text": {
+            "text": "奥地ハ悉〳〵両州附属の夷感なれハ初島の夷恐怖",
+            "confidence": 0.9,
+            "rawPredictions": []
+          },
+          "readingOrder": 21
+        }
+      ]
+    }
+  },
+  "editedBy": "fdixFwL0nRPQRxgn3A9IdzY0Mof1",
+  "requestReview": false,
+  "share": true,
+  "text": "しと夫ゟ酒杯あたへ色〳〵の耳言恵教を以て其心を\n慰めけれは漸に解心して従ひ行へしといふに至り大に\n力を得て和洋を窺ふの間日数十一日にして漸風波も\n穏なれハ同月廿五日此所を出て九月三日トツシヨカウに至り\n付ぬるに是より奥地ハ異俗の夷域に入事既に深く\n且日を追て寒威増劇に趣き貯糧も又多からされ\nは従夷しきりに帰りさらんと云て強ゆへからさる勢\nなれは已事を得すして終に船を返し九月十四日リ\nヨナイに帰り着ぬ去にても此志を空して徒に帰り\nさらん事の口惜けれハ如何にもして帰上の凍合する\nを待水上を経歴して奥地に至るへしと思ひ十月十四日\nまて夷家に寓宿しけるに日を追て積雪山をなすと\nいへとも海上更に凍合セされハ如何に思ふ共奥地\nに至るへき術なく旦日々食糧も残少々なり終に\n雑具を約して船と共に夷家に託し置六夷を牽\nひて積雪をおかし陸行して十一月廿六日トンナイに帰\nり至り夷家に寓宿して其年を踰へ巳年正月廿\n八日まて此所に滞留し食料の貯なと調へて廿九\n日此所を出又奥地に向しに二月二日ウシヨロに至る是ゟ\n奥地ハ悉〳〵満州附属の夷域なれハ初島の夷恐怖",
+  "prevStatus": "initiated",
+  "updatedAt": {
+    "_seconds": 1776327910,
+    "_nanoseconds": 997000000
+  },
+  "status": "initiated"
+}

@@ -40,9 +40,14 @@ pub struct ProjectSnapshot {
     pub name: String,
     pub fields: Value,
 }
+#[derive(Clone, PartialEq)]
+struct Draft {
+    text: String,
+    notes: Option<Vec<Value>>,
+}
 #[derive(Default)]
 struct PendingDraft {
-    text: Option<String>,
+    text: Option<Draft>,
     closed: bool,
 }
 /// Submit the latest text even while the session is waiting on an earlier write.
@@ -50,14 +55,21 @@ struct PendingDraft {
 pub struct DraftQueue(Arc<Mutex<PendingDraft>>);
 impl DraftQueue {
     pub fn request(&self, text: &str) -> Result<()> {
+        self.request_with_notes(text, None)
+    }
+    pub fn request_with_notes(&self, text: &str, notes: Option<Vec<Value>>) -> Result<()> {
         let mut pending = self.0.lock().map_err(|e| Error::Worker(e.to_string()))?;
         if pending.closed {
             return Err(Error::Invalid("Transcription is not being edited".into()));
         }
-        pending.text = Some(text.into());
+        let notes = notes.or_else(|| pending.text.as_ref().and_then(|draft| draft.notes.clone()));
+        pending.text = Some(Draft {
+            text: text.into(),
+            notes,
+        });
         Ok(())
     }
-    fn latest(&self) -> Result<Option<String>> {
+    fn latest(&self) -> Result<Option<Draft>> {
         Ok(self
             .0
             .lock()
@@ -73,9 +85,9 @@ impl DraftQueue {
             .text
             .is_some())
     }
-    fn acknowledge(&self, text: &str) -> Result<()> {
+    fn acknowledge(&self, text: &Draft) -> Result<()> {
         let mut pending = self.0.lock().map_err(|e| Error::Worker(e.to_string()))?;
-        if pending.text.as_deref() == Some(text) {
+        if pending.text.as_ref() == Some(text) {
             pending.text = None;
         }
         Ok(())
@@ -109,6 +121,10 @@ impl Drop for DraftFreeze {
             pending.closed = false;
         }
     }
+}
+enum NoteChange {
+    Replace(Value),
+    Delete(usize),
 }
 pub struct EditingSession {
     client: HonkokuClient,
@@ -365,14 +381,40 @@ impl EditingSession {
         Ok(())
     }
     pub async fn draft_notes(&mut self, notes: &[Value]) -> Result<()> {
-        self.check_lock()?;
-        self.refresh().await?;
-        let fields = json!({"tempNotes": notes});
-        let response = self
-            .client
-            .commit(vec![self.update(fields.clone(), true)])
-            .await?;
-        self.apply(fields, &response)
+        self.change_notes(NoteChange::Replace(stored_notes(notes)?))
+            .await
+    }
+    pub async fn delete_note(&mut self, index: usize) -> Result<()> {
+        self.change_notes(NoteChange::Delete(index)).await
+    }
+    async fn change_notes(&mut self, change: NoteChange) -> Result<()> {
+        for attempt in 0..5 {
+            self.refresh().await?;
+            let notes = match &change {
+                NoteChange::Replace(notes) => notes.clone(),
+                NoteChange::Delete(index) => {
+                    let mut notes = self.document.fields["tempNotes"]
+                        .as_array()
+                        .cloned()
+                        .unwrap_or_default();
+                    if let Some(note) = notes.get_mut(*index) {
+                        *note = Value::Null;
+                    }
+                    json!(notes)
+                }
+            };
+            let fields = json!({"tempNotes":notes});
+            match self
+                .client
+                .commit(vec![self.update(fields.clone(), false)])
+                .await
+            {
+                Ok(response) => return self.apply(fields, &response),
+                Err(Error::Conflict { .. }) if attempt < 4 => continue,
+                Err(error) => return Err(error),
+            }
+        }
+        Err(Error::Invalid("note transaction retries exhausted".into()))
     }
     pub async fn draft(&mut self, text: &str) -> Result<()> {
         self.drafts.request(text)?;
@@ -393,7 +435,17 @@ impl EditingSession {
             let Some(text) = self.drafts.latest()? else {
                 break;
             };
-            let fields = json!({"tempText":text,"tempTextChanged":true});
+            let notes = match &text.notes {
+                Some(notes) => stored_notes(notes)?,
+                None => self
+                    .document
+                    .fields
+                    .get("tempNotes")
+                    .filter(|v| !v.is_null())
+                    .cloned()
+                    .unwrap_or(json!([])),
+            };
+            let fields = json!({"tempText":text.text,"tempTextChanged":true,"tempNotes":notes});
             self.last_draft = Some(Instant::now());
             match self
                 .client
@@ -498,6 +550,21 @@ impl EditingSession {
         freeze.complete = true;
         Ok(())
     }
+}
+/// Restore Firestore timestamps after the plain JSON IPC round trip.
+fn stored_notes(notes: &[Value]) -> Result<Value> {
+    let mut notes = notes.to_vec();
+    for note in &mut notes {
+        if let Some(fields) = note.as_object_mut() {
+            for key in ["createdAt", "updatedAt"] {
+                if let Some(Value::String(date)) = fields.get(key) {
+                    let timestamp: crate::model::Timestamp = serde_json::from_value(json!(date))?;
+                    fields.insert(key.into(), json!({"$firestoreTimestamp": timestamp}));
+                }
+            }
+        }
+    }
+    Ok(json!(notes))
 }
 /// jsdiff operates on UTF-16 units; supplementary-plane characters may count differently.
 pub fn added_character_count(old: &str, new: &str) -> usize {

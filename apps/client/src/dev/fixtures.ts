@@ -1,3 +1,4 @@
+import notesFixture from "../../../../fixtures/api/page-notes.json";
 import glyphFixture from "../../../../fixtures/glyphs/attestations-候.json";
 import clipFixture from "../../../../fixtures/glyphs/clips.json";
 import type { Clip, ClipInput } from "@honkoku/client-api/types";
@@ -95,6 +96,8 @@ for (const override of pageStatuses) {
   const page = pages.get(override.index);
   if (page) Object.assign(page, override);
 }
+if (sessionStorage.getItem("honkoku.fixture.notes") === "true")
+  pages.set(notesFixture.index, normalize(notesFixture) as Page);
 const extraPages = normalize(pagesJson) as Record<string, Page[]>;
 extraPages[alignmentEntry.id] = alignmentEntry.canvases.map((canvas, index) =>
   index === alignmentFixture.page.index
@@ -173,6 +176,7 @@ export async function fixtureInvoke(
       "page_lock",
       "page_draft",
       "page_draft_notes",
+      "page_note_delete",
       "page_save",
       "page_discard",
       "page_lock_state",
@@ -204,33 +208,60 @@ export async function fixtureInvoke(
       e,
       editingEvents,
     );
+    if (
+      ["page_draft", "page_draft_notes", "page_note_delete"].includes(command)
+    ) {
+      const writes = JSON.parse(
+        sessionStorage.getItem("honkoku.fixture.noteWrites") ?? "[]",
+      );
+      writes.push({ command, tempNotes: structuredClone(p?.tempNotes) });
+      sessionStorage.setItem(
+        "honkoku.fixture.noteWrites",
+        JSON.stringify(writes),
+      );
+    }
     if (command === "page_save") recordHistory(e, required(p), true);
     return result;
   }
   switch (command) {
     case "glyph_attestations": {
       const result = structuredClone(glyphFixture);
-      result.pages = result.pages.filter(p => !args.project || p.projectId===args.project).slice(0,Number(args.limit));
-      if (args.character !== "候") result.pages=[];
-      result.total=result.pages.length;
+      result.pages = result.pages
+        .filter((p) => !args.project || p.projectId === args.project)
+        .slice(0, Number(args.limit));
+      if (args.character !== "候") result.pages = [];
+      result.total = result.pages.length;
       return result;
     }
     case "clips_list":
-      if (!signedIn) throw {kind:"signed_out",message:"ログインしてください。"};
+      if (!signedIn)
+        throw { kind: "signed_out", message: "ログインしてください。" };
       return fixtureClips;
     case "clip_create": {
-      if (!signedIn) throw {kind:"signed_out",message:"ログインしてください。"};
-      const input=args.input as ClipInput;
-      const canvas = entries.find(e => e.id===input.entryId)?.canvases?.[input.index];
+      if (!signedIn)
+        throw { kind: "signed_out", message: "ログインしてください。" };
+      const input = args.input as ClipInput;
+      const canvas = entries.find((e) => e.id === input.entryId)?.canvases?.[
+        input.index
+      ];
       if (!canvas?.infoJsonUrl) throw Error("IIIF画像がありません。");
-      const clip: Clip = {...input,id:crypto.randomUUID(),uid:whoami.uid,createdAt:new Date().toISOString(),
-        projectId:entry.projectId,transcriptionId:`${input.entryId}_${input.index}`,
-        uri:`${canvas.infoJsonUrl.slice(0,-10)}/${input.xywh.join(",")}/full/0/default.jpg`};
-      fixtureClips = [clip,...fixtureClips]; return clip;
+      const clip: Clip = {
+        ...input,
+        id: crypto.randomUUID(),
+        uid: whoami.uid,
+        createdAt: new Date().toISOString(),
+        projectId: entry.projectId,
+        transcriptionId: `${input.entryId}_${input.index}`,
+        uri: `${canvas.infoJsonUrl.slice(0, -10)}/${input.xywh.join(",")}/full/0/default.jpg`,
+      };
+      fixtureClips = [clip, ...fixtureClips];
+      return clip;
     }
     case "clip_delete":
-      if (!signedIn) throw {kind:"signed_out",message:"ログインしてください。"};
-      fixtureClips=fixtureClips.filter(c => c.id !== args.id); return;
+      if (!signedIn)
+        throw { kind: "signed_out", message: "ログインしてください。" };
+      fixtureClips = fixtureClips.filter((c) => c.id !== args.id);
+      return;
 
     case "history_recent":
       return recentHistory.slice(0, Math.max(0, limit)).map((row) => {

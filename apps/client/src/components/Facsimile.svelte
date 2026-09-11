@@ -12,6 +12,7 @@
   import type { Canvas } from "@honkoku/client-api/types";
   let {
     children,
+    modes = [],
     canvas,
     pending = false,
     region,
@@ -23,6 +24,12 @@
     onlinehover,
     onlineselect,
   }: {
+    modes?: {
+      label: string;
+      active: boolean;
+      disabled?: boolean;
+      select: () => void;
+    }[];
     children?: Snippet<[OpenSeadragon.Viewer | undefined]>;
     canvas?: Canvas;
     pending?: boolean;
@@ -254,6 +261,13 @@
 
 <section class="panel facsimile-panel">
   <div class="pane-toolbar">
+    <div class="facsimile-modes" role="group" aria-label="原本の操作">
+      {#each modes as mode}<button
+          aria-pressed={mode.active}
+          disabled={mode.disabled || !opened}
+          onclick={mode.select}>{mode.label}</button
+        >{/each}
+    </div>
     {#if (showLines || highlightedLine !== null) && lineModel.lines.length}<span
         class="caption muted"
         >{lineModel.engine === "local"

@@ -34,6 +34,8 @@
     editingPages,
     pageLock,
     pageDraftTextAndNotes,
+    pageDraftNotes,
+    pageNoteDelete,
     isTauri,
     pageSave,
     pageDiscard,
@@ -46,6 +48,9 @@
   import { prepareSound, completionSound } from "../sound";
   import GlyphDrawer from "./GlyphDrawer.svelte";
   import ClipSelection from "./ClipSelection.svelte";
+  import NotesDrawer from "./NotesDrawer.svelte";
+  import NoteOverlays from "./NoteOverlays.svelte";
+  import type { Rectangle } from "./glyph-regions";
   import Facsimile from "./Facsimile.svelte";
   import Thumbnail from "./Thumbnail.svelte";
   let {
@@ -112,10 +117,10 @@
           : page.notes,
     }),
   );
-  let noteCount = $derived(pageNotes.filter(Boolean).length);
-  let hasReferences = $derived(
-    /＃[0-9０-９]+/.test(editing ? source : displayedSource),
+  let annotationNotes = $derived(
+    notes({ ...page, notes: editing ? tempNotes : page.notes }),
   );
+  let noteCount = $derived(annotationNotes.filter(Boolean).length);
   let ocrOpen = $state(sessionStorage.getItem("honkoku.ocr.open") === "true");
   let noteList = $state(false);
   let noteAnchor = $state<HTMLElement>();
@@ -132,7 +137,6 @@
   function closeNotes() {
     clearTimeout(noteTimer);
     noteIndex = null;
-    noteList = false;
   }
   function deferClose() {
     clearTimeout(noteTimer);
@@ -154,12 +158,13 @@
       content === null
         ? null
         : {
+            ...old,
             id: old?.id ?? "",
-            type: "note",
+            type: old?.type ?? "note",
             content,
             markdown: content,
-            createdBy: old?.createdBy ?? session!.uid,
-            createdAt: old?.createdAt ?? now,
+            createdBy: old?.createdBy || session!.uid,
+            createdAt: old?.createdAt || now,
             updatedAt: now,
           };
     tempNotes = [...tempNotes];
@@ -246,15 +251,101 @@
     comment = $state("");
   let lockName = $state("名前を確認中");
   let menuOpen = $state(false);
-  let glyphOpen = $state(false), glyphCharacter = $state("");
+  let glyphOpen = $state(false),
+    glyphCharacter = $state("");
   let clipping = $state(false);
+  let notesOpen = $state(false),
+    annotationMode = $state(false),
+    showAnnotations = $state(true);
+  let highlightedNote = $state<number | null>(null);
+  let notesDrawer = $state<NotesDrawer>(),
+    noteOverlays = $state<NoteOverlays>();
+  async function savePageNote(draft: PageNote, position?: number) {
+    if (!editing || busy || verifying || composing) return;
+    busy = true;
+    try {
+      await queue?.flush();
+      const now = new Date().toISOString(),
+        old = position === undefined ? undefined : pageNotes[position];
+      const note: PageNote = {
+        id: old?.id ?? "",
+        content: draft.content,
+        markdown: draft.content,
+        type: draft.type ?? "note",
+        createdBy: old?.createdBy || session!.uid,
+        createdAt: old?.createdAt || now,
+        updatedAt: now,
+      };
+      if (draft.image) note.image = draft.image;
+      if (draft.xywh) note.xywh = draft.xywh;
+      const updated = [...tempNotes];
+      updated[position ?? updated.length] = note as unknown as JsonValue;
+      const fresh = await pageDraftNotes(
+        entry.id,
+        index,
+        JSON.parse(JSON.stringify(updated)) as (JsonValue | null)[],
+      );
+      tempNotes = fresh.tempNotes ?? updated;
+      onpage(fresh);
+      remember();
+      saveState = "下書き保存";
+    } finally {
+      busy = false;
+    }
+  }
+  async function deletePageNote(position: number) {
+    if (!editing || busy || verifying || composing) return;
+    busy = true;
+    try {
+      await queue?.flush();
+      const fresh = await pageNoteDelete(entry.id, index, position);
+      tempNotes = fresh.tempNotes ?? [];
+      onpage(fresh);
+      remember();
+      saveState = "下書き保存";
+    } finally {
+      busy = false;
+    }
+  }
+  async function regionNote(xywh: Rectangle) {
+    const info = canvases[index]?.infoJsonUrl;
+    if (!info || !editing) return;
+    const url = new URL(info, location.href);
+    const upstream = url.searchParams.get("url") ?? info;
+    const image = `${upstream.replace(/\/info\.json(?:\?.*)?$/, "")}/${xywh.join(",")}/300,/0/default.jpg`;
+    annotationMode = false;
+    notesOpen = true;
+    glyphOpen = false;
+    await tick();
+    notesDrawer?.create({ xywh, image });
+  }
+  $effect(() => {
+    if (!editing) annotationMode = false;
+  });
+
   let glyphTimer: ReturnType<typeof setTimeout>;
   function glyphChange(character: string, open: boolean) {
     clearTimeout(glyphTimer);
-    if (open) { glyphCharacter=character; glyphOpen=true; clipping=false; }
-    else if (glyphOpen) glyphTimer=setTimeout(() => glyphCharacter=character,300);
+    if (open) {
+      glyphCharacter = character;
+      glyphOpen = true;
+      clipping = false;
+    } else if (glyphOpen)
+      glyphTimer = setTimeout(() => (glyphCharacter = character), 300);
   }
-  $effect(() => { index; currentEntryId; sessionUid; clipping=false; glyphOpen=false; glyphCharacter=""; clearTimeout(glyphTimer); });
+  $effect(() => {
+    index;
+    currentEntryId;
+    sessionUid;
+    clipping = false;
+    annotationMode = false;
+    notesOpen = false;
+    highlightedNote = null;
+    showAnnotations = true;
+    glyphOpen = false;
+    glyphCharacter = "";
+    clearTimeout(glyphTimer);
+  });
 
   let otherEdits = $derived(
     [
@@ -677,7 +768,7 @@
     half = "";
   });
   $effect(() => {
-    const values = pageNotes;
+    const values = [...pageNotes, ...annotationNotes];
     let cancelled = false;
     for (const n of values)
       if (n?.createdBy)
@@ -715,7 +806,6 @@
       const target = targetOf(event);
       if (!target || document.querySelector(".editor-note-popover")) return;
       clearTimeout(noteTimer);
-      noteList = false;
       noteIndex = Number(target.dataset.note) - 1;
       positionNote(target);
     };
@@ -784,7 +874,7 @@
         e.shiftKey ||
         (e.target instanceof HTMLElement &&
           e.target.closest(
-            'input,textarea,select,[contenteditable="true"],.workbench-editor,.ocr-drawer,.note-popover,.save-popover,.workbench-menu',
+            'input,textarea,select,[contenteditable="true"],.workbench-editor,.ocr-drawer,.notes-drawer,.note-popover,.save-popover,.workbench-menu',
           ))
       )
         return;
@@ -951,15 +1041,18 @@
           disabled={busy || pagesPending || verifying}
           onclick={start}>編集開始</button
         >{/if}
-      {#if noteCount && !hasReferences}<button
-          class="notes-count"
-          aria-expanded={noteList}
-          onclick={(event) => {
-            noteList = !noteList;
-            noteIndex = null;
-            positionNote(event.currentTarget);
-          }}>注記{noteCount}件</button
-        >{/if}
+
+      <button
+        aria-pressed={notesOpen}
+        aria-controls="notes-drawer"
+        onclick={() => {
+          notesOpen = !notesOpen;
+          glyphOpen = false;
+          annotationMode = false;
+          clipping = false;
+        }}
+        >注釈{#if noteCount}<span class="count">{noteCount}</span>{/if}</button
+      >
       <button
         aria-pressed={ocrOpen}
         aria-controls="ocr-drawer"
@@ -975,7 +1068,13 @@
           onclick={() => (menuOpen = !menuOpen)}>⋯</button
         >
         {#if menuOpen}<div class="menu-options">
-            <button disabled={!session || !canvases[index]?.infoJsonUrl} onclick={() => { clipping=true; glyphOpen=false; menuOpen=false; }}>切り抜き</button>
+            <button
+              aria-pressed={showAnnotations}
+              onclick={() => {
+                showAnnotations = !showAnnotations;
+                menuOpen = false;
+              }}>注釈表示</button
+            >
             <button
               onclick={() => {
                 swapped = !swapped;
@@ -1057,6 +1156,39 @@
       </div>
     </section>
     <Facsimile
+      modes={[
+        {
+          label: "移動",
+          active: !clipping && !annotationMode,
+          select: () => {
+            clipping = false;
+            annotationMode = false;
+          },
+        },
+        {
+          label: "切り抜き",
+          active: clipping,
+          disabled: !session || !canvases[index]?.infoJsonUrl,
+          select: () => {
+            clipping = !clipping;
+            annotationMode = false;
+            notesOpen = false;
+            glyphOpen = false;
+          },
+        },
+        {
+          label: "注釈",
+          active: annotationMode,
+          disabled:
+            !editing || busy || verifying || !canvases[index]?.infoJsonUrl,
+          select: () => {
+            annotationMode = !annotationMode;
+            clipping = false;
+            notesOpen = false;
+            glyphOpen = false;
+          },
+        },
+      ]}
       canvas={canvases[index]}
       pending={canvasesRegion.pending && !canvases[index]}
       region={canvasesRegion}
@@ -1068,9 +1200,56 @@
       onlinehover={(line) => (hoveredLine = line)}
     >
       {#snippet children(viewer)}
-        {#if glyphOpen}<GlyphDrawer character={glyphCharacter} onclose={() => glyphOpen=false} />{/if}
-        {#if clipping}<ClipSelection {viewer} canvas={canvases[index]} entryId={entry.id} {index}
-          onclose={() => clipping=false} onsaved={() => { clipping=false; notice="クリップを保存しました。"; }} />{/if}
+        <NoteOverlays
+          bind:this={noteOverlays}
+          {viewer}
+          notes={annotationNotes}
+          visible={showAnnotations}
+          highlighted={highlightedNote}
+          selecting={clipping || annotationMode}
+        />
+        {#if notesOpen}{#key page.id}<NotesDrawer
+              bind:this={notesDrawer}
+              notes={annotationNotes}
+              {editing}
+              disabled={busy || composing || verifying}
+              {authors}
+              lockName={page.status === "editing" && !editing
+                ? lockName
+                : undefined}
+              onclose={() => {
+                notesOpen = false;
+                highlightedNote = null;
+              }}
+              onsave={savePageNote}
+              ondelete={deletePageNote}
+              onhover={(position) => (highlightedNote = position)}
+              onpan={(position) => noteOverlays?.pan(position)}
+            />{/key}{/if}
+        {#if annotationMode}<ClipSelection
+            {viewer}
+            canvas={canvases[index]}
+            entryId={entry.id}
+            {index}
+            onclose={() => (annotationMode = false)}
+            onsaved={() => {}}
+            onregion={regionNote}
+          />{/if}
+        {#if glyphOpen}<GlyphDrawer
+            character={glyphCharacter}
+            onclose={() => (glyphOpen = false)}
+          />{/if}
+        {#if clipping}<ClipSelection
+            {viewer}
+            canvas={canvases[index]}
+            entryId={entry.id}
+            {index}
+            onclose={() => (clipping = false)}
+            onsaved={() => {
+              clipping = false;
+              notice = "クリップを保存しました。";
+            }}
+          />{/if}
       {/snippet}
     </Facsimile>
   </div>
@@ -1114,7 +1293,7 @@
   </nav>
 </div>
 
-{#if noteList || noteIndex !== null}
+{#if noteIndex !== null}
   <div
     class="note-popover"
     role="dialog"
@@ -1139,7 +1318,7 @@
     <button class="note-close" aria-label="注記を閉じる" onclick={closeNotes}
       >×</button
     >
-    {#each pageNotes as n, i}{#if n && (noteList || noteIndex === i)}
+    {#each pageNotes as n, i}{#if n && noteIndex === i}
         <article class="note" data-note-index={i}>
           <strong>＃{i + 1}</strong>
           <p>{n?.content ?? "この番号の注記はありません。"}</p>

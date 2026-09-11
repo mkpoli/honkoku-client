@@ -176,7 +176,12 @@ async fn captured_lock_drafts_save_requests_and_local_state() -> Result<()> {
                 .as_str()
                 .unwrap()
         );
-        assert_commit(&server, requests[index].clone()).await;
+        let mut expected = requests[index].clone();
+        expected["writes"][0]["update"]["fields"]["tempNotes"] =
+            encode_value(&decode_value(&pages[index]["fields"]["tempNotes"])?);
+        expected["writes"][0]["updateMask"]["fieldPaths"] =
+            json!(["tempNotes", "tempText", "tempTextChanged"]);
+        assert_commit(&server, expected).await;
     }
     server.reset().await;
     read(&server, pages[3].clone(), 1).await;
@@ -479,7 +484,10 @@ async fn drafts_coalesce_while_a_write_is_in_flight() -> Result<()> {
     })
     .await
     .map_err(|_| Error::Timeout)?;
-    queue.request("intermediate")?;
+    queue.request_with_notes(
+        "intermediate",
+        Some(vec![json!({"content":"pending note"})]),
+    )?;
     queue.request("latest")?;
     let session = task.await.map_err(|e| Error::Worker(e.to_string()))??;
     assert_eq!(session.page().temp_text.as_deref(), Some("latest"));
@@ -495,6 +503,10 @@ async fn drafts_coalesce_while_a_write_is_in_flight() -> Result<()> {
         })
         .collect();
     assert_eq!(texts, vec!["first", "latest"]);
+    assert_eq!(
+        writes[1].1["writes"][0]["update"]["fields"]["tempNotes"],
+        encode_value(&json!([{"content":"pending note"}]))
+    );
     Ok(())
 }
 #[tokio::test]
@@ -735,20 +747,25 @@ async fn notes_draft_writes_only_temp_notes_with_lock_precondition() -> Result<(
     let client = client(&server)?;
     let document = page_reads()[1].clone();
     read(&server, document.clone(), 2).await;
-    let response = commits("response")[1].clone();
+    let mut response = commits("response")[1].clone();
+    response["writeResults"][0]
+        .as_object_mut()
+        .unwrap()
+        .remove("transformResults");
     commit_response(&server, response.clone()).await;
     let mut session = client.resume_editing(ENTRY, 20).await?;
+    let previous_timestamp = session.page().updated_at.clone();
     let notes = vec![
         Value::Null,
         json!({"type":"note","content":"原本の書入れ","markdown":"原本の書入れ"}),
     ];
     session.draft_notes(&notes).await?;
+    assert_eq!(session.page().updated_at, previous_timestamp);
     assert_commit(
         &server,
         json!({"writes":[{
             "update":{"name": document["name"],"fields":{"tempNotes":encode_value(&json!(notes))}},
             "updateMask":{"fieldPaths":["tempNotes"]},
-            "updateTransforms":[{"fieldPath":"updatedAt","setToServerValue":"REQUEST_TIME"}],
             "currentDocument":{"updateTime":document["updateTime"]}
         }]}),
     )
@@ -786,5 +803,108 @@ async fn notes_draft_rejects_a_lost_lock() -> Result<()> {
                 .all(|r| !r.url.path().ends_with(":commit"))
         );
     }
+    Ok(())
+}
+
+#[tokio::test]
+async fn note_delete_preserves_slots_and_server_notes() -> Result<()> {
+    let server = MockServer::start().await;
+    let client = client(&server)?;
+    let mut document = page_reads()[1].clone();
+    let notes = json!([{"content":"first"},null,{"content":"latest server note"}]);
+    document["fields"]["tempNotes"] = encode_value(&notes);
+    read(&server, document.clone(), 2).await;
+    commit_response(&server, commits("response")[1].clone()).await;
+    let mut session = client.resume_editing(ENTRY, 20).await?;
+    session.delete_note(0).await?;
+    assert_commit(&server, json!({"writes":[{
+        "update":{"name":document["name"],"fields":{"tempNotes":encode_value(&json!([null,null,{"content":"latest server note"}]))}},
+        "updateMask":{"fieldPaths":["tempNotes"]},
+        "currentDocument":{"updateTime":document["updateTime"]}
+    }]})).await;
+    Ok(())
+}
+
+#[tokio::test]
+async fn combined_draft_keeps_region_and_timestamp_types() -> Result<()> {
+    let server = MockServer::start().await;
+    let client = client(&server)?;
+    let document = page_reads()[1].clone();
+    read(&server, document.clone(), 2).await;
+    commit_response(&server, commits("response")[1].clone()).await;
+    let mut session = client.resume_editing(ENTRY, 20).await?;
+    let note = json!({"id":"","type":"memo","content":"region","markdown":"region","createdBy":UID,"createdAt":"2026-09-10T01:00:00Z","updatedAt":"2026-09-10T02:00:00Z","image":"https://example.org/iiif/10,20,30,40/300,/0/default.jpg","xywh":[10,20,30,40]});
+    session
+        .draft_queue()
+        .request_with_notes("本文", Some(vec![Value::Null, note.clone()]))?;
+    session.flush_drafts(true).await?;
+    let requests = server.received_requests().await.unwrap();
+    let request = requests
+        .iter()
+        .find(|r| r.url.path().ends_with(":commit"))
+        .unwrap();
+    let body: Value = serde_json::from_slice(&request.body)?;
+    let fields = &body["writes"][0]["update"]["fields"];
+    let stored = &fields["tempNotes"]["arrayValue"]["values"][1]["mapValue"]["fields"];
+    assert!(stored["createdAt"]["timestampValue"].is_string());
+    assert!(stored["updatedAt"]["timestampValue"].is_string());
+    assert_eq!(stored["image"], encode_value(&note["image"]));
+    assert_eq!(stored["xywh"], encode_value(&note["xywh"]));
+    assert_eq!(fields["tempText"], json!({"stringValue":"本文"}));
+    assert_eq!(
+        session.page().temp_notes.as_ref().unwrap()[1]
+            .as_ref()
+            .unwrap()["content"],
+        "region"
+    );
+    Ok(())
+}
+
+#[tokio::test]
+async fn note_delete_retries_against_the_new_server_array() -> Result<()> {
+    let server = MockServer::start().await;
+    let client = client(&server)?;
+    let mut document = page_reads()[1].clone();
+    document["fields"]["tempNotes"] = encode_value(&json!([{"content":"remove"}]));
+    let current = Arc::new(Mutex::new(document.clone()));
+    let for_read = current.clone();
+    Mock::given(path("/documents:batchGet"))
+        .respond_with(move |_: &wiremock::Request| {
+            ResponseTemplate::new(200).set_body_json(json!([{"found":*for_read.lock().unwrap()}]))
+        })
+        .expect(4)
+        .mount(&server)
+        .await;
+    let attempts = Arc::new(Mutex::new(Vec::<Value>::new()));
+    let observed = attempts.clone();
+    Mock::given(path("/documents:commit"))
+        .respond_with(move |request: &wiremock::Request| {
+            let mut attempts = observed.lock().unwrap();
+            attempts.push(serde_json::from_slice(&request.body).unwrap());
+            if attempts.len() == 1 {
+                let mut document = current.lock().unwrap();
+                document["updateTime"] = json!("2026-09-10T07:41:42Z");
+                document["fields"]["tempNotes"] =
+                    encode_value(&json!([{"content":"remove"},{"content":"concurrent note"}]));
+                ResponseTemplate::new(400)
+                    .set_body_json(json!({"error":{"status":"FAILED_PRECONDITION"}}))
+            } else {
+                ResponseTemplate::new(200).set_body_json(commits("response")[1].clone())
+            }
+        })
+        .expect(2)
+        .mount(&server)
+        .await;
+    let mut session = client.resume_editing(ENTRY, 20).await?;
+    session.delete_note(0).await?;
+    let attempts = attempts.lock().unwrap();
+    assert_eq!(
+        attempts[1]["writes"][0]["update"]["fields"]["tempNotes"],
+        encode_value(&json!([null,{"content":"concurrent note"}]))
+    );
+    assert_eq!(
+        attempts[1]["writes"][0]["currentDocument"]["updateTime"],
+        "2026-09-10T07:41:42Z"
+    );
     Ok(())
 }

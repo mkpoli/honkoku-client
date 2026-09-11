@@ -42,6 +42,7 @@ fn main() {
             "page_lock",
             "page_draft",
             "page_draft_notes",
+            "page_note_delete",
             "history_open",
             "history_recent",
             "history_clear",
