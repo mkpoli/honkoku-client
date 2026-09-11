@@ -760,7 +760,11 @@ export async function checkAlignment(
     );
     for (let i = 0; i < 3; i++)
       await page.getByRole("button", { name: "拡大", exact: true }).click();
-    await page.waitForTimeout(300);
+    await page.waitForFunction(
+      (target) =>
+        document.querySelector(".zoom-controls .numeric")?.textContent === target,
+      `${Math.round(100 * 1.25 ** 4)}%`,
+    );
     const zoomLabel = await page
       .locator(".zoom-controls .numeric")
       .textContent();
