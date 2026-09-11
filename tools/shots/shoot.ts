@@ -1,5 +1,6 @@
 import { checkPaletteTerms, checkInlineEditor } from "./editor-checks";
 import {
+  checkTextScale,
   checkCaretContexts,
   checkHistory,
   checkRecognition,
@@ -175,6 +176,17 @@ try {
       throw Error("Vite did not start on the assigned port.");
   }
   browser = await chromium.launch({ headless: true });
+  for (const theme of ["light", "dark"] as const) await checkTextScale(browser, origin, theme);
+  for (const theme of ["light", "dark"] as const)
+    await checkWorkbenchParity(browser, origin, theme);
+  for (const theme of ["light", "dark"] as const)
+    await checkAlignment(browser, origin, theme);
+  if (process.env.HONKOKU_SHOTS_SCALE_ONLY === "1") {
+    await browser.close();
+    browser = undefined;
+    await stopServer();
+    process.exit(0);
+  }
   for (const theme of ["light", "dark"] as const) await checkPaletteTerms(browser, origin, theme);
   if (process.env.HONKOKU_SHOTS_TERMS_ONLY === "1") {
     await browser.close();
@@ -209,8 +221,6 @@ try {
   }
   await checkInteractions(browser, origin);
   for (const theme of ["light", "dark"] as const)
-    await checkWorkbenchParity(browser, origin, theme);
-  for (const theme of ["light", "dark"] as const)
     await checkRankingSelf(browser, origin, theme);
   for (const theme of ["light", "dark"] as const)
     await checkGlyphs(browser, origin, theme);
@@ -231,8 +241,6 @@ try {
     await checkBrowsePolish(browser, origin, theme);
   for (const theme of ["light", "dark"] as const)
     await checkQuietWorkbench(browser, origin, theme);
-  for (const theme of ["light", "dark"] as const)
-    await checkAlignment(browser, origin, theme);
   const webkitBrowser = await webkit.launch({ headless: true });
   try {
     await checkCaretContexts(webkitBrowser, origin, "light", "-webkit");

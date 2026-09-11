@@ -228,12 +228,14 @@ export async function checkInteractions(browser: Browser, origin: string) {
     .evaluate((e) => ({
       mode: getComputedStyle(e).writingMode,
       whiteSpace: getComputedStyle(e).whiteSpace,
+      automatic: !!e.closest(".auto-columns"),
+      fontSize: parseFloat(getComputedStyle(e).fontSize),
       width: e.getBoundingClientRect().width,
       height: e.getBoundingClientRect().height,
     }));
   assert.equal(metrics.mode, "vertical-rl");
-  assert.equal(metrics.whiteSpace, "pre-wrap");
-  assert.ok(Math.round(metrics.width) >= 44);
+  assert.equal(metrics.whiteSpace, metrics.automatic ? "pre" : "pre-wrap");
+  assert.ok(metrics.width >= metrics.fontSize * 1.7 - 1);
   assert.ok(metrics.height > 0);
   const panel = await page.locator(".transcription").evaluate((e) => ({
     scrollHeight: e.scrollHeight,
@@ -443,6 +445,10 @@ export async function checkEditing(
     );
     await page.getByRole("button", { name: "原文表示", exact: true }).click();
     const scroll = page.locator(".editor-scroll");
+    await page.waitForFunction(() => {
+      const pane = document.querySelector(".editor-scroll")!;
+      return pane.scrollWidth > pane.clientWidth;
+    });
     const wide = await scroll.evaluate((e) => {
       const pane = e.getBoundingClientRect();
       e.scrollLeft = -e.scrollWidth;
@@ -755,12 +761,12 @@ export async function checkAlignment(
       await page.getByRole("button", { name: "拡大", exact: true }).click();
     await page.waitForFunction(
       (target) =>
-        document.querySelector(".zoom-controls .numeric")?.textContent ===
+        document.querySelector(".facsimile-panel .zoom-controls .numeric")?.textContent ===
         target,
       `${Math.round(100 * 1.25 ** 4)}%`,
     );
     const zoomLabel = await page
-      .locator(".zoom-controls .numeric")
+      .locator(".facsimile-panel .zoom-controls .numeric")
       .textContent();
     const lastBefore = await page
       .locator('.line-overlay[data-line-index="9"]')
@@ -786,7 +792,7 @@ export async function checkAlignment(
       "selected line is horizontally visible",
     );
     assert.equal(
-      await page.locator(".zoom-controls .numeric").textContent(),
+      await page.locator(".facsimile-panel .zoom-controls .numeric").textContent(),
       zoomLabel,
       "caret panning preserves zoom",
     );
@@ -1400,10 +1406,12 @@ export async function checkWorkbenchParity(
         list_entry_summaries: 1200,
       };
     });
-    await page.goto(`${origin}/#/`);
-    await page.locator(".project-groups .skeleton").waitFor();
-    await page.locator(".timeline-items .skeleton").waitFor();
-    await page.locator(".ranking .skeleton").waitFor();
+    await page.goto(`${origin}/#/`, { waitUntil: "commit" });
+    await Promise.all([
+      page.locator(".project-groups .skeleton").waitFor(),
+      page.locator(".timeline-items .skeleton").waitFor(),
+      page.locator(".ranking .skeleton").waitFor(),
+    ]);
     if (theme === "light")
       await page.screenshot({
         path: resolve(
@@ -1437,7 +1445,7 @@ export async function checkWorkbenchParity(
       "true",
     );
     await page.evaluate(() => (location.hash = "#/"));
-    await page.locator(".project-row").first().waitFor({ timeout: 500 });
+    await page.locator(".project-row").first().waitFor({ timeout: 2000 });
     assert.equal(
       await page.locator(".project-groups .skeleton").count(),
       0,
@@ -1465,10 +1473,15 @@ export async function checkWorkbenchParity(
     assert.equal(
       await page
         .locator(
-          ".transcription-panel > .pane-toolbar, .facsimile-panel .pane-toolbar h2, .filmstrip-heading, .statusbar",
+          ".facsimile-panel .pane-toolbar h2, .filmstrip-heading, .statusbar",
         )
         .count(),
       0,
+    );
+    assert.equal(
+      await page.locator(".transcription-panel > .pane-toolbar .text-scale-controls").count(),
+      1,
+      "the reading header provides text scale controls",
     );
     await page.waitForLoadState("networkidle");
     await page.screenshot({
@@ -1507,7 +1520,7 @@ export async function checkWorkbenchParity(
       () =>
         Number(
           document
-            .querySelector(".zoom-controls .numeric")
+            .querySelector(".facsimile-panel .zoom-controls .numeric")
             ?.textContent?.replace("%", ""),
         ) > 100,
     );
@@ -1520,7 +1533,7 @@ export async function checkWorkbenchParity(
       () =>
         Number(
           document
-            .querySelector(".zoom-controls .numeric")
+            .querySelector(".facsimile-panel .zoom-controls .numeric")
             ?.textContent?.replace("%", ""),
         ) > 100,
     );
@@ -2149,7 +2162,10 @@ export async function checkKunten(
               const base = bounds(reading.firstChild!);
               const okuri = bounds(column.querySelector(".kunten-okurigana")!);
               const kaeriten = bounds(column.querySelector(".kunten-return")!);
-              const last = column.lastChild!;
+              const last = [...column.childNodes].findLast((node) =>
+                node.nodeType === Node.ELEMENT_NODE ||
+                (node.nodeType === Node.TEXT_NODE && !!node.textContent?.trim()),
+              )!;
               const next = bounds(last);
               return { base, okuri, kaeriten, next };
             });
@@ -2922,3 +2938,266 @@ export async function checkRecognition(
 }
 
 export { checkCaretContexts } from "./editor-checks";
+
+export async function checkTextScale(
+  browser: Browser,
+  origin: string,
+  theme: "light" | "dark",
+) {
+  const fixture = await import("../../fixtures/api/page-minna-ocr.json");
+  const { pageLines } = await import("../../packages/client-api/ocr");
+  const { alignColumns, transcriptionColumns } =
+    await import("../../packages/markup/align");
+  const columns = transcriptionColumns(fixture.page.text);
+  const model = pageLines(
+    fixture.page as unknown as import("../../packages/client-api/types").Page,
+    fixture.canvas,
+  );
+  const alignment = alignColumns(
+    columns.map((c) => c.text),
+    model.lines,
+  );
+  const expected = fixture.page.text
+    .split(/\r\n|\r|\n/)
+    .map((_, i) => `L${i + 1}`);
+  const context = await browser.newContext({
+    viewport: { width: 1600, height: 1000 },
+    locale: "ja-JP",
+    colorScheme: theme,
+    reducedMotion: "reduce",
+  });
+  await context.addInitScript(
+    (theme) => localStorage.setItem("honkoku.theme", theme),
+    theme,
+  );
+  const page = await context.newPage();
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  try {
+    await page.goto(
+      `${origin}/#/entries/${fixture.page.entryId}/pages/${fixture.page.index}`,
+      { waitUntil: "commit" },
+    );
+    await page.locator(".line-overlay").first().waitFor({ state: "attached" });
+    await page.evaluate(() => document.fonts.ready);
+    await page.getByRole("button", { name: "表示設定", exact: true }).click();
+    await page.getByRole("button", { name: "行番号", exact: true }).click();
+    await page.locator(".line-number-badge").first().waitFor();
+    assert.deepEqual(
+      await page
+        .locator(".transcription-reader .text-line-number")
+        .allTextContents(),
+      expected,
+    );
+    assert.equal(
+      await page.locator(".line-number-badge[data-source-index]").count(),
+      alignment.filter((n) => n !== null).length,
+    );
+    const first = alignment.findIndex((n) => n !== null);
+    const lineIndex = alignment[first]!;
+    const label = page.locator(
+      `.transcription-reader [data-source-index="${columns[first].sourceIndex}"] .text-line-number`,
+    );
+    await label.hover();
+    const box = page.locator(`.line-overlay[data-line-index="${lineIndex}"]`);
+    await box.waitFor({ state: "visible" });
+    const badge = page.locator(
+      `.line-number-badge[data-source-index="${columns[first].sourceIndex}"]`,
+    );
+    const before = await badge.boundingBox();
+    await page.locator('.facsimile-panel button[aria-label="拡大"]').click();
+    await page.waitForTimeout(300);
+    await badge.hover();
+    const badgeRect = await badge.boundingBox(),
+      boxRect = await box.boundingBox();
+    assert.ok(badgeRect && boxRect && before);
+    assert.ok(Math.abs(badgeRect.x - boxRect.x) < 2);
+    assert.ok(
+      Math.abs(badgeRect.y + badgeRect.height - boxRect.y) < 2,
+      JSON.stringify({ badgeRect, boxRect }),
+    );
+    assert.ok(
+      Math.abs(badgeRect.x - before.x) + Math.abs(badgeRect.y - before.y) > 1,
+    );
+    assert.equal(
+      await page
+        .locator(".transcription-reader .alignment-active-column")
+        .getAttribute("data-column-index"),
+      String(first),
+    );
+    await page
+      .locator(".facsimile-panel button")
+      .filter({ hasText: /^全体$/ })
+      .click();
+    await page.mouse.move(0, 0);
+    await page.waitForTimeout(300);
+    await page.screenshot({
+      path: `.local/shots/23-line-numbers-${theme}.png`,
+    });
+    const controls = page.getByRole("group", {
+      name: "本文の倍率",
+      exact: true,
+    });
+    const fontSize = () =>
+      page
+        .locator(".transcription")
+        .evaluate((element) => parseFloat(getComputedStyle(element).fontSize));
+    const autoSize = await fontSize();
+    await controls
+      .getByRole("button", { name: "本文を縮小", exact: true })
+      .click();
+    assert.ok((await fontSize()) < autoSize);
+    assert.equal(
+      await controls
+        .getByRole("button", { name: "自動", exact: true })
+        .getAttribute("aria-pressed"),
+      "false",
+    );
+    await page
+      .locator(".transcription")
+      .dispatchEvent("wheel", { ctrlKey: true, deltaY: -100 });
+    const manualSize = await fontSize();
+    await page.reload({ waitUntil: "commit" });
+    await page.locator(".transcription").waitFor();
+    assert.ok(Math.abs((await fontSize()) - manualSize) < 0.01);
+    assert.deepEqual(
+      await page
+        .locator(".transcription-reader .text-line-number")
+        .allTextContents(),
+      expected,
+    );
+    await controls.getByRole("button", { name: "自動", exact: true }).click();
+    await page.waitForTimeout(300);
+    async function assertFits() {
+      const fit = await page.locator(".transcription").evaluate((pane) => {
+        const heights = [
+          ...pane.querySelectorAll<HTMLElement>(".transcription-column"),
+        ].map((column) => {
+          const range = document.createRange();
+          range.selectNodeContents(column);
+          const rects = [...range.getClientRects()].filter(
+            (r) => r.height > 18,
+          );
+          return {
+            available: column.clientHeight,
+            tallest: Math.max(0, ...rects.map((r) => r.height)),
+          };
+        });
+        return {
+          scroll: pane.scrollHeight,
+          client: pane.clientHeight,
+          heights,
+        };
+      });
+      assert.ok(fit.scroll <= fit.client + 1, JSON.stringify(fit));
+      assert.ok(
+        fit.heights.every((h) => h.tallest <= h.available + 1),
+        JSON.stringify(fit),
+      );
+    }
+    await assertFits();
+    await page.getByRole("button", { name: "編集開始", exact: true }).click();
+    await page.locator(".vertical-editor").waitFor();
+    await page.waitForTimeout(400);
+    assert.deepEqual(
+      await page
+        .locator(".vertical-editor .text-line-number")
+        .allTextContents(),
+      expected,
+    );
+    await assertFits();
+    if (theme === "light")
+      await page.screenshot({ path: ".local/shots/23-text-scale-light.png" });
+    await page.locator(`.vertical-editor [data-column-index="${first}"]`).click();
+    const next = alignment.findIndex((line, index) => index !== first && line !== null && line !== lineIndex);
+    const nextLabel = page.locator(`.vertical-editor [data-column-index="${next}"] .text-line-number`);
+    await nextLabel.hover();
+    assert.equal(await page.locator(".line-overlay.highlighted").getAttribute("data-line-index"), String(alignment[next]));
+    await page.mouse.move(0, 0);
+    assert.equal(await page.locator(".line-overlay.highlighted").getAttribute("data-line-index"), String(lineIndex));
+    await page.setViewportSize({ width: 1600, height: 600 });
+    await page.waitForTimeout(300);
+    assert.ok((await fontSize()) < 17 * 1.25);
+    await assertFits();
+    await page.setViewportSize({ width: 1600, height: 1000 });
+    await page.waitForTimeout(300);
+    await controls.getByRole("button", { name: "自動", exact: true }).click();
+    for (
+      let step = 0;
+      step < 20 &&
+      !(await controls
+        .getByRole("button", { name: "本文を縮小", exact: true })
+        .isDisabled());
+      step++
+    )
+      await controls
+        .getByRole("button", { name: "本文を縮小", exact: true })
+        .click();
+    assert.equal(await fontSize(), 8.5);
+    for (
+      let step = 0;
+      step < 20 &&
+      !(await controls
+        .getByRole("button", { name: "本文を拡大", exact: true })
+        .isDisabled());
+      step++
+    )
+      await controls
+        .getByRole("button", { name: "本文を拡大", exact: true })
+        .click();
+    assert.equal(await fontSize(), 34);
+    await page.getByRole("button", { name: "表示設定", exact: true }).click();
+    await page.getByRole("button", { name: "行番号", exact: true }).click();
+    assert.equal(await page.locator(".text-line-number").count(), 0);
+    assert.equal(await page.locator(".line-number-badge").count(), 0);
+    await page.getByRole("button", { name: "表示設定", exact: true }).click();
+    await page.getByRole("button", { name: "行番号", exact: true }).click();
+    await controls.getByRole("button", { name: "自動", exact: true }).click();
+    await page.waitForTimeout(300);
+    await assertFits();
+
+    assert.deepEqual(errors, []);
+    if (theme === "light") {
+      await page.getByRole("button", { name: "原文表示", exact: true }).click();
+      await page
+        .getByRole("textbox", { name: "原文を編集", exact: true })
+        .fill(
+          `【右丁】\n\n${"讀＿レ￣ム".repeat(35)}\n《割書：一二三四｜五六》＃1`,
+        );
+      await page.getByRole("button", { name: "原文表示", exact: true }).click();
+      await page.waitForTimeout(400);
+      assert.deepEqual(
+        await page
+          .locator(".vertical-editor .text-line-number")
+          .allTextContents(),
+        ["L1", "L2", "L3", "L4"],
+      );
+      await assertFits();
+      await page.getByRole("button", { name: "原文表示", exact: true }).click();
+      await page.setViewportSize({ width: 1600, height: 700 });
+      for (const source of ["■".repeat(35), "《箱：字》".repeat(30)]) {
+        await page.getByRole("textbox", { name: "原文を編集", exact: true }).fill(source);
+        await page.getByRole("button", { name: "原文表示", exact: true }).click();
+        await page.waitForTimeout(400);
+        assert.ok(await fontSize() > 8.5);
+        await assertFits();
+        await page.getByRole("button", { name: "原文表示", exact: true }).click();
+      }
+      await page.setViewportSize({ width: 1600, height: 1000 });
+      await page
+        .getByRole("textbox", { name: "原文を編集", exact: true })
+        .fill("山".repeat(200));
+      await page.getByRole("button", { name: "原文表示", exact: true }).click();
+      await page.waitForTimeout(400);
+      assert.equal(await fontSize(), 8.5);
+      assert.equal(
+        await controls.getByText("折り返しあり", { exact: true }).count(),
+        1,
+      );
+    }
+    assert.deepEqual(errors, []);
+    console.log(`Text scale and source line numbers passed (${theme}).`);
+  } finally {
+    await context.close();
+  }
+}

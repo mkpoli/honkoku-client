@@ -711,15 +711,14 @@ export async function checkInlineEditor(
     await page.screenshot({
       path: `.local/shots/14-layout-samples-${theme}${suffix}.png`,
     });
-    assert.equal(
-      await page
-        .locator(
-          ".vertical-editor .editor-warigaki .editor-ruby > .editor-right",
-        )
-        .first()
-        .evaluate((el) => getComputedStyle(el).fontSize),
-      "6.5px",
-    );
+    const rubySizes = await page
+      .locator(".vertical-editor .editor-warigaki .editor-ruby > .editor-right")
+      .first()
+      .evaluate((el) => ({
+        reading: parseFloat(getComputedStyle(el).fontSize),
+        base: parseFloat(getComputedStyle(el.closest(".transcription")!).fontSize),
+      }));
+    assert.equal(rubySizes.reading, rubySizes.base / 4);
     assert.deepEqual(errors, []);
     console.log(
       `Inline editor checks passed (${theme}${suffix}): drag, script runs, keyboard selection, source clipboard, shells, nesting, raw templates, notes, layout.`,
