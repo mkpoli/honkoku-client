@@ -209,3 +209,8 @@ export const clipCreate = (input: import("./types").ClipInput) =>
 export const clipDelete = (id: string) => invoke<void>("clip_delete", { id });
 export const glyphImageUrl = (infoUrl: string, url: string) =>
   invoke<string>("glyph_image_url", { infoUrl, url });
+
+export const pageHistory = (entryId: string, index: number, limit = 100) => invoke<TimelineItem[]>("page_history", {entryId, index, limit});
+export const entryBibliography = (entryId: string) => invoke<Record<string, unknown>>("entry_bibliography", {entryId});
+export const saveTranscription = (name: string, format: "txt" | "xml" | "tex", content: string) => invoke<boolean>("save_transcription", {name, format, content});
+export const saveFullImage = (entryId: string, index: number) => invoke<boolean>("save_full_image", {entryId, index});

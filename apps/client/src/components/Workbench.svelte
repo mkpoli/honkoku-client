@@ -2,6 +2,11 @@
   import { openSessions } from "../editing-sessions.svelte";
   import { restoreDraft } from "../editing-draft";
   import type { Region } from "../region.svelte";
+  import HistoryDrawer from "./HistoryDrawer.svelte";
+  import BibliographyDrawer from "./BibliographyDrawer.svelte";
+  import { exportTranscription, type ExportFormat } from "@honkoku/markup";
+  import { saveTranscription, saveFullImage } from "@honkoku/client-api/invoke";
+  import { allPages } from "../lib";
   import Skeleton from "./Skeleton.svelte";
   import RegionNotice from "./RegionNotice.svelte";
   import { onMount, tick, untrack } from "svelte";
@@ -242,12 +247,41 @@
     comment = $state("");
   let lockName = $state("名前を確認中");
   let menuOpen = $state(false);
+  let historyOpen=$state(false), bibliographyOpen=$state(false), exportOpen=$state(false);
+  let exportScope=$state("page"), exportFormat=$state<ExportFormat>("txt"), exportBusy=$state(false);
+  $effect(()=>{ index; currentEntryId; historyOpen=false; bibliographyOpen=false; });
+  function restoreHistory(text:string) {
+    if(busy || verifying || composing) return;
+    act(async()=>{
+      if(!editing) { begin(await pageLock(entry.id,index,false)); await tick(); }
+      editorInstance?.setSource(text);
+      source=text;
+      saveState="未保存の変更"; remember(); queue?.request(draftPayload());
+    });
+  }
+  async function download(image=false) {
+    if(exportBusy) return;
+    const selectedEntry=entry, selectedIndex=index, scope=exportScope, format=exportFormat;
+    const currentText=editing ? source : displayedSource;
+    exportBusy=true; notice="";
+    try {
+      let saved:boolean;
+      if(image) saved=await saveFullImage(selectedEntry.id,selectedIndex);
+      else {
+        const values=scope==="entry" ? allPages(selectedEntry,await listPages(selectedEntry.id)) : [{index:selectedIndex,text:currentText}];
+        const name=`${label(selectedEntry.label)||selectedEntry.id}${scope==="page" ? `-${selectedIndex+1}` : ""}`;
+        saved=await saveTranscription(name,format,exportTranscription(values,format));
+      }
+      if(saved) { notice="保存しました。"; menuOpen=false; }
+    } catch(error) { notice=errorMessage(error); }
+    finally {exportBusy=false;}
+  }
   let glyphOpen = $state(false), glyphCharacter = $state("");
   let clipping = $state(false);
   let glyphTimer: ReturnType<typeof setTimeout>;
   function glyphChange(character: string, open: boolean) {
     clearTimeout(glyphTimer);
-    if (open) { glyphCharacter=character; glyphOpen=true; clipping=false; }
+    if (open) { glyphCharacter=character; glyphOpen=true; clipping=false; historyOpen=false; bibliographyOpen=false; }
     else if (glyphOpen) glyphTimer=setTimeout(() => glyphCharacter=character,300);
   }
   $effect(() => { index; currentEntryId; sessionUid; clipping=false; glyphOpen=false; glyphCharacter=""; clearTimeout(glyphTimer); });
@@ -967,6 +1001,10 @@
         }}>OCR</button
       >
       <button
+        aria-pressed={historyOpen}
+        aria-controls="history-side"
+        onclick={() => {historyOpen=!historyOpen; bibliographyOpen=false;glyphOpen=false;clipping=false;}}>履歴</button>
+      <button
         aria-pressed={showLines}
         disabled={!lineModel.lines.length}
         onclick={() => (showLines = !showLines)}>行枠</button
@@ -978,6 +1016,16 @@
           onclick={() => (menuOpen = !menuOpen)}>⋯</button
         >
         {#if menuOpen}<div class="menu-options">
+            <button aria-expanded={exportOpen} onclick={()=>exportOpen=!exportOpen}>翻刻文をダウンロード</button>
+            {#if exportOpen}<div class="export-submenu">
+              <label>範囲<select bind:value={exportScope}><option value="page">このコマ</option><option value="entry">この資料</option></select></label>
+              <label>形式<select bind:value={exportFormat}><option value="txt">テキスト（.txt）</option><option value="xml">TEI XML（.xml）</option><option value="tex">LaTeX（.tex）</option></select></label>
+              <button disabled={exportBusy} onclick={()=>download()}>{exportBusy ? "保存の準備中…" : "保存先を選ぶ"}</button>
+            </div>{/if}
+            <button disabled={exportBusy || !canvases[index]} onclick={()=>download(true)}>フルサイズ画像を保存</button>
+            <button onclick={()=>{bibliographyOpen=true;historyOpen=false;glyphOpen=false;clipping=false;menuOpen=false;}}>書誌情報</button>
+            <a href="#/help/markup">特殊記法の解説</a>
+            <a href={href({projectId:entry.projectId,guidelines:true})}>翻刻ガイドライン</a>
             <button disabled={!session || !canvases[index]?.infoJsonUrl} onclick={() => { clipping=true; glyphOpen=false; menuOpen=false; }}>切り抜き</button>
             <button
               onclick={() => {
@@ -1071,6 +1119,8 @@
       onlinehover={(line) => (hoveredLine = line)}
     >
       {#snippet children(viewer)}
+        {#if historyOpen}<HistoryDrawer entryId={entry.id} {index} current={editing ? source : displayedSource} {editing} disabled={!session || busy || verifying || composing || pagesPending || (!editing && page.status==="editing")} onrestore={restoreHistory} onclose={()=>historyOpen=false} />{/if}
+        {#if bibliographyOpen}<BibliographyDrawer entryId={entry.id} manifestUrl={entry.manifestUrl} onclose={()=>bibliographyOpen=false} />{/if}
         {#if glyphOpen}<GlyphDrawer character={glyphCharacter} onclose={() => glyphOpen=false} />{/if}
         {#if clipping}<ClipSelection {viewer} canvas={canvases[index]} entryId={entry.id} {index}
           onclose={() => clipping=false} onsaved={() => { clipping=false; notice="クリップを保存しました。"; }} />{/if}
