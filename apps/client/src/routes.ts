@@ -1,4 +1,6 @@
 export interface Route {
+  markupHelp?: boolean;
+  guidelines?: boolean;
   glyph?: string;
   clips?: boolean;
   search?: boolean;
@@ -17,6 +19,9 @@ export function parseRoute(hash: string): Route {
     const split = raw.indexOf("?");
     const path = split < 0 ? raw : raw.slice(0, split);
     const params = new URLSearchParams(split < 0 ? "" : raw.slice(split + 1));
+    if (path === "/help/markup") return {markupHelp:true};
+    const guidelines = /^\/projects\/([^/]+)\/guidelines\/?$/.exec(path);
+    if(guidelines) return {projectId:decodeURIComponent(guidelines[1]),guidelines:true};
     if (path === "/clips") return { clips: true };
     const glyph = /^\/glyphs\/([^/]+)\/?$/.exec(path);
     if (glyph) return { glyph: decodeURIComponent(glyph[1]) };
@@ -60,6 +65,8 @@ export function parseRoute(hash: string): Route {
   return { invalid: true };
 }
 export function href(route: Route): string {
+  if(route.markupHelp) return "#/help/markup";
+  if(route.guidelines && route.projectId) return `#/projects/${encodeURIComponent(route.projectId)}/guidelines`;
   if (route.search)
     return `#/search?q=${encodeURIComponent(route.query ?? "")}`;
   if (route.entryId)

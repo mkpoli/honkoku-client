@@ -41,6 +41,8 @@
   import Glyphs from "./components/Glyphs.svelte";
   import Clips from "./components/Clips.svelte";
   import Search from "./components/Search.svelte";
+  import MarkupHelp from "./components/MarkupHelp.svelte";
+  import Guidelines from "./components/Guidelines.svelte";
   import Home from "./components/Home.svelte";
   import ProjectScreen from "./components/Project.svelte";
   import EntryScreen from "./components/Entry.svelte";
@@ -102,7 +104,7 @@
       !route.entryId &&
       !route.invalid &&
       !route.editorSpike &&
-      !route.search && !route.glyph && !route.clips,
+      !route.search && !route.glyph && !route.clips && !route.markupHelp,
   );
   let workbench = $derived(route.pageIndex !== undefined);
   async function identity() {
@@ -202,7 +204,7 @@
       error = "ページが見つかりません。ホームから選び直してください。";
       return;
     }
-    if (next.search || next.glyph || next.clips) return;
+    if (next.search || next.glyph || next.clips || next.markupHelp) return;
     const scope = String(accountGeneration);
     if (!next.projectId && !next.entryId) {
       await projectsRegion.load(
@@ -536,7 +538,7 @@
       </div>{:else}{#key route.glyph ? `glyphs:${session?.uid ?? ""}` : route.clips ? `clips:${session?.uid ?? ""}` : route.editorSpike ? "editor" : route.search ? "search" : (route.entryId ?? route.projectId ?? "home")}<div
           class="route-screen"
         >
-          {#if route.glyph}<Glyphs character={route.glyph} />{:else if route.clips}<Clips />{:else if route.search}<Search
+          {#if route.markupHelp}<MarkupHelp />{:else if route.guidelines && project}<Guidelines {project} />{:else if route.glyph}<Glyphs character={route.glyph} />{:else if route.clips}<Clips />{:else if route.search}<Search
               query={route.query ?? ""}
             />{:else if route.editorSpike && EditorSpike}<EditorSpike
             />{:else if isHome}<Home

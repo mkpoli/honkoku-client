@@ -347,3 +347,71 @@ async fn real_ryukoku_info_is_cached() -> Result {
     );
     Ok(())
 }
+
+#[tokio::test]
+async fn full_image_falls_back_to_largest_permitted_size() -> Result {
+    use honkoku_iiif::{ImageService, ImageVersion};
+    use serde_json::json;
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/image/full/full/0/default.jpg"))
+        .respond_with(ResponseTemplate::new(400))
+        .expect(1)
+        .mount(&server)
+        .await;
+    Mock::given(method("GET")).and(path("/image/info.json"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({"width":4000,"height":6000,
+            "sizes":[{"width":400,"height":600},{"width":2000,"height":3000},{"width":4000,"height":6000}],
+            "maxArea":6000000}))).expect(1).mount(&server).await;
+    Mock::given(method("GET"))
+        .and(path("/image/full/2000,3000/0/default.jpg"))
+        .respond_with(
+            ResponseTemplate::new(200)
+                .set_body_bytes(b"full image")
+                .insert_header("Content-Type", "image/jpeg"),
+        )
+        .expect(1)
+        .mount(&server)
+        .await;
+    let dir = tempfile::tempdir()?;
+    let fetcher = test_fetcher(dir.path())?;
+    fetcher.allow_host("127.0.0.1")?;
+    let image = fetcher
+        .full_image(&ImageService {
+            id: format!("{}/image", server.uri()),
+            version: ImageVersion::V2,
+            profile: serde_json::Value::Null,
+        })
+        .await?;
+    assert_eq!(image.read().await?.as_ref(), b"full image");
+    Ok(())
+}
+
+#[tokio::test]
+async fn version_three_full_image_uses_max_without_a_thumbnail() -> Result {
+    use honkoku_iiif::{ImageService, ImageVersion};
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/image/full/max/0/default.jpg"))
+        .respond_with(
+            ResponseTemplate::new(200)
+                .set_body_bytes(b"maximum")
+                .insert_header("Content-Type", "image/jpeg"),
+        )
+        .expect(1)
+        .mount(&server)
+        .await;
+    let dir = tempfile::tempdir()?;
+    let fetcher = test_fetcher(dir.path())?;
+    fetcher.allow_host("127.0.0.1")?;
+    let image = fetcher
+        .full_image(&ImageService {
+            id: format!("{}/image", server.uri()),
+            version: ImageVersion::V3,
+            profile: serde_json::Value::Null,
+        })
+        .await?;
+    assert_eq!(image.read().await?.as_ref(), b"maximum");
+    assert_eq!(fetcher.request_count(), 1);
+    Ok(())
+}

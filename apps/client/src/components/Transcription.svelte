@@ -2,8 +2,7 @@
   import "../../../../packages/editor/style.css";
   import { onDestroy } from "svelte";
   import {
-    parseInline,
-    renderInline,
+    renderReadingLine,
     transcriptionColumns,
   } from "@honkoku/markup";
   let {
@@ -33,17 +32,22 @@
     );
     const groups: {
       label: string;
-      columns: { html: string; index: number }[];
+      columns: { html: string; index: number; indent?:number }[];
     }[] = [];
-    let group = { label: "", columns: [] as { html: string; index: number }[] };
+    let group = { label: "", columns: [] as { html: string; index: number; indent?:number }[] };
+    const blocks: number[]=[];
     for (const [sourceIndex, line] of source.split(/\r\n|\r|\n/).entries()) {
+      const block=/^％(表紙|字下げ[一二三])$/.exec(line);
+      if(block) { blocks.push(({一:1,二:2,三:3} as Record<string,number>)[block[1].slice(-1)] ?? 0); continue; }
+      if(line==="％" && blocks.length) {blocks.pop(); continue;}
       const marker = /^\s*【([右左]丁)】\s*$/.exec(line);
       if (marker) {
         if (group.columns.length || group.label) groups.push(group);
         group = { label: marker[1], columns: [] };
       } else
         group.columns.push({
-          html: renderInline(parseInline(line)),
+          html: renderReadingLine(line),
+          indent: blocks.at(-1) ?? 0,
           index: indices.get(sourceIndex) ?? -1,
         });
     }
@@ -105,6 +109,7 @@
             class:alignment-active-column={column.index >= 0 &&
               highlightedColumn === column.index}
             data-column-index={column.index >= 0 ? column.index : undefined}
+            style:padding-inline-start={column.indent ? `${column.indent}em` : undefined}
             role="button"
             tabindex={column.index >= 0 ? 0 : -1}
             onmouseenter={() => change(column.index)}

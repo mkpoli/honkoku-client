@@ -3,6 +3,11 @@
   import { openSessions } from "../editing-sessions.svelte";
   import { restoreDraft } from "../editing-draft";
   import type { Region } from "../region.svelte";
+  import HistoryDrawer from "./HistoryDrawer.svelte";
+  import BibliographyDrawer from "./BibliographyDrawer.svelte";
+  import { exportTranscription, type ExportFormat } from "@honkoku/markup";
+  import { saveTranscription, saveFullImage } from "@honkoku/client-api/invoke";
+  import { allPages } from "../lib";
   import Skeleton from "./Skeleton.svelte";
   import RegionNotice from "./RegionNotice.svelte";
   import { onMount, tick, untrack } from "svelte";
@@ -26,7 +31,14 @@
     textareaSource,
   } from "@honkoku/editor";
   import Transcription from "./Transcription.svelte";
-  import { date, notes, status, statusClass, user } from "../lib";
+  import {
+    date,
+    label as entryLabel,
+    notes,
+    status,
+    statusClass,
+    user,
+  } from "../lib";
   import { href, parseRoute } from "../routes";
   import VerticalEditor from "@honkoku/editor/VerticalEditor.svelte";
   import type { EditorUpdate } from "@honkoku/editor";
@@ -251,6 +263,66 @@
     comment = $state("");
   let lockName = $state("名前を確認中");
   let menuOpen = $state(false);
+  let historyOpen = $state(false),
+    bibliographyOpen = $state(false),
+    exportOpen = $state(false);
+  let exportScope = $state("page"),
+    exportFormat = $state<ExportFormat>("txt"),
+    exportBusy = $state(false);
+  $effect(() => {
+    index;
+    currentEntryId;
+    historyOpen = false;
+    bibliographyOpen = false;
+  });
+  function restoreHistory(text: string) {
+    if (busy || verifying || composing) return;
+    act(async () => {
+      if (!editing) {
+        begin(await pageLock(entry.id, index, false));
+        await tick();
+      }
+      editorInstance?.setSource(text);
+      source = text;
+      saveState = "未保存の変更";
+      remember();
+      queue?.request(draftPayload());
+    });
+  }
+  async function download(image = false) {
+    if (exportBusy) return;
+    const selectedEntry = entry,
+      selectedIndex = index,
+      scope = exportScope,
+      format = exportFormat;
+    const currentText = editing ? source : displayedSource;
+    exportBusy = true;
+    notice = "";
+    try {
+      let saved: boolean;
+      if (image) saved = await saveFullImage(selectedEntry.id, selectedIndex);
+      else {
+        const values =
+          scope === "entry"
+            ? allPages(selectedEntry, await listPages(selectedEntry.id))
+            : [{ index: selectedIndex, text: currentText }];
+        const name = `${entryLabel(selectedEntry.label) || selectedEntry.id}${scope === "page" ? `-${selectedIndex + 1}` : ""}`;
+        saved = await saveTranscription(
+          name,
+          format,
+          exportTranscription(values, format),
+        );
+      }
+      if (saved) {
+        notice = "保存しました。";
+        menuOpen = false;
+      }
+    } catch (error) {
+      notice = errorMessage(error);
+    } finally {
+      exportBusy = false;
+    }
+  }
   let glyphOpen = $state(false),
     glyphCharacter = $state("");
   let clipping = $state(false);
@@ -330,6 +402,8 @@
       glyphCharacter = character;
       glyphOpen = true;
       clipping = false;
+      historyOpen = false;
+      bibliographyOpen = false;
     } else if (glyphOpen)
       glyphTimer = setTimeout(() => (glyphCharacter = character), 300);
   }
@@ -936,21 +1010,22 @@
     </div>{/if}
   <div class="workbench-toolbar">
     <div class="toolbar-leading">
-    {#if leading}{@render leading()}{/if}
-    <div class="editing-pages">
-      {#if otherEdits.length}<details>
-          <summary
-            >編集中のコマ<span class="count">{otherEdits.length}</span></summary
-          >
-          <div class="editing-page-links">
-            {#each otherEdits as p}<a
-                href={href({ entryId: p.entryId, pageIndex: p.index })}
-                >{p.entryId === entry.id ? "" : "別の資料・"}コマ{p.index +
-                  1}</a
-              >{/each}
-          </div>
-        </details>{/if}
-    </div>
+      {#if leading}{@render leading()}{/if}
+      <div class="editing-pages">
+        {#if otherEdits.length}<details>
+            <summary
+              >編集中のコマ<span class="count">{otherEdits.length}</span
+              ></summary
+            >
+            <div class="editing-page-links">
+              {#each otherEdits as p}<a
+                  href={href({ entryId: p.entryId, pageIndex: p.index })}
+                  >{p.entryId === entry.id ? "" : "別の資料・"}コマ{p.index +
+                    1}</a
+                >{/each}
+            </div>
+          </details>{/if}
+      </div>
     </div>
     <div class="page-position">
       <div>
@@ -1061,6 +1136,16 @@
           sessionStorage.setItem("honkoku.ocr.open", String(ocrOpen));
         }}>OCR</button
       >
+      <button
+        aria-pressed={historyOpen}
+        aria-controls="history-side"
+        onclick={() => {
+          historyOpen = !historyOpen;
+          bibliographyOpen = false;
+          glyphOpen = false;
+          clipping = false;
+        }}>履歴</button
+      >
       <div class="workbench-menu">
         <button
           aria-label="表示設定"
@@ -1074,6 +1159,47 @@
                 showAnnotations = !showAnnotations;
                 menuOpen = false;
               }}>注釈表示</button
+            >
+            <button
+              aria-expanded={exportOpen}
+              onclick={() => (exportOpen = !exportOpen)}
+              >翻刻文をダウンロード</button
+            >
+            {#if exportOpen}<div class="export-submenu">
+                <label
+                  >範囲<select bind:value={exportScope}
+                    ><option value="page">このコマ</option><option value="entry"
+                      >この資料</option
+                    ></select
+                  ></label
+                >
+                <label
+                  >形式<select bind:value={exportFormat}
+                    ><option value="txt">テキスト（.txt）</option><option
+                      value="xml">TEI XML（.xml）</option
+                    ><option value="tex">LaTeX（.tex）</option></select
+                  ></label
+                >
+                <button disabled={exportBusy} onclick={() => download()}
+                  >{exportBusy ? "保存の準備中…" : "保存先を選ぶ"}</button
+                >
+              </div>{/if}
+            <button
+              disabled={exportBusy || !canvases[index]}
+              onclick={() => download(true)}>フルサイズ画像を保存</button
+            >
+            <button
+              onclick={() => {
+                bibliographyOpen = true;
+                historyOpen = false;
+                glyphOpen = false;
+                clipping = false;
+                menuOpen = false;
+              }}>書誌情報</button
+            >
+            <a href="#/help/markup">特殊記法の解説</a>
+            <a href={href({ projectId: entry.projectId, guidelines: true })}
+              >翻刻ガイドライン</a
             >
             <button
               onclick={() => {
@@ -1234,6 +1360,25 @@
             onclose={() => (annotationMode = false)}
             onsaved={() => {}}
             onregion={regionNote}
+          />{/if}
+        {#if historyOpen}<HistoryDrawer
+            entryId={entry.id}
+            {index}
+            current={editing ? source : displayedSource}
+            {editing}
+            disabled={!session ||
+              busy ||
+              verifying ||
+              composing ||
+              pagesPending ||
+              (!editing && page.status === "editing")}
+            onrestore={restoreHistory}
+            onclose={() => (historyOpen = false)}
+          />{/if}
+        {#if bibliographyOpen}<BibliographyDrawer
+            entryId={entry.id}
+            manifestUrl={entry.manifestUrl}
+            onclose={() => (bibliographyOpen = false)}
           />{/if}
         {#if glyphOpen}<GlyphDrawer
             character={glyphCharacter}

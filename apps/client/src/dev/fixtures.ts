@@ -1,4 +1,6 @@
 import notesFixture from "../../../../fixtures/api/page-notes.json";
+import pageHistoryFixture from "../../../../fixtures/home/page-history.json";
+import bibliographyFixture from "../../../../fixtures/api/manifest-bibliography-v3.json";
 import glyphFixture from "../../../../fixtures/glyphs/attestations-候.json";
 import clipFixture from "../../../../fixtures/glyphs/clips.json";
 import type { Clip, ClipInput } from "@honkoku/client-api/types";
@@ -224,6 +226,18 @@ export async function fixtureInvoke(
     return result;
   }
   switch (command) {
+    case "page_history":
+      return args.entryId === entry.id && Number(args.index) === 3
+        ? structuredClone(pageHistoryFixture).slice(0, limit)
+        : [];
+    case "entry_bibliography":
+      return structuredClone(bibliographyFixture);
+    case "save_transcription":
+    case "save_full_image":
+      throw {
+        kind: "fixture",
+        message: "ファイルの保存はデスクトップアプリで利用できます。",
+      };
     case "glyph_attestations": {
       const result = structuredClone(glyphFixture);
       result.pages = result.pages
@@ -358,7 +372,12 @@ export async function fixtureInvoke(
     case "get_project":
       return required(
         args.id === project.id
-          ? project
+          ? {
+              ...project,
+              useOwnGuidelines: false,
+              guidelines:
+                "## アイヌ語資料の翻刻\n原本の表記を尊重し、判読に迷った箇所は注記に残してください。",
+            }
           : projects.find((p) => p.id === args.id),
       );
     case "list_collections": {

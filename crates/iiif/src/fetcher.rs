@@ -76,6 +76,30 @@ impl Fetcher {
         self.0.requests.load(Ordering::Relaxed)
     }
 
+    /// Request the version-specific maximum, then honor info.json size restrictions.
+    pub async fn full_image(&self, service: &ImageService) -> Result<Cached> {
+        match self.get(&service.full()).await {
+            Ok(image) => return Ok(image),
+            Err(error) if size_refused(&error) => {}
+            Err(error) => return Err(error),
+        }
+        let info = self.info(service).await?;
+        let info: serde_json::Value = serde_json::from_slice(&info.read().await?)?;
+        let size = largest_size(&info)?;
+        let id = info["id"]
+            .as_str()
+            .or_else(|| info["@id"].as_str())
+            .unwrap_or(&service.id);
+        self.allow_url(id)?;
+        let canonical = ImageService {
+            id: id.into(),
+            version: service.version,
+            profile: service.profile.clone(),
+        };
+        self.get(&canonical.url("full", &size, "0", "default", "jpg"))
+            .await
+    }
+
     pub async fn get(&self, url: &str) -> Result<Cached> {
         self.checked_url(url)?;
         let mut receiver = {
@@ -323,6 +347,70 @@ fn retry_after(value: Option<&str>) -> Option<Duration> {
             .duration_since(SystemTime::now())
             .unwrap_or_default(),
     )
+}
+
+fn size_refused(error: &Error) -> bool {
+    match error {
+        Error::Shared(error) => size_refused(error),
+        Error::Status(400 | 403 | 404 | 422) => true,
+        _ => false,
+    }
+}
+fn largest_size(info: &serde_json::Value) -> Result<String> {
+    let width = info["width"]
+        .as_u64()
+        .filter(|n| *n > 0)
+        .ok_or_else(|| Error::Invalid("image width missing".into()))?;
+    let height = info["height"]
+        .as_u64()
+        .filter(|n| *n > 0)
+        .ok_or_else(|| Error::Invalid("image height missing".into()))?;
+    let profile = info["profile"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .find(|p| p.is_object());
+    let bound = |key: &str| {
+        info[key]
+            .as_u64()
+            .or_else(|| profile.and_then(|p| p[key].as_u64()))
+            .filter(|n| *n > 0)
+    };
+    let max_w = bound("maxWidth").unwrap_or(width);
+    let max_h = bound("maxHeight").unwrap_or(height);
+    let max_area = bound("maxArea").unwrap_or(u64::MAX);
+    if let Some((w, h)) = info["sizes"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .filter_map(|s| Some((s["width"].as_u64()?, s["height"].as_u64()?)))
+        .filter(|(w, h)| {
+            *w > 0
+                && *h > 0
+                && *w <= max_w
+                && *h <= max_h
+                && (*w as u128) * (*h as u128) <= max_area as u128
+        })
+        .max_by_key(|(w, h)| (*w as u128) * (*h as u128))
+    {
+        return Ok(format!("{w},{h}"));
+    }
+    if info["sizes"]
+        .as_array()
+        .is_some_and(|sizes| !sizes.is_empty())
+    {
+        return Err(Error::Invalid(
+            "no advertised size fits image limits".into(),
+        ));
+    }
+    let scale = (max_w as f64 / width as f64)
+        .min(max_h as f64 / height as f64)
+        .min((max_area as f64 / (width as f64 * height as f64)).sqrt())
+        .min(1.0);
+    Ok(format!(
+        "{},",
+        (width as f64 * scale).floor().max(1.0) as u64
+    ))
 }
 
 #[cfg(test)]

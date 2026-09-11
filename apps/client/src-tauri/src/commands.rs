@@ -359,6 +359,22 @@ pub async fn get_user(uid: String, state: State<'_, AppState>) -> Result<User, A
     Ok(state.connection.read().await.client.user(&uid).await?)
 }
 
+#[tauri::command]
+pub async fn page_history(
+    entry_id: String,
+    index: u32,
+    limit: u32,
+    state: State<'_, AppState>,
+) -> Result<Vec<TimelineItem>, AppError> {
+    Ok(state
+        .connection
+        .read()
+        .await
+        .client
+        .page_history(&entry_id, index, limit)
+        .await?)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

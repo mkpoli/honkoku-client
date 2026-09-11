@@ -1,5 +1,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 mod commands;
+mod exports;
 mod iiif_protocol;
 mod ocr;
 mod search;
@@ -286,6 +287,10 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             commands::page_note_delete,
             commands::history_open,
             commands::history_recent,
+            commands::page_history,
+            exports::entry_bibliography,
+            exports::save_transcription,
+            exports::save_full_image,
             commands::history_clear,
             commands::page_save,
             commands::page_discard,
