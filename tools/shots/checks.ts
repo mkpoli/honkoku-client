@@ -2912,6 +2912,8 @@ export async function checkRecognition(
     await page.locator(".candidate").nth(9).waitFor();
     const segment = await page.evaluate(() => window.honkokuRecognitionRegion);
     assert.ok(segment && segment[2] > 0 && segment[3] > 0);
+    await page.getByRole("button", { name: "再認識", exact: true }).waitFor();
+    assert.equal(await page.locator(".recognition-error").count(), 0);
     assert.deepEqual(errors, []);
     console.log(
       `Recognition, approval, review filter and realtime checks passed (${theme}).`,

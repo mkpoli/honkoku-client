@@ -53,8 +53,10 @@
   let recognitionSelection = $state<Rectangle>();
   $effect(() => {
     canvas;
-    recognizing;
     recognitionSelection = undefined;
+  });
+  $effect(() => {
+    if (!recognizing) recognitionSelection = undefined;
   });
   let host: HTMLDivElement;
   let retryVersion = $state(0);
@@ -218,10 +220,7 @@
               ? [line.x, line.y + offset * advance, line.width, advance]
               : [line.x + offset * advance, line.y, advance, line.height];
             if (!recognizing) recognitionMode.select();
-            queueMicrotask(
-              () =>
-                (recognitionSelection = region.map(Math.round) as Rectangle),
-            );
+            recognitionSelection = region.map(Math.round) as Rectangle;
           } else onlineselect?.(line.index);
         },
       });
