@@ -1069,6 +1069,8 @@ pub async fn glyph_image_url(
         kind: "iiif".into(),
         message: "切り抜き画像の情報を取得できません。".into(),
     };
+    let info_url = honkoku_iiif::upstream_of(&info_url).map_err(error)?;
+    let url = honkoku_iiif::upstream_of(&url).map_err(error)?;
     fetcher.allow_url(&info_url).map_err(error)?;
     let cached = fetcher.get(&info_url).await.map_err(error)?;
     let bytes = cached.read().await.map_err(error)?;
@@ -1148,6 +1150,7 @@ pub async fn recognize_region(
         kind: "iiif".into(),
         message: "原本の切り抜きを取得できません。".into(),
     };
+    let info_url = honkoku_iiif::upstream_of(&info_url).map_err(image_error)?;
     fetcher.allow_url(&info_url).map_err(image_error)?;
     let cached = fetcher.get(&info_url).await.map_err(image_error)?;
     let bytes = cached.read().await.map_err(image_error)?;
@@ -1222,5 +1225,21 @@ mod recognition_region_tests {
         );
         assert!(recognition_crop_url(&info, url, [990, 20, 20, 100]).is_err());
         assert!(recognition_crop_url(&info, url, [10, 20, 0, 100]).is_err());
+    }
+    #[test]
+    fn viewer_protocol_info_json_resolves_to_the_upstream_crop() {
+        let remote = "https://example.org/image/info.json";
+        for local in [
+            honkoku_iiif::local_url(remote, false),
+            honkoku_iiif::local_url(remote, true),
+        ] {
+            let resolved = honkoku_iiif::upstream_of(&local).unwrap();
+            assert_eq!(resolved, remote);
+            let info = json!({"width":1000,"height":2000,"@context":"http://iiif.io/api/image/3/context.json"});
+            assert_eq!(
+                recognition_crop_url(&info, &resolved, [10, 20, 80, 120]).unwrap(),
+                "https://example.org/image/10,20,80,120/80,/0/default.jpg"
+            );
+        }
     }
 }

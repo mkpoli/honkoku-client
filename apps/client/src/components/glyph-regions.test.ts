@@ -4,6 +4,7 @@ import {
   glyphCards,
   regionUrl,
   singleGlyph,
+  upstreamInfoUrl,
 } from "./glyph-regions";
 import fixture from "../../../../fixtures/glyphs/attestations-候.json";
 import type {
@@ -60,6 +61,33 @@ test("crop URL keeps query service and requests 192px on long side", () => {
   expect(regionUrl(canvas, [10, 20, 40, 60])).toBe(
     "https://example.org/?IIIF=/a%2Fb/10,20,40,60/,192/0/default.jpg",
   );
+});
+test("crop URL unwraps the viewer protocol info.json", () => {
+  const remote = "https://example.org/?IIIF=/a%2Fb/info.json";
+  for (const infoJsonUrl of [
+    `honkoku-iiif://localhost/fetch?url=${encodeURIComponent(remote)}`,
+    `http://honkoku-iiif.localhost/fetch?url=${encodeURIComponent(remote)}`,
+  ])
+    expect(
+      regionUrl({ ...canvas, infoJsonUrl }, [10, 20, 40, 60]),
+    ).toBe("https://example.org/?IIIF=/a%2Fb/10,20,40,60/,192/0/default.jpg");
+  expect(upstreamInfoUrl(`honkoku-iiif://localhost/fetch?url=${encodeURIComponent(remote)}`)).toBe(
+    remote,
+  );
+  expect(upstreamInfoUrl("https://example.org/?IIIF=/a%2Fb/info.json")).toBe(
+    remote,
+  );
+  expect(upstreamInfoUrl("https://example.org/image")).toBeNull();
+  for (const nested of [
+    `honkoku-iiif://localhost/fetch?url=${encodeURIComponent(
+      `http://honkoku-iiif.localhost/fetch?url=x/info.json`,
+    )}`,
+    "file:///etc/passwd/info.json",
+    `honkoku-iiif://localhost/fetch?url=${encodeURIComponent(
+      "file:///etc/passwd/info.json",
+    )}`,
+  ])
+    expect(upstreamInfoUrl(nested)).toBeNull();
 });
 test("three OCR pages have crops, fourth stays text-only", () => {
   const pages = fixture.pages as unknown as GlyphAttestation[];

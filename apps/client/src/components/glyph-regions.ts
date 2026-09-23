@@ -53,18 +53,44 @@ export function estimateRegion(
   const result = clampRegion(rect, canvas);
   return result[2] > 0 && result[3] > 0 ? result : null;
 }
+function remoteInfoJson(url: string | null): string | null {
+  if (!url?.endsWith("/info.json")) return null;
+  try {
+    const parsed = new URL(url);
+    if (!["http:", "https:"].includes(parsed.protocol)) return null;
+    if (parsed.hostname === "honkoku-iiif.localhost") return null;
+  } catch {
+    return null;
+  }
+  return url;
+}
+/** Unwrap the viewer protocol URL the facsimile uses, or keep a remote info.json. */
+export function upstreamInfoUrl(info?: string | null): string | null {
+  if (!info) return null;
+  try {
+    const url = new URL(info);
+    if (
+      url.protocol === "honkoku-iiif:" ||
+      url.hostname === "honkoku-iiif.localhost"
+    )
+      return remoteInfoJson(url.searchParams.get("url"));
+  } catch {
+    return null;
+  }
+  return remoteInfoJson(info);
+}
 export function regionUrl(
   canvas: Canvas,
   rect: Rectangle,
   longSide = 192,
 ): string | null {
-  const info = canvas.infoJsonUrl;
-  if (!info?.endsWith("/info.json")) return null;
+  const info = upstreamInfoUrl(canvas.infoJsonUrl);
+  if (!info) return null;
   const [, , w, h] = rect;
   if (!w || !h) return null;
   const size =
     w >= h ? `${Math.max(longSide, w)},` : `,${Math.max(longSide, h)}`;
-  return `${info.slice(0, -10)}/${rect.join(",")}/${size}/0/default.jpg`;
+  return `${info.slice(0, -"/info.json".length)}/${rect.join(",")}/${size}/0/default.jpg`;
 }
 export function glyphCards(page: GlyphAttestation) {
   const canvas = page.canvas;
