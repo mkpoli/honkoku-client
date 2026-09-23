@@ -826,6 +826,42 @@ async fn note_delete_preserves_slots_and_server_notes() -> Result<()> {
 }
 
 #[tokio::test]
+async fn note_draft_echo_keeps_the_wire_timestamp_strings() -> Result<()> {
+    let server = MockServer::start().await;
+    let client = client(&server)?;
+    let document = page_reads()[1].clone();
+    read(&server, document.clone(), 2).await;
+    commit_response(&server, commits("response")[1].clone()).await;
+    let mut session = client.resume_editing(ENTRY, 20).await?;
+    let note = json!({"content":"書入れ","createdAt":"2026-09-10T01:00:00.100Z","updatedAt":"2026-09-10T02:00:00.000Z"});
+    session
+        .draft_queue()
+        .request_with_notes("本文", Some(vec![note.clone()]))?;
+    session.flush_drafts(true).await?;
+    let requests = server.received_requests().await.unwrap();
+    let request = requests
+        .iter()
+        .find(|r| r.url.path().ends_with(":commit"))
+        .unwrap();
+    let body: Value = serde_json::from_slice(&request.body)?;
+    let stored = &body["writes"][0]["update"]["fields"]["tempNotes"]["arrayValue"]["values"][0]
+        ["mapValue"]["fields"];
+    assert_eq!(
+        stored["createdAt"]["timestampValue"],
+        json!("2026-09-10T01:00:00.100Z")
+    );
+    assert_eq!(
+        stored["updatedAt"]["timestampValue"],
+        json!("2026-09-10T02:00:00.000Z")
+    );
+    assert_eq!(
+        serde_json::to_value(&session.page().temp_notes)?,
+        json!([note])
+    );
+    Ok(())
+}
+
+#[tokio::test]
 async fn combined_draft_keeps_region_and_timestamp_types() -> Result<()> {
     let server = MockServer::start().await;
     let client = client(&server)?;
