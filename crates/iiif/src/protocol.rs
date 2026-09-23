@@ -58,6 +58,20 @@ pub fn upstream_url(path: &str, query: Option<&str>) -> Result<String> {
     Ok(value.into_owned())
 }
 
+/// Map a viewer URL back to the upstream HTTP(S) URL it wraps.
+/// Remote HTTP(S) URLs are validated and returned unchanged.
+pub fn upstream_of(url: &str) -> Result<String> {
+    let parsed = url::Url::parse(url).map_err(|_| Error::Invalid("invalid IIIF URL".into()))?;
+    let local =
+        parsed.scheme() == "honkoku-iiif" || parsed.host_str() == Some("honkoku-iiif.localhost");
+    if local {
+        upstream_url(parsed.path(), parsed.query())
+    } else {
+        parse_url(url)?;
+        Ok(url.into())
+    }
+}
+
 /// Rewrites only the service identifier, preserving contexts, profiles and tile metadata.
 pub fn rewrite_info_json(json: &Value, mut local: impl FnMut(&str) -> String) -> Result<Value> {
     let mut result = json.clone();
@@ -119,6 +133,9 @@ mod tests {
         assert!(local.starts_with("http://honkoku-iiif.localhost/fetch?url=https%3A%2F%2F"));
         let parsed = url::Url::parse(&local).map_err(|e| Error::Invalid(e.to_string()))?;
         assert_eq!(upstream_url(parsed.path(), parsed.query())?, upstream);
+        assert_eq!(upstream_of(&local)?, upstream);
+        assert_eq!(upstream_of(&local_url(upstream, false))?, upstream);
+        assert_eq!(upstream_of(upstream)?, upstream);
         for query in [
             None,
             Some("url=file%3A%2F%2F%2Fetc%2Fpasswd"),

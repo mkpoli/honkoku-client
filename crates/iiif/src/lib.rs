@@ -9,7 +9,7 @@ mod protocol;
 pub use bytes::Bytes;
 pub use cache::{CacheEntry, Cached, DEFAULT_MAX_BYTES, ImageCache};
 pub use fetcher::Fetcher;
-pub use protocol::{local_url, rewrite_info_json, upstream_url};
+pub use protocol::{local_url, rewrite_info_json, upstream_of, upstream_url};
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
