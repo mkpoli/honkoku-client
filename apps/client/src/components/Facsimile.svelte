@@ -12,6 +12,7 @@
   } from "../../../../packages/client-api/ocr";
   import OpenSeadragon from "openseadragon";
   import type { Canvas } from "@honkoku/client-api/types";
+  import { lineFrameRect } from "./line-frame";
   let {
     oninsert,
     lineCharacterCounts = {},
@@ -232,11 +233,17 @@
           onlineselect?.(line.index);
         }
       });
+      const frame = lineFrameRect(line);
       v.addOverlay({
         element,
         location: v.world
           .getItemAt(0)
-          .imageToViewportRectangle(line.x, line.y, line.width, line.height),
+          .imageToViewportRectangle(
+            frame.x,
+            frame.y,
+            frame.width,
+            frame.height,
+          ),
         checkResize: false,
         rotationMode: OpenSeadragon.OverlayRotationMode.EXACT,
       });
@@ -268,9 +275,15 @@
     if (!v || !opened || !line || !v.world.getItemCount()) return;
     if (target === pannedLine) return;
     pannedLine = target;
+    const frame = lineFrameRect(line);
     const rect = v.world
       .getItemAt(0)
-      .imageToViewportRectangle(line.x, line.y, line.width, line.height);
+      .imageToViewportRectangle(
+        frame.x,
+        frame.y,
+        frame.width,
+        frame.height,
+      );
     const points = [
       rect.getTopLeft(),
       rect.getTopRight(),

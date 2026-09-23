@@ -242,18 +242,32 @@
       lineModel.lines,
     ),
   );
-  let currentColumn = $state(-1);
+  let selectedColumn = $state(-1);
+  let hoveredColumn = $state<number | null>(null);
   let hoveredLine = $state<number | null>(null);
-  let selectedLine = $derived(hoveredLine ?? alignment[currentColumn] ?? null);
   let highlightedColumn = $derived(
-    hoveredLine === null ? currentColumn : alignment.indexOf(hoveredLine),
+    hoveredColumn !== null
+      ? hoveredColumn
+      : hoveredLine !== null
+        ? alignment.indexOf(hoveredLine)
+        : selectedColumn,
+  );
+  let selectedLine = $derived(
+    hoveredLine ??
+      (hoveredColumn !== null
+        ? (alignment[hoveredColumn] ?? null)
+        : selectedColumn >= 0
+          ? (alignment[selectedColumn] ?? null)
+          : null),
   );
   let editor = $state<VerticalEditor>();
   let notationMode = $state(false);
   let transcription = $state<Transcription>();
   function columnChange(index: number) {
-    currentColumn = index;
-    hoveredLine = null;
+    selectedColumn = index;
+  }
+  function columnHover(index: number | null) {
+    hoveredColumn = index;
   }
   function selectLine(lineIndex: number) {
     const column = alignment.indexOf(lineIndex);
@@ -842,7 +856,8 @@
       lockSlow = false;
       lockFailed = false;
       editing = false;
-      currentColumn = -1;
+      selectedColumn = -1;
+      hoveredColumn = null;
       hoveredLine = null;
       localOcr = null;
       closeNotes();
@@ -920,11 +935,8 @@
       if (pageIndex !== index || requested !== column || requested >= count)
         return;
       columnChange(requested);
-      document
-        .querySelector(
-          `.transcription-reader [data-column-index="${requested}"]`,
-        )
-        ?.scrollIntoView({ block: "nearest", inline: "nearest" });
+      if (editing) editor?.focusColumn(requested);
+      else transcription?.focusColumn(requested);
     });
   });
   $effect(() => {
@@ -1413,8 +1425,10 @@
             source={displayedSource}
             {horizontal}
             bind:half
+            selected={selectedColumn}
             {highlightedColumn}
             oncolumnchange={columnChange}
+            onhover={columnHover}
           />
         </div>
       {/if}
