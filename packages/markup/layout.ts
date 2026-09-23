@@ -3,13 +3,16 @@
  * sections, and the page templates those markers imply for a new page.
  */
 
-/** Inner text of a section marker. Longest alternatives first. */
+/**
+ * Inner text of a section marker. Longest alternatives first.
+ * Mirrored by `honkoku_text::is_section_name`.
+ */
 export const sectionInner =
-  "[右左](?:丁|頁)?[上下]段|[右左](?:丁|頁|側|帖)?[・　]?(?:白紙|文字無|文字無し|文字なし)|[右左](?:丁|頁|側|帖)?|[上下中]段";
+  "[右左](?:丁|頁|側|帖)?[・　]?[上下]段|[右左](?:丁|頁|側|帖)?[・　]?(?:文字無し|文字なし|文字無|白紙)|[右左](?:丁|頁|側|帖)?|[上下中]段";
 
 const sectionWhole = new RegExp(`^(?:${sectionInner})$`);
 const sectionLine = new RegExp(`^\\s*【(${sectionInner})】\\s*$`);
-export const sectionSplit = new RegExp(`(【(?:${sectionInner})】)`);
+const blankKind = /[・　]?(?:文字無し|文字なし|文字無|白紙)$/;
 
 /** The label inside a section marker line, or null when the line is ordinary text. */
 export function sectionLabel(line: string): string | null {
@@ -38,9 +41,9 @@ export function isSectionMarker(token: string): boolean {
   return !!match && sectionWhole.test(match[1]);
 }
 
-/** 右丁・白紙 and 左丁　文字無 sit in the same slot as 右丁 / 左丁. */
+/** 右丁・白紙 and 左丁文字無 sit in the same slot as 右丁 / 左丁. */
 export function sectionSlot(label: string): string {
-  return label.split(/[・　]/)[0]!;
+  return label.replace(blankKind, "");
 }
 
 export interface LayoutTemplate {
@@ -51,6 +54,8 @@ export interface LayoutTemplate {
 /**
  * Layout families seen on みんなで翻刻 pages (データ v3). A book is in one
  * family; a blank page of that book starts from the family's markers.
+ * A page matches when every one of its section slots is a template label,
+ * so a richer layout cannot fall through to a subset of itself.
  */
 export const layoutTemplates: readonly LayoutTemplate[] = [
   { text: "【右丁】\n\n【左丁】\n\n", labels: ["右丁", "左丁"] },
@@ -63,6 +68,15 @@ export const layoutTemplates: readonly LayoutTemplate[] = [
     text: "【右上段】\n\n【右下段】\n\n【左上段】\n\n【左下段】\n\n",
     labels: ["右上段", "右下段", "左上段", "左下段"],
   },
+  {
+    text: "【右丁上段】\n\n【右丁下段】\n\n【左丁上段】\n\n【左丁下段】\n\n",
+    labels: ["右丁上段", "右丁下段", "左丁上段", "左丁下段"],
+  },
+  {
+    text: "【右丁】\n\n【上段】\n\n【下段】\n\n【左丁】\n\n",
+    labels: ["右丁", "上段", "下段", "左丁"],
+  },
+  { text: "【上段】\n\n【中段】\n\n【下段】\n\n", labels: ["上段", "中段", "下段"] },
   { text: "【上段】\n\n【下段】\n\n", labels: ["上段", "下段"] },
   { text: "【右側】\n\n【左側】\n\n", labels: ["右側", "左側"] },
   { text: "【右帖】\n\n【左帖】\n\n", labels: ["右帖", "左帖"] },
@@ -71,9 +85,11 @@ export const layoutTemplates: readonly LayoutTemplate[] = [
 ];
 
 function bestTemplate(labels: readonly string[]): LayoutTemplate | null {
-  const slots = new Set(labels.map(sectionSlot));
+  const slots = new Set(labels.map(sectionSlot).filter(Boolean));
   let best: LayoutTemplate | null = null;
   for (const template of layoutTemplates) {
+    const wanted = new Set(template.labels);
+    if (wanted.size !== slots.size) continue;
     if (!template.labels.every((label) => slots.has(label))) continue;
     if (!best || template.labels.length > best.labels.length) best = template;
   }

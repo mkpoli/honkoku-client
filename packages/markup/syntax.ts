@@ -159,7 +159,12 @@ export function parseLine(text: string, start = 0): SyntaxNode[] {
         continue;
       }
       if (open === "【") {
-        add(isSectionMarker(token) ? "divider" : "editorial", end);
+        add(
+          text.trim() === token && isSectionMarker(token)
+            ? "divider"
+            : "editorial",
+          end,
+        );
         continue;
       }
       const match = /^《([^：]+)：([\s\S]*)》$/.exec(token);

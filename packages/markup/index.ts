@@ -1,5 +1,5 @@
 import { parseLine, inlineBrackets, notePreview } from "./syntax";
-import { sectionLabel, sectionSplit } from "./layout";
+import { sectionLabel } from "./layout";
 export {
   parse,
   serialize,
@@ -109,19 +109,12 @@ export function parseInline(text: string): Inline[] {
 export function parseGroups(text: string): ColumnGroup[] {
   const groups: ColumnGroup[] = [];
   let group: ColumnGroup = { label: "", columns: [] };
-  const chunks = text.replace(/\r\n?/g, "\n").split(sectionSplit);
-  for (const [index, chunk] of chunks.entries()) {
-    const label = sectionLabel(chunk);
+  for (const line of text.replace(/\r\n?/g, "\n").split("\n")) {
+    const label = sectionLabel(line);
     if (label !== null) {
       if (group.columns.length || group.label) groups.push(group);
       group = { label, columns: [] };
-    } else if (chunk) {
-      let content = chunk;
-      if (index > 0) content = content.replace(/^\n/, "");
-      if (index + 1 < chunks.length) content = content.replace(/\n$/, "");
-      const lines = content.split("\n");
-      group.columns.push(...lines.map(parseInline));
-    }
+    } else group.columns.push(parseInline(line));
   }
   if (group.columns.length || group.label) groups.push(group);
   return groups;

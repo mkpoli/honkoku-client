@@ -3,6 +3,7 @@
 pub mod normalize;
 
 /// Own-line layout markers such as 【右丁】 that split a page into sections.
+/// Mirrors `sectionInner` in packages/markup/layout.ts.
 pub fn is_section_name(name: &str) -> bool {
     if matches!(name, "上段" | "中段" | "下段") {
         return true;
@@ -10,14 +11,25 @@ pub fn is_section_name(name: &str) -> bool {
     let Some(tail) = name.strip_prefix('右').or_else(|| name.strip_prefix('左')) else {
         return false;
     };
-    let tail = tail
-        .trim_start_matches(['丁', '頁', '側', '帖'])
-        .trim_start_matches(['・', '　']);
-    tail.is_empty()
-        || matches!(
-            tail,
-            "上段" | "下段" | "白紙" | "文字無" | "文字無し" | "文字なし"
-        )
+    let (base, rest) = if let Some(rest) = tail
+        .strip_prefix('丁')
+        .or_else(|| tail.strip_prefix('頁'))
+        .or_else(|| tail.strip_prefix('側'))
+        .or_else(|| tail.strip_prefix('帖'))
+    {
+        (true, rest)
+    } else {
+        (false, tail)
+    };
+    let rest = rest.strip_prefix(['・', '　']).unwrap_or(rest);
+    if rest.is_empty() {
+        return true;
+    }
+    let _ = base;
+    matches!(
+        rest,
+        "上段" | "下段" | "白紙" | "文字無" | "文字無し" | "文字なし"
+    )
 }
 
 pub fn is_section_line(line: &str) -> bool {
@@ -66,10 +78,13 @@ mod tests {
             assert!(is_section_name(name), "{name}");
             assert!(is_section_line(&format!("【{name}】")), "{name}");
         }
-        for name in ["注", "表紙", "本文", "右線", "丁"] {
+        for name in ["注", "表紙", "本文", "右線", "丁", "右丁丁", "右丁丁上段"] {
             assert!(!is_section_name(name), "{name}");
         }
         assert!(!is_section_line("凡例：【右丁】と【左丁】"));
+        assert!(is_section_name("右側上段"));
+        assert!(is_section_name("右丁白紙"));
+        assert!(is_section_name("右丁・上段"));
     }
     #[test]
     fn syntax_and_unicode() {
