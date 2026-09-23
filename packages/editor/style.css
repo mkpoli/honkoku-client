@@ -145,7 +145,8 @@
   inline-size: max-content;
   min-block-size: 1.15em;
 }
-/* A lone field is the right half of the split; leave the left half empty. */
+/* A lone field is the right half of the split; leave the left half empty.
+   1.15em matches a segment's min-block-size below. */
 .editor-warigaki:has(> .editor-segment:only-child) {
   padding-inline-start: 1.15em;
 }

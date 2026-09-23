@@ -27,6 +27,7 @@ describe("transcription projection", () => {
     expect(node).toMatchObject({
       kind: "warichu",
       base: "松前志摩守内",
+      annotation: "",
       segments: ["松前志摩守内"],
     });
     const html = renderInline([node]);

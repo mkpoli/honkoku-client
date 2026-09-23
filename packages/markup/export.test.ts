@@ -34,7 +34,12 @@ test("a warigaki without ｜ exports as 双行 with an empty left half", () => {
     "\\sougyou{ 松前志摩守内 }{  }",
   );
   expect(exportTranscription([{ index: 0, text: source }], "xml")).toContain(
-    '<note type="wari">松前志摩守内<milestone unit="wrb"/></note>',
+    '<note type="wari">松前志摩守内<milestone unit="wrb"/><milestone unit="wrb"/></note>',
+  );
+  expect(
+    exportTranscription([{ index: 0, text: "《割書：松前志摩守内｜》" }], "xml"),
+  ).toContain(
+    '<note type="wari">松前志摩守内<milestone unit="wrb"/><milestone unit="wrb"/></note>',
   );
 });
 test("entry exports sort pages and preserve empty page breaks", () => {
