@@ -21,6 +21,7 @@ test("a newer server draft supersedes older local text and notes", () => {
   });
   expect(result.source).toBe(page.tempText!);
   expect(result.notes).toEqual(page.tempNotes!);
+  expect(result.acknowledgedNotes).toEqual(page.tempNotes!);
 });
 test("a current local draft keeps text not yet sent", () => {
   const result = restoreDraft(page, {
@@ -31,7 +32,29 @@ test("a current local draft keeps text not yet sent", () => {
   });
   expect(result.source).toBe("未送信の下書き");
   expect(result.notes).toEqual([null]);
+  expect(result.acknowledgedNotes).toEqual(page.tempNotes!);
   expect(result.unsavedLocal).toBe(true);
+});
+test("acknowledged notes separate sent from unsent local edits", () => {
+  const sent = [{ content: "送信済み" }];
+  const result = restoreDraft(page, {
+    source: "下書き",
+    draft: "下書き",
+    notes: [{ content: "未送信" }],
+    acknowledgedNotes: sent,
+    updatedAt: page.updatedAt,
+  });
+  expect(result.notes).toEqual([{ content: "未送信" }]);
+  expect(result.acknowledgedNotes).toEqual(sent);
+  const fullySent = restoreDraft(page, {
+    source: "下書き",
+    draft: "下書き",
+    notes: sent,
+    acknowledgedNotes: sent,
+    updatedAt: page.updatedAt,
+  });
+  expect(fullySent.notes).toEqual(sent);
+  expect(fullySent.acknowledgedNotes).toEqual(sent);
 });
 test("missing or invalid local timestamps resume server text", () => {
   for (const updatedAt of [undefined, null, "invalid"]) {
@@ -44,6 +67,7 @@ test("missing or invalid local timestamps resume server text", () => {
     expect(result.unsavedLocal).toBe(false);
   }
   expect(restoreDraft(page).notes).toEqual(page.tempNotes!);
+  expect(restoreDraft(page).acknowledgedNotes).toEqual(page.tempNotes!);
 });
 test("a leftover local record without unsaved text does not win", () => {
   const result = restoreDraft(page, {

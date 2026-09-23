@@ -3,6 +3,7 @@ export interface LocalDraft {
   source: string;
   draft: string;
   notes?: (JsonValue | null)[];
+  acknowledgedNotes?: (JsonValue | null)[];
   updatedAt?: string | null;
 }
 function timestamp(value?: string | null): bigint | undefined {
@@ -21,15 +22,15 @@ export function restoreDraft(page: Page, local?: LocalDraft) {
     serverTime !== undefined &&
     localTime >= serverTime;
   const unsavedLocal = current && local.source !== local.draft;
+  const serverNotes = JSON.parse(
+    JSON.stringify(page.tempNotes ?? page.notes),
+  ) as (JsonValue | null)[];
   return {
     source:
       local && unsavedLocal ? local.source : (page.tempText ?? page.text),
-    notes:
-      current && local.notes
-        ? local.notes
-        : (JSON.parse(
-            JSON.stringify(page.tempNotes ?? page.notes),
-          ) as (JsonValue | null)[]),
+    notes: current && local.notes ? local.notes : serverNotes,
+    acknowledgedNotes:
+      current && local.acknowledgedNotes ? local.acknowledgedNotes : serverNotes,
     unsavedLocal: Boolean(unsavedLocal),
   };
 }
