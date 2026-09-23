@@ -70,8 +70,8 @@ export function parseInline(text: string): Inline[] {
       nodes.push({
         kind: names[node.kind as keyof typeof names],
         base: parts[0],
-        annotation: parts[1],
-        ...(parts.length > 2 ? { segments: parts } : {}),
+        annotation: parts[1] ?? "",
+        ...(parts.length !== 2 ? { segments: parts } : {}),
       });
     } else if (node.kind === "return" || node.kind === "okurigana") {
       let previous = nodes.at(-1);
