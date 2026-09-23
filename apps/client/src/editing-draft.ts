@@ -13,6 +13,13 @@ function timestamp(value?: string | null): bigint | undefined {
   const fraction = value.match(/\.(\d+)/)?.[1] ?? "";
   return BigInt(ms) * 1_000_000n + BigInt(fraction.padEnd(9, "0").slice(3, 9));
 }
+/** Note edits this device has not seen acknowledged by the server. */
+export function notesPending(
+  notes: (JsonValue | null)[],
+  acknowledged: (JsonValue | null)[],
+): boolean {
+  return JSON.stringify(notes) !== JSON.stringify(acknowledged);
+}
 export function restoreDraft(page: Page, local?: LocalDraft) {
   const serverTime = timestamp(page.updatedAt),
     localTime = timestamp(local?.updatedAt);
@@ -25,12 +32,21 @@ export function restoreDraft(page: Page, local?: LocalDraft) {
   const serverNotes = JSON.parse(
     JSON.stringify(page.tempNotes ?? page.notes),
   ) as (JsonValue | null)[];
+  const localNotes = current && local.notes ? local.notes : undefined;
+  const localAck = current ? local.acknowledgedNotes : undefined;
+  // Note writes leave updatedAt alone, so a local array that is already fully
+  // sent can still be an older generation than the server's. Keep local notes
+  // only while an edit is still unacknowledged.
+  const unsentNotes =
+    localNotes !== undefined &&
+    JSON.stringify(localNotes) !== JSON.stringify(localAck ?? serverNotes);
   return {
     source:
       local && unsavedLocal ? local.source : (page.tempText ?? page.text),
-    notes: current && local.notes ? local.notes : serverNotes,
-    acknowledgedNotes:
-      current && local.acknowledgedNotes ? local.acknowledgedNotes : serverNotes,
+    notes: unsentNotes ? localNotes! : serverNotes,
+    acknowledgedNotes: JSON.parse(
+      JSON.stringify(unsentNotes ? (localAck ?? serverNotes) : serverNotes),
+    ) as (JsonValue | null)[],
     unsavedLocal: Boolean(unsavedLocal),
   };
 }

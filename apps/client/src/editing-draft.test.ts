@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
-import { restoreDraft } from "./editing-draft";
-import type { Page } from "@honkoku/client-api/types";
+import { notesPending, restoreDraft } from "./editing-draft";
+import type { JsonValue, Page } from "@honkoku/client-api/types";
 const page: Page = {
   id: "entry_0",
   entryId: "entry",
@@ -46,15 +46,41 @@ test("acknowledged notes separate sent from unsent local edits", () => {
   });
   expect(result.notes).toEqual([{ content: "未送信" }]);
   expect(result.acknowledgedNotes).toEqual(sent);
-  const fullySent = restoreDraft(page, {
+  expect(notesPending(result.notes, result.acknowledgedNotes)).toBe(true);
+});
+test("a fully sent local draft yields to the server's notes", () => {
+  const sent = [{ content: "送信済み" }];
+  const result = restoreDraft(page, {
     source: "下書き",
     draft: "下書き",
     notes: sent,
     acknowledgedNotes: sent,
     updatedAt: page.updatedAt,
   });
-  expect(fullySent.notes).toEqual(sent);
-  expect(fullySent.acknowledgedNotes).toEqual(sent);
+  expect(result.notes).toEqual(page.tempNotes!);
+  expect(result.acknowledgedNotes).toEqual(page.tempNotes!);
+  expect(notesPending(result.notes, result.acknowledgedNotes)).toBe(false);
+});
+test("untouched notes do not read as a local change", () => {
+  const notes: (JsonValue | null)[] = [
+    { content: "書入れ", createdAt: "2026-09-10T01:00:00.100Z" },
+  ];
+  const acknowledged = JSON.parse(JSON.stringify(notes));
+  expect(notesPending(notes, acknowledged)).toBe(false);
+  const edited = JSON.parse(JSON.stringify(notes));
+  edited[0].content = "改めた書入れ";
+  expect(notesPending(edited, acknowledged)).toBe(true);
+});
+test("the gate reads the sent payload, not a reshaped echo", () => {
+  const notes: (JsonValue | null)[] = [
+    { id: "", content: "x", createdAt: "2026-09-10T01:00:00.100Z" },
+  ];
+  const acknowledged = JSON.parse(JSON.stringify(notes));
+  const echo = [
+    { createdAt: "2026-09-10T01:00:00.1Z", content: "x", id: "" },
+  ] as (JsonValue | null)[];
+  expect(notesPending(notes, echo)).toBe(true);
+  expect(notesPending(notes, acknowledged)).toBe(false);
 });
 test("missing or invalid local timestamps resume server text", () => {
   for (const updatedAt of [undefined, null, "invalid"]) {
