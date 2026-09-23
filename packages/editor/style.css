@@ -368,6 +368,7 @@
 }
 .transcription.horizontal .editor-warigaki:has(> .editor-segment:only-child) {
   padding-inline-start: 0;
+  padding-block-end: 1.15em;
 }
 .transcription.horizontal .editor-warigaki > .editor-segment {
   writing-mode: horizontal-tb;
