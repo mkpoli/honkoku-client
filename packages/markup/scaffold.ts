@@ -8,11 +8,11 @@ export function usesChoPair(text: string): boolean {
   return text.includes(rightHalf) && text.includes(leftHalf);
 }
 
-/** 表紙・扉のような短いラベルは本紙の多数決に入れない。 */
+/** 表紙・扉のような短いラベルと、印だけの下書きは本紙の多数決に入れない。 */
 function isMainPage(text: string): boolean {
-  if (usesChoPair(text)) return true;
   const body = text.replaceAll(rightHalf, "").replaceAll(leftHalf, "").trim();
-  return body.replace(/\s+/g, "").length >= 20;
+  if (!body) return false;
+  return usesChoPair(text) || body.replace(/\s+/g, "").length >= 20;
 }
 
 /**

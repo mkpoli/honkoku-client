@@ -28,6 +28,24 @@ describe("page template from sibling pages", () => {
     ).toBe(choPairTemplate);
   });
 
+  test("印だけのページは本紙に数えない", () => {
+    expect(
+      suggestPageTemplate([
+        choPairTemplate,
+        choPairTemplate,
+        unmarked("本文だけのページが二十文字を超えるくらいの本文"),
+        unmarked("別の本文だけのページも同じくらいの長さにする"),
+      ]),
+    ).toBeNull();
+    expect(
+      suggestPageTemplate([
+        choPairTemplate,
+        spread("見開きの本文"),
+        spread("続きの見開き"),
+      ]),
+    ).toBe(choPairTemplate);
+  });
+
   test("本紙がほぼ印のない書物では足さない", () => {
     expect(
       suggestPageTemplate([
