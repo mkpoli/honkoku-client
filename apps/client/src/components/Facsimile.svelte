@@ -12,7 +12,7 @@
   } from "../../../../packages/client-api/ocr";
   import OpenSeadragon from "openseadragon";
   import type { Canvas } from "@honkoku/client-api/types";
-  import { lineFrameRect } from "./line-frame";
+  import { lineFrameRect, lineFramePads } from "./line-frame";
   let {
     oninsert,
     lineCharacterCounts = {},
@@ -209,14 +209,16 @@
             const bounds = element.getBoundingClientRect();
             // The overlay is the padded frame; the crop belongs to the raw
             // OCR box, so map the click back across the padding first.
-            const frame = lineFrameRect(line);
-            const alongFrame = vertical ? frame.height : frame.width;
+            const pads = lineFramePads(line);
             const alongLine = vertical ? line.height : line.width;
+            const padAlong = vertical ? pads.padY : pads.padX;
             const alongScreen = vertical ? bounds.height : bounds.width;
             const local = vertical ? event.position.y : event.position.x;
-            const raw = (local * alongFrame) / alongScreen -
-              (alongFrame - alongLine) / 2;
-            const fraction = raw / alongLine;
+            const raw =
+              alongScreen > 0
+                ? (local * (alongLine + 2 * padAlong)) / alongScreen - padAlong
+                : 0;
+            const fraction = alongLine > 0 ? raw / alongLine : 0;
             const offset = Math.max(
               0,
               Math.min(count - 1, Math.floor(fraction * count)),
