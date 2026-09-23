@@ -16,25 +16,25 @@ describe("page template from sibling pages", () => {
     expect(choPairTemplate).toBe("【右丁】\n\n【左丁】\n\n");
   });
 
-  test("表紙や空ページは多数決に入れない", () => {
+  test("空ページと印だけの下書きは多数決に入れない", () => {
     expect(
       suggestPageTemplate([
-        "蝦夷方言藻汐草　乾",
         "",
         "   ",
+        choPairTemplate,
         spread("本文がここに入る"),
         spread("続きの本文"),
       ]),
     ).toBe(choPairTemplate);
   });
 
-  test("印だけのページは本紙に数えない", () => {
+  test("印だけのページが本文ページに勝たない", () => {
     expect(
       suggestPageTemplate([
         choPairTemplate,
         choPairTemplate,
-        unmarked("本文だけのページが二十文字を超えるくらいの本文"),
-        unmarked("別の本文だけのページも同じくらいの長さにする"),
+        unmarked("本文だけのページ"),
+        unmarked("別の本文だけのページ"),
       ]),
     ).toBeNull();
     expect(
@@ -44,6 +44,34 @@ describe("page template from sibling pages", () => {
         spread("続きの見開き"),
       ]),
     ).toBe(choPairTemplate);
+  });
+
+  test("短い本文ページも多数決に入れる", () => {
+    const short = ["一", "二", "三", "四", "五", "六", "七", "八", "九", "十"];
+    expect(suggestPageTemplate(short)).toBeNull();
+    expect(suggestPageTemplate([...short, spread("一")])).toBeNull();
+    expect(
+      suggestPageTemplate([
+        unmarked("一"),
+        unmarked("二"),
+        spread("三"),
+        spread("四"),
+        spread("五"),
+      ]),
+    ).toBe(choPairTemplate);
+  });
+
+  test("本文中の言及は見開きに数えない", () => {
+    expect(usesChoPair("凡例：見開きには【右丁】と【左丁】を付ける。")).toBe(
+      false,
+    );
+    expect(usesChoPair(spread("一"))).toBe(true);
+    expect(
+      suggestPageTemplate([
+        unmarked("凡例：見開きには【右丁】と【左丁】を付ける。"),
+        unmarked("凡例二：同じく【右丁】と【左丁】の説明を書く。"),
+      ]),
+    ).toBeNull();
   });
 
   test("本紙がほぼ印のない書物では足さない", () => {

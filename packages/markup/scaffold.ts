@@ -1,18 +1,29 @@
 /** 見開きの右丁・左丁から始まるページの下書き。 */
 export const choPairTemplate = "【右丁】\n\n【左丁】\n\n";
 
-const rightHalf = "【右丁】";
-const leftHalf = "【左丁】";
+const halfLine = /^\s*【([右左]丁)】\s*$/;
 
-export function usesChoPair(text: string): boolean {
-  return text.includes(rightHalf) && text.includes(leftHalf);
+function halfLabels(text: string): string[] {
+  const labels: string[] = [];
+  for (const line of text.split(/\r\n|\r|\n/)) {
+    const label = halfLine.exec(line)?.[1];
+    if (label) labels.push(label);
+  }
+  return labels;
 }
 
-/** 表紙・扉のような短いラベルと、印だけの下書きは本紙の多数決に入れない。 */
+export function usesChoPair(text: string): boolean {
+  const labels = halfLabels(text);
+  return labels.includes("右丁") && labels.includes("左丁");
+}
+
+/** 印だけの下書きは本紙の多数決に入れない。 */
 function isMainPage(text: string): boolean {
-  const body = text.replaceAll(rightHalf, "").replaceAll(leftHalf, "").trim();
-  if (!body) return false;
-  return usesChoPair(text) || body.replace(/\s+/g, "").length >= 20;
+  const body = text
+    .split(/\r\n|\r|\n/)
+    .filter((line) => !halfLine.test(line))
+    .join("\n");
+  return body.replace(/\s+/g, "").length > 0;
 }
 
 /**
