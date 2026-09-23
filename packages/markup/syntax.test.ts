@@ -49,6 +49,19 @@ test("malformed syntax, empty segments and mixed endings", () => {
   expect(parseLine("《割書：a《題：b》｜c》")[0].kind).toBe("warigaki");
   expect(parseLine("《割書：a｜b｜c｜d｜e》")[0].kind).toBe("raw");
 });
+test("a warigaki without ｜ is the right half alone", () => {
+  expect(parseLine("《割書：松前志摩守内》")[0]).toMatchObject({
+    kind: "warigaki",
+    segments: ["松前志摩守内"],
+  });
+  expect(parseLine("《割書：》")[0]).toMatchObject({
+    kind: "warigaki",
+    segments: [""],
+  });
+  expect(serialize(parse("前《割書：松前志摩守内》後"))).toBe(
+    "前《割書：松前志摩守内》後",
+  );
+});
 test("all specified constructs and site legacy ruby", () => {
   expect(
     parseLine(

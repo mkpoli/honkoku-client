@@ -28,6 +28,20 @@ test("LaTeX reproduces the site's ruby and kanbun macros", () => {
     "\\sougyou{ 一行 }{ 二行 }讀\\kokana{ ム }{}\\kaeriten{ レ }\\textcolor{red}{【注記】}□■",
   );
 });
+test("a warigaki without ｜ exports as 双行 with an empty left half", () => {
+  const source = "《割書：松前志摩守内》";
+  expect(exportTranscription([{ index: 0, text: source }], "tex")).toContain(
+    "\\sougyou{ 松前志摩守内 }{  }",
+  );
+  expect(exportTranscription([{ index: 0, text: source }], "xml")).toContain(
+    '<note type="wari">松前志摩守内<milestone unit="wrb"/><milestone unit="wrb"/></note>',
+  );
+  expect(
+    exportTranscription([{ index: 0, text: "《割書：松前志摩守内｜》" }], "xml"),
+  ).toContain(
+    '<note type="wari">松前志摩守内<milestone unit="wrb"/><milestone unit="wrb"/></note>',
+  );
+});
 test("entry exports sort pages and preserve empty page breaks", () => {
   const pages = [
     { index: 2, text: "< & $" },

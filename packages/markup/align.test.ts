@@ -83,8 +83,9 @@ test("nested readings do not enter facsimile matching text", () => {
     plainColumn("《割書：《振り仮名：峰｜みね》｜《見せ消ち：旧｜新》》"),
   ).toBe("峰旧");
 });
-test("plain text omits kunten and headers and cleans older single-part warigaki", () => {
+test("plain text omits kunten and headers and keeps a right-only warigaki", () => {
   expect(plainColumn("故￣ニ讀＿レ￣ム")).toBe("故讀");
   expect(plainColumn("％表紙")).toBe("");
   expect(plainColumn("俊寛《割書：能》")).toBe("俊寛能");
+  expect(plainColumn("松前《割書：松前志摩守内》")).toBe("松前松前志摩守内");
 });

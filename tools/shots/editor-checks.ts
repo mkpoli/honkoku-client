@@ -538,6 +538,24 @@ export async function checkInlineEditor(
     await page.keyboard.press("Backspace");
     await page.keyboard.press("Backspace");
     assert.equal(await source(page), "前《割書：一｜二｜｜》後");
+    // A lone field is the right half of the split and must keep the split's width.
+    await reset(
+      page,
+      "《割書：但船新敷｜堅く御座候》\n《割書：松前志摩守内》\n《割書：松前志摩守内｜》",
+    );
+    assert.equal(await page.locator(".editor-warigaki").count(), 3);
+    assert.equal(
+      await page.locator(".editor-warigaki > .editor-segment").count(),
+      5,
+    );
+    const warigakiWidths = await page.$$eval(".editor-warigaki", (nodes) =>
+      nodes.map((n) => n.getBoundingClientRect().width),
+    );
+    assert.ok(
+      Math.abs(warigakiWidths[0] - warigakiWidths[1]) < 0.5 &&
+        Math.abs(warigakiWidths[0] - warigakiWidths[2]) < 0.5,
+      `right-only warigaki should keep the split width: ${warigakiWidths.join(", ")}`,
+    );
     await reset(page, "前《割書：一｜二》後");
     await select(page, 8);
     await page.keyboard.press("Control+r");

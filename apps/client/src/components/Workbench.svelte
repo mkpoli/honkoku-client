@@ -53,7 +53,6 @@
     pageDraftTextAndNotes,
     pageDraftNotes,
     pageNoteDelete,
-    isTauri,
     pageSave,
     pageDiscard,
     pageLockState,
@@ -195,8 +194,7 @@
   }
   const draftPayload = () => JSON.stringify({ text: source, notes: tempNotes });
   const notesPending = () =>
-    isTauri() &&
-    JSON.stringify(tempNotes) !== JSON.stringify(page.tempNotes ?? page.notes);
+    JSON.stringify(tempNotes) !== JSON.stringify(acknowledgedNotes);
 
   let localOcr = $state<LocalOcrPage | null>(null);
   let lineModel = $derived(
@@ -380,6 +378,7 @@
         JSON.parse(JSON.stringify(updated)) as (JsonValue | null)[],
       );
       tempNotes = fresh.tempNotes ?? updated;
+      acknowledgedNotes = tempNotes;
       onpage(fresh);
       remember();
       saveState = "下書き保存";
@@ -394,6 +393,7 @@
       await queue?.flush();
       const fresh = await pageNoteDelete(entry.id, index, position);
       tempNotes = fresh.tempNotes ?? [];
+      acknowledgedNotes = tempNotes;
       onpage(fresh);
       remember();
       saveState = "下書き保存";
@@ -604,6 +604,7 @@
         source: string;
         draft: string;
         notes?: (JsonValue | null)[];
+        acknowledgedNotes?: (JsonValue | null)[];
         updatedAt?: string | null;
       }
     | undefined {
@@ -616,6 +617,7 @@
     }
   }
   let acknowledged = "";
+  let acknowledgedNotes: (JsonValue | null)[] = [];
   let draftUpdatedAt: string | null | undefined;
   function remember() {
     try {
@@ -625,6 +627,7 @@
           source,
           notes: tempNotes,
           draft: acknowledged,
+          acknowledgedNotes,
           updatedAt: draftUpdatedAt,
         }),
       );
@@ -695,6 +698,7 @@
           pages.filter((p) => p.id !== locked.id).map((p) => p.text),
         ) ?? source;
     tempNotes = restored.notes;
+    acknowledgedNotes = restored.acknowledgedNotes;
     editing = true;
     recovered = "";
     saveState = locked.tempTextChanged
@@ -721,13 +725,12 @@
           pendingNotes,
         );
         acknowledged = text;
+        acknowledgedNotes = pendingNotes;
         draftUpdatedAt = draft.updatedAt;
         onpage(draft);
         remember();
         saveState =
-          source === text &&
-          JSON.stringify(tempNotes) === JSON.stringify(pendingNotes) &&
-          !notesPending()
+          source === text && !notesPending()
             ? `下書き保存${new Date().toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })}`
             : "未保存の変更";
         notice = "";
@@ -738,7 +741,7 @@
       },
     );
     remember();
-    if (source !== acknowledged || local?.notes) queue.request(draftPayload());
+    if (source !== acknowledged || notesPending()) queue.request(draftPayload());
   }
   function update(value: EditorUpdate) {
     composing = value.composing;

@@ -557,14 +557,17 @@ impl EditingSession {
     }
 }
 /// Restore Firestore timestamps after the plain JSON IPC round trip.
+/// The wire string is kept as-is: reformatting through `Timestamp` trimmed
+/// fractional seconds (`.100Z` → `.1Z`) and made an untouched note look edited.
 fn stored_notes(notes: &[Value]) -> Result<Value> {
     let mut notes = notes.to_vec();
     for note in &mut notes {
         if let Some(fields) = note.as_object_mut() {
             for key in ["createdAt", "updatedAt"] {
                 if let Some(Value::String(date)) = fields.get(key) {
-                    let timestamp: crate::model::Timestamp = serde_json::from_value(json!(date))?;
-                    fields.insert(key.into(), json!({"$firestoreTimestamp": timestamp}));
+                    let _: crate::model::Timestamp = serde_json::from_value(json!(date))?;
+                    let tagged = json!({"$firestoreTimestamp": date.clone()});
+                    fields.insert(key.into(), tagged);
                 }
             }
         }

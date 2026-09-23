@@ -58,8 +58,11 @@ function nodes(source: string, format: "xml" | "tex"): string {
             if (p[2]) value = `<ruby><rb>${value}</rb><rt>${p[2]}</rt></ruby>`;
             return value;
           }
-          case "warigaki":
-            return `<note type="wari">${p.map((s) => `${s}<milestone unit="wrb"/>`).join("")}</note>`;
+          case "warigaki": {
+            // A lone field is the right half of 双行; keep the empty left milestone.
+            const fields = p.length === 1 ? [p[0], ""] : p;
+            return `<note type="wari">${fields.map((s) => `${s}<milestone unit="wrb"/>`).join("")}</note>`;
+          }
           case "misekechi":
             return `<subst><del>${p[0]}</del><add>${p[1]}</add></subst>`;
           case "kenten":
@@ -98,6 +101,9 @@ function nodes(source: string, format: "xml" | "tex"): string {
                 : p.length === 3
                   ? "sangyouwari"
                   : "sougyou",
+              // A lone field is the right half of 双行; keep the left argument empty.
+              // Field order matches the existing two-part \\sougyou{ right }{ left } call.
+              p.length === 1 ? [p[0], ""] : p,
             );
           case "misekechi":
             return macro("sout", [macro("MigiKataTn")]);
