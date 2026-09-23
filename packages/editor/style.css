@@ -145,6 +145,10 @@
   inline-size: max-content;
   min-block-size: 1.15em;
 }
+/* A lone field is the right half of the split; leave the left half empty. */
+.editor-warigaki:has(> .editor-segment:only-child) {
+  padding-inline-start: 1.15em;
+}
 .editor-misekechi {
   display: inline-block;
   position: relative;
@@ -361,6 +365,9 @@
 }
 .transcription.horizontal .editor-warigaki {
   flex-direction: column;
+}
+.transcription.horizontal .editor-warigaki:has(> .editor-segment:only-child) {
+  padding-inline-start: 0;
 }
 .transcription.horizontal .editor-warigaki > .editor-segment {
   writing-mode: horizontal-tb;

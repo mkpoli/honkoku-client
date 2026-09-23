@@ -39,7 +39,7 @@ export interface SyntaxTree {
 }
 const constructs: Record<string, [SyntaxKind, number, number]> = {
   振り仮名: ["ruby", 2, 3],
-  割書: ["warigaki", 2, 4],
+  割書: ["warigaki", 1, 4],
   見せ消ち: ["misekechi", 2, 2],
   圏点: ["kenten", 2, 2],
   右線: ["rightLine", 1, 1],

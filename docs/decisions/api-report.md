@@ -689,7 +689,7 @@ Full element catalog extracted from the grammar's element registry (`elemName`/`
 | 場所 | inline | `〔日本橋〕` | place name |
 | 日時 | inline | `＜安政二年卯十月二日＞` | date/time |
 | 題 | inline | `《題：地震年代記》` | document title |
-| 割書 | inline | `《割書：一行目｜二行目｜三行目》` (2–4 segments, `｜`-separated) | split/interlinear writing (warigaki) |
+| 割書 | inline | `《割書：一行目｜二行目｜三行目》` (2–4 segments, `｜`-separated); a single segment with no `｜` also occurs in transcriptions and means the right half only | split/interlinear writing (warigaki) |
 | 振り仮名 | inline | `未（いまだ｜ズ）` (2–3 segments) | furigana / kanbun re-reading marks, same syntax for both |
 | 圏点 | inline | `《圏点：本文｜﹅》` | emphasis dots, 2nd segment is the dot glyph used |
 | 返り点 | inline | `｛＿レ｝` (also `＿一＿二＿三＿上＿中＿下`) | kanbun kaeriten reading-order marks |

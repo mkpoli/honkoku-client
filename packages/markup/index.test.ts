@@ -19,8 +19,20 @@ describe("transcription projection", () => {
     );
   });
   test("unfamiliar and malformed syntax survives as text", () => {
-    const source = "《未知：あ｜い》【未閉じ《割書：あ》";
+    const source = "《未知：あ｜い》【未閉じ《割書：あ｜い｜う｜え｜お》";
     expect(renderInline(parseInline(source))).toBe(source);
+  });
+  test("a warigaki without ｜ renders the right half alone", () => {
+    const node = parseInline("《割書：松前志摩守内》")[0];
+    expect(node).toMatchObject({
+      kind: "warichu",
+      base: "松前志摩守内",
+      segments: ["松前志摩守内"],
+    });
+    const html = renderInline([node]);
+    expect(html).toContain("editor-warigaki");
+    expect(html.match(/editor-segment/g)).toHaveLength(1);
+    expect(html).toContain("松前志摩守内");
   });
   test("notes, comments and boxed glyphs", () => {
     expect(parseInline("【異本】■□〓＃１２※欄外").map((n) => n.kind)).toEqual([

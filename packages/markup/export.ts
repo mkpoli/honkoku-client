@@ -98,6 +98,8 @@ function nodes(source: string, format: "xml" | "tex"): string {
                 : p.length === 3
                   ? "sangyouwari"
                   : "sougyou",
+              // A lone field is the right half of 双行; keep the left argument empty.
+              p.length === 1 ? [p[0], ""] : p,
             );
           case "misekechi":
             return macro("sout", [macro("MigiKataTn")]);

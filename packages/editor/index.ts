@@ -165,7 +165,7 @@ for (const name of [...Object.keys(annotationNames), "return", "okurigana"]) {
     name === "ruby"
       ? "{2,3}"
       : name === "warigaki"
-        ? "{2,4}"
+        ? "{1,4}"
         : ["misekechi", "kenten"].includes(name)
           ? "{2}"
           : "{1}";

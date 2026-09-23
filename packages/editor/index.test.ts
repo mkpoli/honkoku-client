@@ -74,6 +74,7 @@ test("every annotation constituent is editable", () => {
   for (const source of [
     "《振り仮名：未｜いまだ｜ズ》",
     "《割書：a｜b｜c｜d》",
+    "《割書：松前志摩守内》",
     "《見せ消ち：旧｜新》",
     "《圏点：語｜﹅》",
     "《題：題》",
@@ -93,6 +94,24 @@ test("every annotation constituent is editable", () => {
       e.dispatch(e.state.tr.insertText("追", pos));
     expect(e.source.match(/追/g)?.length).toBe(positions.length);
   }
+});
+test("a right-only warigaki keeps its spelling until its field is edited", async () => {
+  const { shellKey } = await import("./index");
+  const e = editor("前《割書：松前志摩守内》後");
+  expect(toMarkup(fromMarkup(e.source))).toBe(e.source);
+  let end = -1;
+  e.state.doc.descendants((n, pos) => {
+    if (n.type.name === "segment" && n.attrs.role === "line-0")
+      end = pos + n.nodeSize - 1;
+  });
+  {
+    const tr = e.state.tr.insertText("方", end);
+    e.dispatch(tr.setSelection(TextSelection.create(tr.doc, end + 1)));
+  }
+  expect(e.source).toBe("前《割書：松前志摩守内方》後");
+  shellKey("Enter")(e.state, e.dispatch);
+  e.dispatch(e.state.tr.insertText("左"));
+  expect(e.source).toBe("前《割書：松前志摩守内方｜左》後");
 });
 test("ruby command, source edits and undo share one history", () => {
   const e = editor("峰\r\n原文");
