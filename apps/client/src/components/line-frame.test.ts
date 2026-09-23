@@ -16,8 +16,8 @@ test("horizontal lines grow mostly in width", () => {
   expect(frame.x + frame.width).toBeGreaterThan(10 + 400);
 });
 
-test("tiny boxes still get a visible margin", () => {
+test("tiny boxes still get the minimum margin on every side", () => {
   const frame = lineFrameRect({ x: 0, y: 0, width: 4, height: 20 });
-  expect(frame.height).toBeGreaterThan(20 + 28);
-  expect(frame.width).toBeGreaterThan(4 + 10);
+  expect(frame.height).toBeGreaterThanOrEqual(20 + 2 * 28);
+  expect(frame.width).toBeGreaterThanOrEqual(4 + 2 * 10);
 });
