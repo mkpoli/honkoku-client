@@ -1689,6 +1689,10 @@ button.line-overlay.highlighted {
     0 0 0 4px rgb(255 255 255 / 75%),
     0 0 0 5px rgb(0 0 0 / 12%);
 }
+button.line-overlay:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
 button.line-overlay.line-hidden {
   visibility: hidden;
   pointer-events: none;
