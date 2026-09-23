@@ -1,6 +1,7 @@
 <script lang="ts">
   import Recognition from "./Recognition.svelte";
   import type { Rectangle } from "./glyph-regions";
+  import { clampRegion } from "./glyph-regions";
   import Skeleton from "./Skeleton.svelte";
   import RegionNotice from "./RegionNotice.svelte";
   import type { Region } from "../region.svelte";
@@ -220,7 +221,7 @@
               ? [line.x, line.y + offset * advance, line.width, advance]
               : [line.x + offset * advance, line.y, advance, line.height];
             if (!recognizing) recognitionMode.select();
-            recognitionSelection = region.map(Math.round) as Rectangle;
+            recognitionSelection = clampRegion(region, canvas);
           } else onlineselect?.(line.index);
         },
       });
