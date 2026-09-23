@@ -207,9 +207,16 @@
           ) {
             const vertical = line.height >= line.width;
             const bounds = element.getBoundingClientRect();
-            const fraction = vertical
-              ? event.position.y / bounds.height
-              : event.position.x / bounds.width;
+            // The overlay is the padded frame; the crop belongs to the raw
+            // OCR box, so map the click back across the padding first.
+            const frame = lineFrameRect(line);
+            const alongFrame = vertical ? frame.height : frame.width;
+            const alongLine = vertical ? line.height : line.width;
+            const alongScreen = vertical ? bounds.height : bounds.width;
+            const local = vertical ? event.position.y : event.position.x;
+            const raw = (local * alongFrame) / alongScreen -
+              (alongFrame - alongLine) / 2;
+            const fraction = raw / alongLine;
             const offset = Math.max(
               0,
               Math.min(count - 1, Math.floor(fraction * count)),
