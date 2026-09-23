@@ -53,6 +53,17 @@ export function estimateRegion(
   const result = clampRegion(rect, canvas);
   return result[2] > 0 && result[3] > 0 ? result : null;
 }
+function remoteInfoJson(url: string | null): string | null {
+  if (!url?.endsWith("/info.json")) return null;
+  try {
+    const parsed = new URL(url);
+    if (!["http:", "https:"].includes(parsed.protocol)) return null;
+    if (parsed.hostname === "honkoku-iiif.localhost") return null;
+  } catch {
+    return null;
+  }
+  return url;
+}
 /** Unwrap the viewer protocol URL the facsimile uses, or keep a remote info.json. */
 export function upstreamInfoUrl(info?: string | null): string | null {
   if (!info) return null;
@@ -61,14 +72,12 @@ export function upstreamInfoUrl(info?: string | null): string | null {
     if (
       url.protocol === "honkoku-iiif:" ||
       url.hostname === "honkoku-iiif.localhost"
-    ) {
-      const upstream = url.searchParams.get("url");
-      return upstream && upstream.endsWith("/info.json") ? upstream : null;
-    }
+    )
+      return remoteInfoJson(url.searchParams.get("url"));
   } catch {
     return null;
   }
-  return info.endsWith("/info.json") ? info : null;
+  return remoteInfoJson(info);
 }
 export function regionUrl(
   canvas: Canvas,

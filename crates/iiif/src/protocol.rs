@@ -54,7 +54,10 @@ pub fn upstream_url(path: &str, query: Option<&str>) -> Result<String> {
     if name != "url" || value.is_empty() || pairs.next().is_some() {
         return Err(Error::Invalid("expected one url parameter".into()));
     }
-    parse_url(&value)?;
+    let upstream = parse_url(&value)?;
+    if upstream.host_str() == Some("honkoku-iiif.localhost") {
+        return Err(Error::Invalid("nested viewer URL".into()));
+    }
     Ok(value.into_owned())
 }
 
@@ -136,6 +139,8 @@ mod tests {
         assert_eq!(upstream_of(&local)?, upstream);
         assert_eq!(upstream_of(&local_url(upstream, false))?, upstream);
         assert_eq!(upstream_of(upstream)?, upstream);
+        assert!(upstream_of(&local_url(&local_url(upstream, true), true)).is_err());
+        assert!(upstream_of(&local_url(&local_url(upstream, true), false)).is_err());
         for query in [
             None,
             Some("url=file%3A%2F%2F%2Fetc%2Fpasswd"),

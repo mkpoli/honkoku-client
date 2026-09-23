@@ -78,6 +78,16 @@ test("crop URL unwraps the viewer protocol info.json", () => {
     remote,
   );
   expect(upstreamInfoUrl("https://example.org/image")).toBeNull();
+  for (const nested of [
+    `honkoku-iiif://localhost/fetch?url=${encodeURIComponent(
+      `http://honkoku-iiif.localhost/fetch?url=x/info.json`,
+    )}`,
+    "file:///etc/passwd/info.json",
+    `honkoku-iiif://localhost/fetch?url=${encodeURIComponent(
+      "file:///etc/passwd/info.json",
+    )}`,
+  ])
+    expect(upstreamInfoUrl(nested)).toBeNull();
 });
 test("three OCR pages have crops, fourth stays text-only", () => {
   const pages = fixture.pages as unknown as GlyphAttestation[];
