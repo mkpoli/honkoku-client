@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
   import { openSessions } from "../editing-sessions.svelte";
-  import { restoreDraft } from "../editing-draft";
+  import { notesPending, restoreDraft, type LocalDraft } from "../editing-draft";
   import type { Region } from "../region.svelte";
   import HistoryDrawer from "./HistoryDrawer.svelte";
   import BibliographyDrawer from "./BibliographyDrawer.svelte";
@@ -193,8 +193,7 @@
     return position;
   }
   const draftPayload = () => JSON.stringify({ text: source, notes: tempNotes });
-  const notesPending = () =>
-    JSON.stringify(tempNotes) !== JSON.stringify(acknowledgedNotes);
+  const unsentNotes = () => notesPending(tempNotes, acknowledgedNotes);
 
   let localOcr = $state<LocalOcrPage | null>(null);
   let lineModel = $derived(
@@ -364,7 +363,7 @@
         JSON.parse(JSON.stringify(updated)) as (JsonValue | null)[],
       );
       tempNotes = fresh.tempNotes ?? updated;
-      acknowledgedNotes = tempNotes;
+      acknowledgedNotes = JSON.parse(JSON.stringify(tempNotes));
       onpage(fresh);
       remember();
       saveState = "下書き保存";
@@ -378,8 +377,10 @@
     try {
       await queue?.flush();
       const fresh = await pageNoteDelete(entry.id, index, position);
-      tempNotes = fresh.tempNotes ?? [];
-      acknowledgedNotes = tempNotes;
+      if (fresh.tempNotes) {
+        tempNotes = fresh.tempNotes;
+        acknowledgedNotes = JSON.parse(JSON.stringify(fresh.tempNotes));
+      }
       onpage(fresh);
       remember();
       saveState = "下書き保存";
@@ -585,15 +586,7 @@
     } catch {}
   }
   const storageKey = () => `honkoku.edit.${session?.uid}.${entry.id}.${index}`;
-  function localDraft():
-    | {
-        source: string;
-        draft: string;
-        notes?: (JsonValue | null)[];
-        acknowledgedNotes?: (JsonValue | null)[];
-        updatedAt?: string | null;
-      }
-    | undefined {
+  function localDraft(): LocalDraft | undefined {
     try {
       return (
         JSON.parse(localStorage.getItem(storageKey()) ?? "null") ?? undefined
@@ -716,7 +709,7 @@
         onpage(draft);
         remember();
         saveState =
-          source === text && !notesPending()
+          source === text && !unsentNotes()
             ? `下書き保存${new Date().toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })}`
             : "未保存の変更";
         notice = "";
@@ -727,7 +720,7 @@
       },
     );
     remember();
-    if (source !== acknowledged || notesPending()) queue.request(draftPayload());
+    if (source !== acknowledged || unsentNotes()) queue.request(draftPayload());
   }
   function update(value: EditorUpdate) {
     composing = value.composing;
@@ -753,7 +746,7 @@
         );
       } catch {}
       await queue!.flush(draftPayload());
-      if (notesPending())
+      if (unsentNotes())
         throw Error(
           "注記の変更はこの端末に保存されています。注記の送信を確認できませんでした。再試行してください。",
         );
