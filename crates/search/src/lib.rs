@@ -371,9 +371,7 @@ fn occurrences(
             .map_or("", |(lines, _)| lines);
         let column = completed_lines
             .split(['\r', '\n'])
-            .filter(|line| {
-                !line.trim().is_empty() && !honkoku_text::is_section_line(line)
-            })
+            .filter(|line| !line.trim().is_empty() && !honkoku_text::is_section_line(line))
             .count();
         out.push(Occurrence {
             original_start: start as u32,
