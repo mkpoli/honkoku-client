@@ -675,7 +675,7 @@
     draftUpdatedAt = locked.updatedAt;
     const restored = restoreDraft(locked, local);
     source = restored.source;
-    if (!source.trim() && !local)
+    if (!source.trim() && !restored.unsavedLocal)
       source =
         suggestPageTemplate(
           pages.filter((p) => p.id !== locked.id).map((p) => p.text),

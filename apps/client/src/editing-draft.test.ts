@@ -31,11 +31,26 @@ test("a current local draft keeps text not yet sent", () => {
   });
   expect(result.source).toBe("未送信の下書き");
   expect(result.notes).toEqual([null]);
+  expect(result.unsavedLocal).toBe(true);
 });
 test("missing or invalid local timestamps resume server text", () => {
-  for (const updatedAt of [undefined, null, "invalid"])
-    expect(
-      restoreDraft(page, { source: "旧本文", draft: "", updatedAt }).source,
-    ).toBe(page.tempText!);
+  for (const updatedAt of [undefined, null, "invalid"]) {
+    const result = restoreDraft(page, {
+      source: "旧本文",
+      draft: "",
+      updatedAt,
+    });
+    expect(result.source).toBe(page.tempText!);
+    expect(result.unsavedLocal).toBe(false);
+  }
   expect(restoreDraft(page).notes).toEqual(page.tempNotes!);
+});
+test("a leftover local record without unsaved text does not win", () => {
+  const result = restoreDraft(page, {
+    source: "",
+    draft: "",
+    updatedAt: page.updatedAt,
+  });
+  expect(result.source).toBe(page.tempText!);
+  expect(result.unsavedLocal).toBe(false);
 });

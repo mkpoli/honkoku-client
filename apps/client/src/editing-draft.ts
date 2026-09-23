@@ -20,16 +20,16 @@ export function restoreDraft(page: Page, local?: LocalDraft) {
     localTime !== undefined &&
     serverTime !== undefined &&
     localTime >= serverTime;
+  const unsavedLocal = current && local.source !== local.draft;
   return {
     source:
-      current && local.source !== local.draft
-        ? local.source
-        : (page.tempText ?? page.text),
+      local && unsavedLocal ? local.source : (page.tempText ?? page.text),
     notes:
       current && local.notes
         ? local.notes
         : (JSON.parse(
             JSON.stringify(page.tempNotes ?? page.notes),
           ) as (JsonValue | null)[]),
+    unsavedLocal: Boolean(unsavedLocal),
   };
 }
