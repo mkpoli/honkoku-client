@@ -17,6 +17,8 @@ const matches = alignColumns(
 );
 const lineIndex = 4;
 const column = matches.indexOf(lineIndex);
+if (column < 0)
+  throw Error(`look fixture line ${lineIndex} is unaligned; pick a matched one`);
 const raw = model.lines.find((l) => l.index === lineIndex)!;
 console.log("ocr line", raw.x, raw.y, raw.width, raw.height, "column", column);
 
