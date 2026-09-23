@@ -263,9 +263,11 @@
   let transcription = $state<Transcription>();
   function columnChange(index: number) {
     selectedColumn = index;
+    hoveredColumn = null;
+    hoveredLine = null;
   }
   function columnHover(index: number | null) {
-    hoveredColumn = index;
+    hoveredColumn = index !== null && index >= 0 ? index : null;
   }
   function selectLine(lineIndex: number) {
     const column = alignment.indexOf(lineIndex);
@@ -700,6 +702,8 @@
     tempNotes = restored.notes;
     acknowledgedNotes = restored.acknowledgedNotes;
     editing = true;
+    hoveredColumn = null;
+    hoveredLine = null;
     recovered = "";
     saveState = locked.tempTextChanged
       ? `下書き保存${new Date(locked.updatedAt ?? Date.now()).toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })}`
