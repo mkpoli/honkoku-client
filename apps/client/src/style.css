@@ -1309,7 +1309,7 @@ main {
 .filmstrip {
   padding: 8px 12px;
   flex-shrink: 0;
-  overflow: hidden;
+  position: relative;
 }
 .status-strip {
   display: flex;
@@ -1327,17 +1327,37 @@ main {
   outline-offset: 1px;
 }
 .filmstrip-thumbnails {
+  position: absolute;
+  left: -1px;
+  right: -1px;
+  bottom: calc(100% - var(--panel-radius));
+  z-index: 5;
   display: flex;
   gap: 12px;
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height 150ms ease-out;
+  padding: 12px 12px calc(12px + var(--panel-radius));
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-bottom: 0;
+  border-radius: var(--panel-radius) var(--panel-radius) 0 0;
+  box-shadow: 0 -8px 24px rgb(0 0 0 / 0.12);
+  overflow-x: auto;
+  overflow-y: hidden;
   scrollbar-width: thin;
+  visibility: hidden;
+  opacity: 0;
+  transform: translateY(8px);
+  transition:
+    opacity 150ms ease-out,
+    transform 150ms ease-out,
+    visibility 0s 150ms;
 }
 .filmstrip.expanded .filmstrip-thumbnails {
-  max-height: 130px;
-  overflow: auto;
-  padding-top: 12px;
+  visibility: visible;
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 150ms ease-out,
+    transform 150ms ease-out;
 }
 .filmstrip-thumbnails > a {
   width: 116px;
