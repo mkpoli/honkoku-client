@@ -565,6 +565,7 @@ fn stored_notes(notes: &[Value]) -> Result<Value> {
         if let Some(fields) = note.as_object_mut() {
             for key in ["createdAt", "updatedAt"] {
                 if let Some(Value::String(date)) = fields.get(key) {
+                    // Validate the instant, then write the client's wire string unchanged.
                     let _: crate::model::Timestamp = serde_json::from_value(json!(date))?;
                     let tagged = json!({"$firestoreTimestamp": date.clone()});
                     fields.insert(key.into(), tagged);
