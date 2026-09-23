@@ -1,4 +1,5 @@
 import { legacyRuby, legacyTextRun } from "./legacy";
+import { isSectionMarker } from "./layout";
 export type SyntaxKind =
   | "text"
   | "raw"
@@ -158,7 +159,7 @@ export function parseLine(text: string, start = 0): SyntaxNode[] {
         continue;
       }
       if (open === "【") {
-        add(/^【[右左]丁】$/.test(token) ? "divider" : "editorial", end);
+        add(isSectionMarker(token) ? "divider" : "editorial", end);
         continue;
       }
       const match = /^《([^：]+)：([\s\S]*)》$/.exec(token);

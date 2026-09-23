@@ -1,4 +1,5 @@
 import { parseLine, inlineBrackets, notePreview } from "./syntax";
+import { sectionLabel, sectionSplit } from "./layout";
 export {
   parse,
   serialize,
@@ -42,7 +43,8 @@ export type Inline =
   | { kind: "reading"; base: string; returnMark: string; okurigana: string }
   | { kind: "reference"; number: number };
 export interface ColumnGroup {
-  label: "右丁" | "左丁" | "";
+  /** Section marker label, or empty for text before the first marker. */
+  label: string;
   columns: Inline[][];
 }
 const graphemes = new Intl.Segmenter("ja", { granularity: "grapheme" });
@@ -107,11 +109,12 @@ export function parseInline(text: string): Inline[] {
 export function parseGroups(text: string): ColumnGroup[] {
   const groups: ColumnGroup[] = [];
   let group: ColumnGroup = { label: "", columns: [] };
-  const chunks = text.replace(/\r\n?/g, "\n").split(/(【右丁】|【左丁】)/);
+  const chunks = text.replace(/\r\n?/g, "\n").split(sectionSplit);
   for (const [index, chunk] of chunks.entries()) {
-    if (chunk === "【右丁】" || chunk === "【左丁】") {
+    const label = sectionLabel(chunk);
+    if (label !== null) {
       if (group.columns.length || group.label) groups.push(group);
-      group = { label: chunk === "【右丁】" ? "右丁" : "左丁", columns: [] };
+      group = { label, columns: [] };
     } else if (chunk) {
       let content = chunk;
       if (index > 0) content = content.replace(/^\n/, "");
@@ -197,7 +200,17 @@ export { diffSource } from "./diff";
 export { exportTranscription } from "./export";
 export type { ExportFormat, ExportPage } from "./export";
 export { elements } from "./elements";
-export { choPairTemplate, suggestPageTemplate, usesChoPair } from "./scaffold";
+export {
+  bodyWithoutSections,
+  isSectionMarker,
+  layoutTemplates,
+  sectionInner,
+  sectionLabel,
+  sectionLabelsIn,
+  sectionSlot,
+  suggestPageTemplate,
+  type LayoutTemplate,
+} from "./layout";
 
 /** Render a source line with its semantic annotations. */
 export function renderReadingLine(source: string): string {

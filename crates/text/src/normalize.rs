@@ -83,7 +83,7 @@ pub(crate) fn stripped(source: &str, half_breaks: bool) -> Mapped {
 fn reduce(kind: char, body: Mapped, half_breaks: bool) -> Mapped {
     if kind == '【' {
         let name: String = body.iter().map(|(ch, _)| ch).collect();
-        return if half_breaks && (name == "右丁" || name == "左丁") {
+        return if half_breaks && crate::is_section_name(&name) {
             body.first()
                 .map(|(_, span)| vec![('\n', *span)])
                 .unwrap_or_default()

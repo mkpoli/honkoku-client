@@ -8,6 +8,17 @@ export const pageNotes = [
   "上段",
   "中段",
   "下段",
+  "右側",
+  "左側",
+  "右帖",
+  "左帖",
+  "白紙",
+  "表紙",
+  "裏表紙",
+  "見返し",
+  "文字なし",
+  "絵",
+  "挿絵",
 ];
 const okurigana = corpus.okurigana
   .slice(0, 24)

@@ -256,7 +256,7 @@ fn occurrences(source: &str, character: &str) -> Vec<GlyphOccurrence> {
     let mut result = Vec::new();
     for (column, line) in source
         .split(['\n', '\r'])
-        .filter(|l| !l.trim().is_empty() && !matches!(l.trim(), "【右丁】" | "【左丁】"))
+        .filter(|l| !l.trim().is_empty() && !honkoku_text::is_section_line(l))
         .enumerate()
     {
         let plain = honkoku_text::plain_text(line);
