@@ -168,7 +168,7 @@
     const top = region === "上段" || region.endsWith("上段");
     const bottom = region === "下段" || region.endsWith("下段");
     const x = right ? size.x / 2 : 0;
-    const y = top ? size.y / 2 : 0;
+    const y = bottom ? size.y / 2 : 0;
     const width = right || left ? size.x / 2 : size.x;
     const height = top || bottom ? size.y / 2 : size.y;
     viewer.viewport.fitBounds(
