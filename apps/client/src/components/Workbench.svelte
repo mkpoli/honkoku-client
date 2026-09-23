@@ -258,6 +258,16 @@
           ? (alignment[selectedColumn] ?? null)
           : null),
   );
+  // A structural text change (draft sync, history restore) shifts column
+  // indices, so a view-mode selection is dropped; editing keeps its own.
+  $effect(() => {
+    displayedSource;
+    if (!untrack(() => editing)) {
+      selectedColumn = -1;
+      hoveredColumn = null;
+      hoveredLine = null;
+    }
+  });
   let editor = $state<VerticalEditor>();
   let notationMode = $state(false);
   let transcription = $state<Transcription>();
@@ -931,6 +941,7 @@
     }, 6000);
     return () => clearTimeout(timer);
   });
+  let appliedDeepLink = "";
   $effect(() => {
     const requested = column;
     const pageIndex = index;
@@ -938,9 +949,14 @@
     const pending = pagesPending;
     verifying;
     if (requested === undefined || pending) return;
+    const key = `${pageIndex}:${requested}`;
+    // Once per page and column: later source syncs must not yank the caret
+    // or the selection back to the deep-linked column.
+    if (appliedDeepLink === key) return;
     void tick().then(() => {
       if (pageIndex !== index || requested !== column || requested >= count)
         return;
+      appliedDeepLink = key;
       columnChange(requested);
       if (editing) editor?.focusColumn(requested);
       else transcription?.focusColumn(requested);
