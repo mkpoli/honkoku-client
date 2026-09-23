@@ -221,7 +221,7 @@
               ? [line.x, line.y + offset * advance, line.width, advance]
               : [line.x + offset * advance, line.y, advance, line.height];
             if (!recognizing) recognitionMode.select();
-            recognitionSelection = clampRegion(region, canvas);
+            if (canvas) recognitionSelection = clampRegion(region, canvas);
           } else onlineselect?.(line.index);
         },
       });
