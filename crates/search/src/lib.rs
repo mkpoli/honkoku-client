@@ -372,7 +372,7 @@ fn occurrences(
         let column = completed_lines
             .split(['\r', '\n'])
             .filter(|line| {
-                !line.trim().is_empty() && !matches!(line.trim(), "【右丁】" | "【左丁】")
+                !line.trim().is_empty() && !honkoku_text::is_section_line(line)
             })
             .count();
         out.push(Occurrence {

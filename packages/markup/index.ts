@@ -1,4 +1,5 @@
 import { parseLine, inlineBrackets, notePreview } from "./syntax";
+import { sectionLabel } from "./layout";
 export {
   parse,
   serialize,
@@ -42,7 +43,8 @@ export type Inline =
   | { kind: "reading"; base: string; returnMark: string; okurigana: string }
   | { kind: "reference"; number: number };
 export interface ColumnGroup {
-  label: "右丁" | "左丁" | "";
+  /** Section marker label, or empty for text before the first marker. */
+  label: string;
   columns: Inline[][];
 }
 const graphemes = new Intl.Segmenter("ja", { granularity: "grapheme" });
@@ -107,18 +109,12 @@ export function parseInline(text: string): Inline[] {
 export function parseGroups(text: string): ColumnGroup[] {
   const groups: ColumnGroup[] = [];
   let group: ColumnGroup = { label: "", columns: [] };
-  const chunks = text.replace(/\r\n?/g, "\n").split(/(【右丁】|【左丁】)/);
-  for (const [index, chunk] of chunks.entries()) {
-    if (chunk === "【右丁】" || chunk === "【左丁】") {
+  for (const line of text.replace(/\r\n?/g, "\n").split("\n")) {
+    const label = sectionLabel(line);
+    if (label !== null) {
       if (group.columns.length || group.label) groups.push(group);
-      group = { label: chunk === "【右丁】" ? "右丁" : "左丁", columns: [] };
-    } else if (chunk) {
-      let content = chunk;
-      if (index > 0) content = content.replace(/^\n/, "");
-      if (index + 1 < chunks.length) content = content.replace(/\n$/, "");
-      const lines = content.split("\n");
-      group.columns.push(...lines.map(parseInline));
-    }
+      group = { label, columns: [] };
+    } else group.columns.push(parseInline(line));
   }
   if (group.columns.length || group.label) groups.push(group);
   return groups;
@@ -197,7 +193,17 @@ export { diffSource } from "./diff";
 export { exportTranscription } from "./export";
 export type { ExportFormat, ExportPage } from "./export";
 export { elements } from "./elements";
-export { choPairTemplate, suggestPageTemplate, usesChoPair } from "./scaffold";
+export {
+  bodyWithoutSections,
+  isSectionMarker,
+  layoutTemplates,
+  sectionInner,
+  sectionLabel,
+  sectionLabelsIn,
+  sectionSlot,
+  suggestPageTemplate,
+  type LayoutTemplate,
+} from "./layout";
 
 /** Render a source line with its semantic annotations. */
 export function renderReadingLine(source: string): string {

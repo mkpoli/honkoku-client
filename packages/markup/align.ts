@@ -1,5 +1,6 @@
 import type { CanvasLine } from "../client-api/ocr";
 import { parseLine, splitFields } from "./syntax";
+import { sectionLabel } from "./layout";
 
 export function plainColumn(source: string): string {
   if (/^\s*％/.test(source)) return "";
@@ -43,7 +44,7 @@ export function transcriptionColumns(
   return source
     .split(/\r\n|\r|\n/)
     .flatMap((line, sourceIndex) =>
-      !line.trim() || /^\s*【[右左]丁】\s*$/.test(line)
+      !line.trim() || sectionLabel(line) !== null
         ? []
         : [{ sourceIndex, text: plainColumn(line) }],
     );

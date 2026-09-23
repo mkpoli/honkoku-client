@@ -3,6 +3,7 @@
   import { onDestroy } from "svelte";
   import {
     renderReadingLine,
+    sectionLabel,
     transcriptionColumns,
   } from "@honkoku/markup";
   let {
@@ -40,10 +41,10 @@
       const block=/^％(表紙|字下げ[一二三])$/.exec(line);
       if(block) { blocks.push(({一:1,二:2,三:3} as Record<string,number>)[block[1].slice(-1)] ?? 0); continue; }
       if(line==="％" && blocks.length) {blocks.pop(); continue;}
-      const marker = /^\s*【([右左]丁)】\s*$/.exec(line);
-      if (marker) {
+      const label = sectionLabel(line);
+      if (label !== null) {
         if (group.columns.length || group.label) groups.push(group);
-        group = { label: marker[1], columns: [] };
+        group = { label, columns: [] };
       } else
         group.columns.push({
           html: renderReadingLine(line),

@@ -1,6 +1,44 @@
 //! Excerpt-only markup reduction; the original source remains authoritative.
 /// Strip inline display markup, including nested constructs and malformed delimiters.
 pub mod normalize;
+
+/// Own-line layout markers such as 【右丁】 that split a page into sections.
+/// Mirrors `sectionInner` in packages/markup/layout.ts.
+pub fn is_section_name(name: &str) -> bool {
+    if matches!(name, "上段" | "中段" | "下段") {
+        return true;
+    }
+    let Some(tail) = name.strip_prefix('右').or_else(|| name.strip_prefix('左')) else {
+        return false;
+    };
+    let (base, rest) = if let Some(rest) = tail
+        .strip_prefix('丁')
+        .or_else(|| tail.strip_prefix('頁'))
+        .or_else(|| tail.strip_prefix('側'))
+        .or_else(|| tail.strip_prefix('帖'))
+    {
+        (true, rest)
+    } else {
+        (false, tail)
+    };
+    let rest = rest.strip_prefix(['・', '　']).unwrap_or(rest);
+    if rest.is_empty() {
+        return true;
+    }
+    let _ = base;
+    matches!(
+        rest,
+        "上段" | "下段" | "白紙" | "文字無" | "文字無し" | "文字なし"
+    )
+}
+
+pub fn is_section_line(line: &str) -> bool {
+    let trimmed = line.trim();
+    trimmed
+        .strip_prefix('【')
+        .and_then(|rest| rest.strip_suffix('】'))
+        .is_some_and(is_section_name)
+}
 pub fn plain_text(markup: &str) -> String {
     normalize::stripped(markup, true)
         .into_iter()
@@ -21,6 +59,33 @@ pub fn excerpt(markup: &str, max_chars: usize) -> String {
 mod tests {
     use super::*;
     use proptest::prelude::*;
+    #[test]
+    fn section_markers() {
+        for name in [
+            "右丁",
+            "左丁",
+            "右頁",
+            "左頁",
+            "上段",
+            "下段",
+            "右丁上段",
+            "左頁下段",
+            "右丁・白紙",
+            "左丁　文字無",
+            "右",
+            "左",
+        ] {
+            assert!(is_section_name(name), "{name}");
+            assert!(is_section_line(&format!("【{name}】")), "{name}");
+        }
+        for name in ["注", "表紙", "本文", "右線", "丁", "右丁丁", "右丁丁上段"] {
+            assert!(!is_section_name(name), "{name}");
+        }
+        assert!(!is_section_line("凡例：【右丁】と【左丁】"));
+        assert!(is_section_name("右側上段"));
+        assert!(is_section_name("右丁白紙"));
+        assert!(is_section_name("右丁・上段"));
+    }
     #[test]
     fn syntax_and_unicode() {
         for (source, want) in [

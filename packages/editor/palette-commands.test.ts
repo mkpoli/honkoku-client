@@ -41,7 +41,9 @@ test("notes accept short free text, reject nested shells, and filter stored buil
   expect(normalizePreset("注記", "文字なし")).toBe("文字なし");
   expect(normalizePreset("注記", "【朱書】")).toBeNull();
   expect(normalizePreset("注記", "一\n二")).toBeNull();
-  expect(presets.注記.slice(0, 7).map((p) => p.text)).toEqual(pageNotes);
+  expect(presets.注記.slice(0, pageNotes.length).map((p) => p.text)).toEqual(
+    pageNotes,
+  );
   expect(
     loadPresets({ getItem: () => '["私注","朱書","私注"]' }, "test", "注記"),
   ).toEqual(["私注"]);
