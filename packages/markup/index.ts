@@ -197,6 +197,7 @@ export { diffSource } from "./diff";
 export { exportTranscription } from "./export";
 export type { ExportFormat, ExportPage } from "./export";
 export { elements } from "./elements";
+export { choPairTemplate, suggestPageTemplate, usesChoPair } from "./scaffold";
 
 /** Render a source line with its semantic annotations. */
 export function renderReadingLine(source: string): string {
