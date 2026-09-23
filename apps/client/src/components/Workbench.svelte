@@ -5,7 +5,11 @@
   import type { Region } from "../region.svelte";
   import HistoryDrawer from "./HistoryDrawer.svelte";
   import BibliographyDrawer from "./BibliographyDrawer.svelte";
-  import { exportTranscription, type ExportFormat } from "@honkoku/markup";
+  import {
+    exportTranscription,
+    suggestPageTemplate,
+    type ExportFormat,
+  } from "@honkoku/markup";
   import { saveTranscription, saveFullImage } from "@honkoku/client-api/invoke";
   import { allPages } from "../lib";
   import Skeleton from "./Skeleton.svelte";
@@ -671,6 +675,11 @@
     draftUpdatedAt = locked.updatedAt;
     const restored = restoreDraft(locked, local);
     source = restored.source;
+    if (!source.trim() && !local)
+      source =
+        suggestPageTemplate(
+          pages.filter((p) => p.id !== locked.id).map((p) => p.text),
+        ) ?? source;
     tempNotes = restored.notes;
     editing = true;
     recovered = "";
