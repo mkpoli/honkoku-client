@@ -844,8 +844,8 @@ async fn note_draft_echo_keeps_the_wire_timestamp_strings() -> Result<()> {
         .find(|r| r.url.path().ends_with(":commit"))
         .unwrap();
     let body: Value = serde_json::from_slice(&request.body)?;
-    let stored = &body["writes"][0]["update"]["fields"]["tempNotes"]["arrayValue"]["values"][0]
-        ["mapValue"]["fields"];
+    let stored = &body["writes"][0]["update"]["fields"]["tempNotes"]["arrayValue"]["values"][0]["mapValue"]
+        ["fields"];
     assert_eq!(
         stored["createdAt"]["timestampValue"],
         json!("2026-09-10T01:00:00.100Z")
