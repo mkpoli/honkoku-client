@@ -74,6 +74,6 @@ Status: ○ present, △ partial, × absent.
 |---|---|---|---|
 | 現代語訳の校正 (proofreading of generated translations: line grid, status, diff, history, TSV) | ○ | × | Later. |
 | Site search (Cloud Run) | ○ | ○ local concordance with KWIC | The client's index answers offline. |
-| Wiki, まなぶ, ご案内 links | ○ | × | External links in the menu. |
+| Wiki, まなぶ, ご案内 links | ○ | ○ | The ↗ menu, with 公式サイト and a context-aware サイトで開く. |
 | Gamification: level and points, completion effects | ○ | ○ with chime and celebration | |
 | 集字 | × | ○ | |

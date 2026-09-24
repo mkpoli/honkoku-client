@@ -15,6 +15,7 @@ import {
   checkEditing,
   checkAlignment,
   checkQuietWorkbench,
+  checkSiteLinks,
 } from "./checks";
 import { chromium, webkit, type Page } from "playwright";
 import { mkdir } from "node:fs/promises";
@@ -244,6 +245,8 @@ try {
     await checkBrowsePolish(browser, origin, theme);
   for (const theme of ["light", "dark"] as const)
     await checkQuietWorkbench(browser, origin, theme);
+  for (const theme of ["light", "dark"] as const)
+    await checkSiteLinks(browser, origin, theme);
   for (const theme of ["light", "dark"] as const)
     await checkAlignment(browser, origin, theme);
   const webkitBrowser = await webkit.launch({ headless: true });
