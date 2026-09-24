@@ -3009,3 +3009,52 @@ export async function checkSiteLinks(
     await context.close();
   }
 }
+
+export async function checkWorkbenchMenuClose(
+  browser: Browser,
+  origin: string,
+  theme: "light" | "dark",
+) {
+  const context = await browser.newContext({
+    viewport: { width: 1600, height: 1000 },
+    locale: "ja-JP",
+    colorScheme: theme,
+    reducedMotion: "reduce",
+  });
+  await context.addInitScript(
+    (theme) => localStorage.setItem("honkoku.theme", theme),
+    theme,
+  );
+  const page = await context.newPage();
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  try {
+    await page.goto(
+      `${origin}/#/entries/0916dafb80cdc48ca7687afcad4a4f35/pages/3`,
+    );
+    await viewerReady(page);
+    const toggle = page.getByRole("button", { name: "表示設定", exact: true });
+    const menu = page.locator(".workbench-menu .menu-options");
+    await toggle.click();
+    await menu.waitFor();
+    await page.getByRole("button", { name: "サイトリンク" }).click();
+    await page.locator(".site-links-menu").waitFor();
+    await menu.waitFor({ state: "detached" });
+    await page.keyboard.press("Escape");
+    await toggle.click();
+    await menu.waitFor();
+    await page.getByRole("button", { name: "書誌情報", exact: true }).focus();
+    await page.keyboard.press("Escape");
+    await menu.waitFor({ state: "detached" });
+    assert.ok(await toggle.evaluate((el) => el === document.activeElement));
+    await toggle.click();
+    await page.getByRole("button", { name: "翻刻文をダウンロード" }).click();
+    await page.locator(".export-submenu").waitFor();
+    await page.locator(".workbench-panes").click({ position: { x: 20, y: 20 } });
+    await menu.waitFor({ state: "detached" });
+    assert.deepEqual(errors, []);
+    console.log(`Workbench menu close checks passed (${theme}).`);
+  } finally {
+    await context.close();
+  }
+}
