@@ -26,6 +26,7 @@
     half = $bindable(""),
     lineModel = { engine: null, lines: [], estimated: false },
     highlightedLine = null,
+    lineLabels = {},
     showLines = false,
     onlinehover,
     onlineselect,
@@ -46,6 +47,8 @@
     half?: string;
     lineModel?: PageLines | LocalPageLines;
     highlightedLine?: number | null;
+    /** The transcription line number shown on each OCR line it is matched to. */
+    lineLabels?: Record<number, number>;
     showLines?: boolean;
     onlinehover?: (index: number | null) => void;
     onlineselect?: (index: number) => void;
@@ -266,6 +269,21 @@
       element.classList.toggle("line-hidden", !showLines && !active);
       element.setAttribute("aria-pressed", String(active));
       element.tabIndex = showLines || active ? 0 : -1;
+    }
+  });
+  $effect(() => {
+    for (const element of overlayElements) {
+      const index = Number(element.dataset.lineIndex);
+      const number = lineLabels[index];
+      const value = number === undefined ? undefined : String(number);
+      if (element.dataset.lineNumber === value) continue;
+      if (value === undefined) delete element.dataset.lineNumber;
+      else element.dataset.lineNumber = value;
+      const text = lineModel.lines.find((line) => line.index === index)?.text ?? "";
+      element.setAttribute(
+        "aria-label",
+        `原本の行${index + 1}${value ? `（翻刻の${value}行目）` : ""}：${text}`,
+      );
     }
   });
   let pannedLine: number | null = null;

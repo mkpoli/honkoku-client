@@ -24,7 +24,11 @@
     PageNote,
     JsonValue,
   } from "@honkoku/client-api/types";
-  import { alignColumns, transcriptionColumns } from "@honkoku/markup";
+  import {
+    alignColumns,
+    lineNumbers,
+    transcriptionColumns,
+  } from "@honkoku/markup";
   import { pageLinesWithLocal as pageLines } from "../../../../packages/client-api/ocr";
   import OcrPanel from "./OcrPanel.svelte";
   import type { LocalOcrPage } from "@honkoku/client-api/types";
@@ -245,6 +249,35 @@
       lineModel.lines,
     ),
   );
+  const lineNumbersKey = "honkoku.line-numbers";
+  let showLineNumbers = $state(
+    (() => {
+      try {
+        return localStorage.getItem(lineNumbersKey) !== "off";
+      } catch {
+        return true;
+      }
+    })(),
+  );
+  function toggleLineNumbers() {
+    showLineNumbers = !showLineNumbers;
+    try {
+      localStorage.setItem(lineNumbersKey, showLineNumbers ? "on" : "off");
+    } catch {}
+  }
+  /** Each matched OCR line shows the number of the transcription line it belongs to. */
+  let overlayNumbers = $derived.by(() => {
+    const numbers = lineNumbers(editing ? source : displayedSource);
+    const byLine: Record<number, number> = {};
+    alignment.forEach((line, column) => {
+      const number = numbers[columns[column].sourceIndex];
+      // Two columns can share one OCR line: the highlighted one names it, else the first.
+      if (line === null || number === null) return;
+      if (column === highlightedColumn) byLine[line] = number;
+      else byLine[line] ??= number;
+    });
+    return byLine;
+  });
   let selectedColumn = $state(-1);
   let hoveredColumn = $state<number | null>(null);
   const textScaleKey = "honkoku.text-scale";
@@ -1529,6 +1562,13 @@
                 menuOpen = false;
               }}>{horizontal ? "横書き" : "縦書き"}</button
             >
+            <button
+              aria-pressed={showLineNumbers}
+              onclick={() => {
+                toggleLineNumbers();
+                menuOpen = false;
+              }}>行番号</button
+            >
             <div
               class="text-scale-controls"
               role="group"
@@ -1559,7 +1599,11 @@
         value={recovered}
         aria-label="端末に残っている本文"></textarea>
     </details>{/if}
-  <div class="workbench-panes" class:swapped>
+  <div
+    class="workbench-panes"
+    class:swapped
+    class:line-numbers={showLineNumbers}
+  >
     <section
       class="panel transcription-panel"
       style:--text-scale={textScale}
@@ -1691,6 +1735,7 @@
       bind:half
       {lineModel}
       highlightedLine={selectedLine}
+      lineLabels={overlayNumbers}
       onlineselect={selectLine}
       onlinehover={(line) => (hoveredLine = line)}
     >
