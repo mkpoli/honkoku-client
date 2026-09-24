@@ -13,9 +13,9 @@ use tokio::{
 const SERVER: &str = include_str!("../../../sidecars/ocr-python/server.py");
 /// The honkoku-ocr-py release the environment installs. An environment recorded with
 /// another release is not ready, so raising this asks existing installs to set up again.
-pub const PACKAGE_VERSION: &str = "0.3.0";
+pub const PACKAGE_VERSION: &str = "0.4.0";
 /// The default recognition model of `PACKAGE_VERSION`.
-pub const MODEL_VERSION: &str = "v18";
+pub const MODEL_VERSION: &str = "v19";
 #[derive(Clone)]
 pub struct OcrEnvironment {
     pub directory: PathBuf,

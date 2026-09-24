@@ -345,16 +345,16 @@ export async function fixtureInvoke(
         log_path: "~/.local/share/org.honkoku.client/logs/ocr.log",
       };
     case "ocr_doctor":
-      return "honkoku-ocr-py 0.3.0\nonnxruntime: CUDAExecutionProvider\nmodel v18: verified";
+      return "honkoku-ocr-py 0.4.0\nonnxruntime: CUDAExecutionProvider\nmodel v19: verified";
     case "ocr_repair_models":
     case "ocr_status":
     case "ocr_setup":
       return {
-        version: "0.3.0",
+        version: "0.4.0",
         device: "cuda",
         environment_ready: true,
         models_ready: true,
-        model_version: "v18",
+        model_version: "v19",
         cuda_available: true,
       };
     case "ocr_result":

@@ -2,7 +2,7 @@
 name = "honkoku-ocr-sidecar"
 version = "0.1.0"
 requires-python = "==3.12.*"
-dependencies = ["honkoku-ocr-py[cpu]==0.3.0"]
+dependencies = ["honkoku-ocr-py[cpu]==0.4.0"]
 
 [project.optional-dependencies]
-gpu = ["honkoku-ocr-py[gpu]==0.3.0"]
+gpu = ["honkoku-ocr-py[gpu]==0.4.0"]
