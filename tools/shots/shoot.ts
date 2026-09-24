@@ -18,6 +18,7 @@ import {
   checkSiteLinks,
   checkWorkbenchMenuClose,
   checkTextScale,
+  checkLineNumbers,
 } from "./checks";
 import { chromium, webkit, type Page } from "playwright";
 import { mkdir } from "node:fs/promises";
@@ -186,6 +187,14 @@ try {
     await stopServer();
     process.exit(0);
   }
+  if (process.env.HONKOKU_SHOTS_LINE_NUMBERS_ONLY === "1") {
+    for (const theme of ["light", "dark"] as const)
+      await checkLineNumbers(browser, origin, theme);
+    await browser.close();
+    browser = undefined;
+    await stopServer();
+    process.exit(0);
+  }
   if (process.env.HONKOKU_SHOTS_SCALE_ONLY === "1") {
     for (const theme of ["light", "dark"] as const)
       await checkTextScale(browser, origin, theme);
@@ -269,6 +278,8 @@ try {
     await checkWorkbenchMenuClose(browser, origin, theme);
   for (const theme of ["light", "dark"] as const)
     await checkTextScale(browser, origin, theme);
+  for (const theme of ["light", "dark"] as const)
+    await checkLineNumbers(browser, origin, theme);
   for (const theme of ["light", "dark"] as const)
     await checkAlignment(browser, origin, theme);
   const webkitBrowser = await webkit.launch({ headless: true });

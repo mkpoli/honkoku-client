@@ -3244,3 +3244,120 @@ export async function checkTextScale(
     await context.close();
   }
 }
+
+export async function checkLineNumbers(
+  browser: Browser,
+  origin: string,
+  theme: "light" | "dark",
+) {
+  const fixture = await import("../../fixtures/api/page-minna-ocr.json");
+  const context = await browser.newContext({
+    viewport: { width: 1600, height: 1000 },
+    locale: "ja-JP",
+    colorScheme: theme,
+    reducedMotion: "reduce",
+  });
+  const page = await context.newPage();
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  /** The number drawn above each column, or "-" where none is drawn. */
+  const shown = (scope: string) =>
+    page.locator(`${scope} .transcription-column`).evaluateAll((columns) =>
+      columns.map((column) => {
+        const content = getComputedStyle(column, "::before").content;
+        return content === "none" || content === "normal"
+          ? "-"
+          : content.replace(/"/g, "");
+      }),
+    );
+  const imageLabel = () =>
+    page
+      .locator(".line-overlay.highlighted")
+      .evaluate((el) => getComputedStyle(el, "::after").content.replace(/"/g, ""));
+  try {
+    await page.goto(
+      `${origin}/#/entries/${fixture.page.entryId}/pages/${fixture.page.index}`,
+    );
+    await page.locator(".transcription-column").first().waitFor();
+    await page.locator(".line-overlay").first().waitFor({ state: "attached" });
+    // 【左丁】 opens the page; its eight text lines count from 1.
+    assert.deepEqual(await shown(".transcription-reader"), [
+      "1", "2", "3", "4", "5", "6", "7", "8",
+    ]);
+    await page.locator('.transcription-reader [data-column-index="2"]').hover();
+    await page.locator(".line-overlay.highlighted").waitFor();
+    assert.equal(await imageLabel(), "3", "the image frame shows the same number");
+    assert.match(
+      (await page.locator(".line-overlay.highlighted").getAttribute("aria-label")) ?? "",
+      /翻刻の3行目/,
+      "the frame's name says the same number",
+    );
+
+    // 横書き: each number sits in a gutter on its row's baseline, clear of the text.
+    await page.getByRole("button", { name: "表示設定", exact: true }).click();
+    await page.getByRole("button", { name: "縦書き", exact: true }).click();
+    await page.locator(".transcription.horizontal").waitFor();
+    const rows = await page
+      .locator(".transcription-reader .transcription-column")
+      .evaluateAll((columns) =>
+        columns.map((column) => {
+          const range = document.createRange();
+          range.selectNodeContents(column);
+          const text = range.getBoundingClientRect();
+          const box = column.getBoundingClientRect();
+          return {
+            position: getComputedStyle(column, "::before").position,
+            gutter: text.left - box.left,
+          };
+        }),
+      );
+    assert.ok(
+      rows.every((row) => row.position === "static" && row.gutter >= -1),
+      JSON.stringify(rows),
+    );
+    assert.equal((await shown(".transcription-reader"))[7], "8");
+    await page.getByRole("button", { name: "表示設定", exact: true }).click();
+    await page.getByRole("button", { name: "横書き", exact: true }).click();
+    await page.locator(".transcription:not(.horizontal)").waitFor();
+
+    await page.getByRole("button", { name: "編集開始", exact: true }).click();
+    await page.locator(".vertical-editor .transcription-column").first().waitFor();
+    assert.deepEqual(await shown(".vertical-editor"), [
+      "-", "1", "2", "3", "4", "5", "6", "7", "8",
+    ]);
+    // A new line after the first keeps the count running.
+    await page.locator(".vertical-editor .transcription-column").nth(1).click();
+    await page.keyboard.press("End");
+    await page.keyboard.press("Enter");
+    await page.keyboard.insertText("追加");
+    await page.waitForFunction(
+      () => document.querySelectorAll(".vertical-editor .transcription-column").length === 10,
+    );
+    assert.deepEqual((await shown(".vertical-editor")).slice(0, 4), ["-", "1", "2", "3"]);
+    assert.equal((await shown(".vertical-editor")).at(-1), "9");
+    if (theme === "light")
+      await page.screenshot({
+        path: resolve(import.meta.dir, "../../.local/shots/24-line-numbers-light.png"),
+      });
+
+    // 行番号 in ⋯ hides them in both panes and is remembered.
+    await page.getByRole("button", { name: "表示設定", exact: true }).click();
+    await page.getByRole("button", { name: "行番号", exact: true }).click();
+    assert.ok((await shown(".vertical-editor")).every((n) => n === "-"));
+    await page.getByRole("button", { name: "破棄", exact: true }).click();
+    await page.getByRole("button", { name: "破棄する", exact: true }).click();
+    await page.reload();
+    await page.locator(".transcription-column").first().waitFor();
+    assert.ok((await shown(".transcription-reader")).every((n) => n === "-"));
+    await page.locator('.transcription-reader [data-column-index="2"]').hover();
+    await page.locator(".line-overlay.highlighted").waitFor();
+    assert.ok(["none", "normal", ""].includes(await imageLabel()));
+    await page.getByRole("button", { name: "表示設定", exact: true }).click();
+    await page.getByRole("button", { name: "行番号", exact: true }).click();
+    assert.equal((await shown(".transcription-reader"))[0], "1");
+    assert.deepEqual(errors, []);
+    console.log(`Line number checks passed (${theme}): reader, editor, image frame, live renumbering, toggle.`);
+  } finally {
+    await context.close();
+  }
+}
