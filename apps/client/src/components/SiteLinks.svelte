@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { isTauri } from "@honkoku/client-api/invoke";
+  import { openUrl } from "@tauri-apps/plugin-opener";
   import type { Route } from "../routes";
   import {
     greetingUrl,
@@ -8,52 +10,84 @@
     siteOrigin,
     wikiUrl,
   } from "../site";
-  import ExternalLink from "./ExternalLink.svelte";
 
   let { route }: { route: Route } = $props();
   let open = $state(false);
+  let failed = $state(false);
   let root: HTMLDivElement | undefined = $state();
+  let toggle: HTMLButtonElement | undefined = $state();
   let current = $derived(siteHref(route));
+  let links = $derived(
+    [
+      current && { href: current, label: siteOpenLabel(route) },
+      current !== `${siteOrigin}/` && { href: siteOrigin, label: "公式サイト" },
+      { href: greetingUrl, label: "ご案内" },
+      { href: wikiUrl, label: "Wiki" },
+      { href: learnUrl, label: "まなぶ" },
+    ].filter((link): link is { href: string; label: string } => !!link),
+  );
 
-  function onDocumentClick(event: MouseEvent) {
-    if (!open || !root) return;
-    const target = event.target as Element | null;
-    if (!target || !root.contains(target)) {
-      open = false;
+  function close(refocus = false) {
+    open = false;
+    failed = false;
+    if (refocus) toggle?.focus();
+  }
+  async function follow(event: MouseEvent, href: string) {
+    if (!isTauri()) {
+      close();
       return;
     }
-    if (target.closest("a")) open = false;
-  }
-  function onKey(event: KeyboardEvent) {
-    if (event.key === "Escape") open = false;
+    event.preventDefault();
+    try {
+      await openUrl(href);
+      close();
+    } catch {
+      failed = true;
+    }
   }
   $effect(() => {
     if (!open) return;
-    document.addEventListener("click", onDocumentClick);
-    document.addEventListener("keydown", onKey);
+    const click = (event: MouseEvent) => {
+      if (root && !root.contains(event.target as Node)) close();
+    };
+    const key = (event: KeyboardEvent) => {
+      if (event.key === "Escape") close(root?.contains(document.activeElement));
+    };
+    document.addEventListener("click", click);
+    document.addEventListener("keydown", key);
     return () => {
-      document.removeEventListener("click", onDocumentClick);
-      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("click", click);
+      document.removeEventListener("keydown", key);
     };
   });
 </script>
 
-<div class="site-links" bind:this={root}>
+<div
+  class="site-links"
+  bind:this={root}
+  onfocusout={(event) => {
+    if (open && !root?.contains(event.relatedTarget as Node | null)) close();
+  }}
+>
   <button
+    bind:this={toggle}
     type="button"
     class="site-links-toggle"
     aria-label="サイトリンク"
     aria-expanded={open}
+    aria-controls="site-links-menu"
     title="サイトリンク"
-    onclick={() => (open = !open)}>↗</button
+    onclick={() => (open ? close() : (open = true))}>↗</button
   >
-  {#if open}<div class="menu-options site-links-menu">
-      {#if current}<ExternalLink href={current}>{siteOpenLabel(route)}↗</ExternalLink>{/if}
-      {#if current !== `${siteOrigin}/`}<ExternalLink href={siteOrigin}
-          >公式サイト↗</ExternalLink
+  {#if open}<div id="site-links-menu" class="menu-options site-links-menu">
+      {#each links as link (link.href)}<a
+          href={link.href}
+          target="_blank"
+          rel="noopener noreferrer"
+          onclick={(event) => follow(event, link.href)}>{link.label}↗</a
+        >{/each}
+      {#if failed}<span class="error" role="alert"
+          >ブラウザーを開けませんでした。</span
         >{/if}
-      <ExternalLink href={greetingUrl}>ご案内↗</ExternalLink>
-      <ExternalLink href={wikiUrl}>Wiki↗</ExternalLink>
-      <ExternalLink href={learnUrl}>まなぶ↗</ExternalLink>
     </div>{/if}
 </div>

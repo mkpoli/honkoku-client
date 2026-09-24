@@ -2989,7 +2989,14 @@ export async function checkSiteLinks(
       await page.screenshot({
         path: resolve(`.local/shots/28-site-links-${name}-${theme}.png`),
       });
+      await current.focus();
       await page.keyboard.press("Escape");
+      await menu.waitFor({ state: "detached" });
+      assert.ok(await toggle.evaluate((el) => el === document.activeElement));
+      await page.keyboard.press("Enter");
+      await menu.waitFor();
+      for (let i = 0; i < 8 && (await menu.count()); i++)
+        await page.keyboard.press("Tab");
       await menu.waitFor({ state: "detached" });
       await toggle.click();
       await menu.waitFor();
