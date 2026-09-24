@@ -48,6 +48,7 @@
   import EntryScreen from "./components/Entry.svelte";
   import Workbench from "./components/Workbench.svelte";
   import SignIn from "./components/SignIn.svelte";
+  import SiteLinks from "./components/SiteLinks.svelte";
   import Avatar from "./components/Avatar.svelte";
   let EditorSpike = $state<typeof import("./dev/EditorSpike.svelte").default>();
   let route = $state<Route>(parseRoute(location.hash)),
@@ -450,6 +451,7 @@
           setSound(sound);
         }}>♪</button
       >
+      <SiteLinks {route} />
       {#if workbench}<button
           class="account-avatar"
           aria-label={session ? "ログアウト" : "ログイン"}

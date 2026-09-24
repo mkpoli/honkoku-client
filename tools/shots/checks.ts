@@ -2933,3 +2933,72 @@ export async function checkRecognition(
 }
 
 export { checkCaretContexts } from "./editor-checks";
+
+export async function checkSiteLinks(
+  browser: Browser,
+  origin: string,
+  theme: "light" | "dark",
+) {
+  const context = await browser.newContext({
+    viewport: { width: 1600, height: 1000 },
+    locale: "ja-JP",
+    colorScheme: theme,
+    reducedMotion: "reduce",
+  });
+  await context.addInitScript(
+    (theme) => localStorage.setItem("honkoku.theme", theme),
+    theme,
+  );
+  const page = await context.newPage();
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  try {
+    for (const [name, route, label, url, official] of [
+      ["home", "#/", "サイトのホームを開く", "https://app.honkoku.org/", false],
+      [
+        "workbench",
+        "#/entries/0916dafb80cdc48ca7687afcad4a4f35/pages/3",
+        "このコマをサイトで開く",
+        "https://app.honkoku.org/transcription/0916dafb80cdc48ca7687afcad4a4f35/4",
+        true,
+      ],
+    ] as const) {
+      await page.goto(`${origin}/${route}`);
+      await page.locator('main[aria-busy="false"]').waitFor();
+      await page.locator(".route-screen").waitFor();
+      const toggle = page.getByRole("button", { name: "サイトリンク" });
+      const menu = page.locator(".site-links-menu");
+      assert.equal(await menu.count(), 0);
+      await toggle.click();
+      const current = page.getByRole("link", { name: `${label}↗` });
+      await current.waitFor();
+      assert.equal(await current.getAttribute("href"), url);
+      assert.equal(
+        await page.getByRole("link", { name: "公式サイト↗" }).count(),
+        official ? 1 : 0,
+      );
+      for (const [text, href] of [
+        ["ご案内↗", "https://app.honkoku.org/locales/markdowns/greeting_ja.md"],
+        ["Wiki↗", "https://wiki.honkoku.org/doku.php?id=start"],
+        ["まなぶ↗", "https://kula-kuzushiji.web.app/learn"],
+      ])
+        assert.equal(
+          await page.getByRole("link", { name: text }).getAttribute("href"),
+          href,
+        );
+      await page.screenshot({
+        path: resolve(`.local/shots/28-site-links-${name}-${theme}.png`),
+      });
+      await page.keyboard.press("Escape");
+      await menu.waitFor({ state: "detached" });
+      await toggle.click();
+      await menu.waitFor();
+      await page.mouse.click(800, 600);
+      await menu.waitFor({ state: "detached" });
+    }
+    assert.deepEqual(errors, []);
+    console.log(`Site link checks passed (${theme}).`);
+  } finally {
+    await context.close();
+  }
+}

@@ -1655,6 +1655,33 @@ main {
   color: var(--text-muted);
   text-decoration: line-through;
 }
+.site-links {
+  position: relative;
+}
+.site-links-toggle {
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  padding: 4px 10px;
+  font: 500 14px/20px var(--font-sans);
+  cursor: pointer;
+}
+.site-links-toggle:hover,
+.site-links-toggle[aria-expanded="true"] {
+  color: var(--text);
+}
+.site-links-menu {
+  gap: 6px;
+}
+.site-links-menu a {
+  color: var(--link);
+  text-decoration: none;
+  font-size: 13px;
+}
+.site-links-menu a:hover {
+  text-decoration: underline;
+}
 .ocr-columns button {
   margin-bottom: 8px;
   font-size: 13px;

@@ -20,6 +20,7 @@
   } from "@honkoku/client-api/invoke";
   import { errorMessage } from "../lib";
   import { href } from "../routes";
+  import { siteHref } from "../site";
 
   let { query }: { query: string } = $props();
   let input = $state("");
@@ -38,9 +39,7 @@
   const desktop = isTauri();
   const displayText = (text: string) => text.replace(/[\r\n\u2028\u2029\t]/g, " ");
   const number = (n: number) => n.toLocaleString("ja-JP");
-  let website = $derived(
-    `https://app.honkoku.org/search?keyword=${encodeURIComponent(query)}`,
-  );
+  let website = $derived(siteHref({ search: true, query })!);
 
   $effect(() => {
     input = query;
