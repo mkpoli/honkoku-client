@@ -97,6 +97,9 @@ impl OcrSidecar {
         self.diagnostic_command("doctor").await
     }
     pub async fn repair_models(&self, progress: ProgressHandler) -> Result<OcrStatus> {
+        if !self.environment.ready() {
+            return Err(Error::Setup("OCR環境の準備が必要です。".into()));
+        }
         let _gate = self.gate.lock().await;
         self.stop().await?;
         self.diagnostic_command("repair").await?;

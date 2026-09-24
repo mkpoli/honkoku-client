@@ -314,7 +314,7 @@
         <p class="caption muted">
           ログ：<code>{diagnostics.value.log_path}</code>
         </p>
-        {#if diagnostics.value.models_directory_exists && !environment?.models_ready}<button
+        {#if diagnostics.value.models_directory_exists && environment?.environment_ready && !environment.models_ready}<button
             disabled={settingUp || running}
             onclick={repair}>モデルを再取得</button
           >{/if}
