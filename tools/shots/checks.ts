@@ -2188,6 +2188,38 @@ export async function checkKunten(
         JSON.stringify({ okuri, kaeriten, next }),
       );
     }
+    console.log("Kunten: punctuation after okurigana");
+    await set("船も打破￣リ、かな");
+    await page.evaluate(() => document.fonts.ready);
+    const punctuation = await page.evaluate(() =>
+      [".vertical-editor", ".editor-source-panel .transcription"].map(
+        (selector) => {
+          const root = document.querySelector(selector)!;
+          const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+          let comma: Node | null;
+          while (
+            (comma = walker.nextNode()) &&
+            !comma.textContent!.startsWith("、")
+          );
+          const range = document.createRange();
+          range.setStart(comma!, 0);
+          range.setEnd(comma!, 1);
+          const cell = range.getBoundingClientRect();
+          const em = parseFloat(
+            getComputedStyle(comma!.parentElement!).fontSize,
+          );
+          // The okurigana starts past the column's right edge, clear of 、's ink.
+          return {
+            okuri: root
+              .querySelector(".kunten-okurigana")!
+              .getBoundingClientRect().left,
+            edge: (cell.left + cell.right) / 2 + em / 2,
+          };
+        },
+      ),
+    );
+    for (const { okuri, edge } of punctuation)
+      assert.ok(okuri >= edge - 1, JSON.stringify({ okuri, edge }));
     if (theme === "light")
       await page.screenshot({
         path: resolve(".local/shots", "17-kunten-layout-light.png"),

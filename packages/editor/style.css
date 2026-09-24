@@ -217,7 +217,11 @@
 .kunten-return {
   inset-block-start: 0.65em;
 }
+/* Vertical okurigana takes the ruby track so a following 、。 stays in the main column. */
 .kunten-okurigana {
+  inset-block-start: -1.5em;
+}
+.transcription.horizontal .kunten-okurigana {
   inset-block-start: -0.65em;
 }
 .editor-raw {
