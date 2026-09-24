@@ -176,6 +176,14 @@ try {
       throw Error("Vite did not start on the assigned port.");
   }
   browser = await chromium.launch({ headless: true });
+  if (process.env.HONKOKU_SHOTS_ALIGNMENT_ONLY === "1") {
+    for (const theme of ["light", "dark"] as const)
+      await checkAlignment(browser, origin, theme);
+    await browser.close();
+    browser = undefined;
+    await stopServer();
+    process.exit(0);
+  }
   for (const theme of ["light", "dark"] as const)
     await checkNotesStyle(browser, origin, theme);
   if (process.env.HONKOKU_SHOTS_NOTES_STYLE_ONLY === "1") {

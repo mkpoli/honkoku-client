@@ -696,6 +696,28 @@ export async function checkAlignment(
         .getAttribute("data-column-index"),
       String(expectedColumn),
     );
+    await page
+      .locator(`.transcription-reader [data-column-index="${expectedColumn}"]`)
+      .click();
+    await page.mouse.move(0, 0);
+    await page.waitForTimeout(2500);
+    assert.equal(
+      await page.locator(".line-overlay:visible").count(),
+      1,
+      "a clicked line keeps its frame while viewing",
+    );
+    assert.equal(
+      await page
+        .locator(".line-overlay.highlighted")
+        .getAttribute("data-line-index"),
+      "2",
+    );
+    assert.equal(
+      await page
+        .locator(".transcription-reader .editor-active-column")
+        .getAttribute("data-column-index"),
+      String(expectedColumn),
+    );
     await page.getByRole("button", { name: "編集開始", exact: true }).click();
     const editor = page.getByRole("textbox", { name: "翻刻本文", exact: true });
     await editor.waitFor();

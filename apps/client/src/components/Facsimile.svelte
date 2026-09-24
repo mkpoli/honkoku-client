@@ -13,6 +13,7 @@
   } from "../../../../packages/client-api/ocr";
   import OpenSeadragon from "openseadragon";
   import type { Canvas } from "@honkoku/client-api/types";
+  import { lineFrameInsets, lineFrameRect } from "./line-frame";
   let {
     oninsert,
     lineCharacterCounts = {},
@@ -209,9 +210,11 @@
           ) {
             const vertical = line.height >= line.width;
             const bounds = element.getBoundingClientRect();
-            const fraction = vertical
-              ? event.position.y / bounds.height
-              : event.position.x / bounds.width;
+            const along = vertical ? bounds.height : bounds.width;
+            const fraction =
+              along > 0
+                ? (vertical ? event.position.y : event.position.x) / along
+                : 0;
             const offset = Math.max(
               0,
               Math.min(count - 1, Math.floor(fraction * count)),
@@ -232,6 +235,11 @@
           onlineselect?.(line.index);
         }
       });
+      // The overlay covers the raw box, so neighbouring lines never overlap as
+      // hit areas; the padded frame is drawn outside it by CSS.
+      const insets = lineFrameInsets(line);
+      element.style.setProperty("--frame-x", `${insets.x}%`);
+      element.style.setProperty("--frame-y", `${insets.y}%`);
       v.addOverlay({
         element,
         location: v.world
@@ -268,9 +276,15 @@
     if (!v || !opened || !line || !v.world.getItemCount()) return;
     if (target === pannedLine) return;
     pannedLine = target;
+    const frame = lineFrameRect(line);
     const rect = v.world
       .getItemAt(0)
-      .imageToViewportRectangle(line.x, line.y, line.width, line.height);
+      .imageToViewportRectangle(
+        frame.x,
+        frame.y,
+        frame.width,
+        frame.height,
+      );
     const points = [
       rect.getTopLeft(),
       rect.getTopRight(),

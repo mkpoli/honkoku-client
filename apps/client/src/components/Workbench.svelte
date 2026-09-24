@@ -239,18 +239,44 @@
       lineModel.lines,
     ),
   );
-  let currentColumn = $state(-1);
+  let selectedColumn = $state(-1);
+  let hoveredColumn = $state<number | null>(null);
   let hoveredLine = $state<number | null>(null);
-  let selectedLine = $derived(hoveredLine ?? alignment[currentColumn] ?? null);
   let highlightedColumn = $derived(
-    hoveredLine === null ? currentColumn : alignment.indexOf(hoveredLine),
+    hoveredColumn !== null
+      ? hoveredColumn
+      : hoveredLine !== null
+        ? alignment.indexOf(hoveredLine)
+        : selectedColumn,
   );
+  let selectedLine = $derived(
+    hoveredLine ??
+      (hoveredColumn !== null
+        ? (alignment[hoveredColumn] ?? null)
+        : selectedColumn >= 0
+          ? (alignment[selectedColumn] ?? null)
+          : null),
+  );
+  // A structural text change (draft sync, history restore) shifts column
+  // indices, so a view-mode selection is dropped; editing keeps its own.
+  $effect(() => {
+    displayedSource;
+    if (!untrack(() => editing)) {
+      selectedColumn = -1;
+      hoveredColumn = null;
+      hoveredLine = null;
+    }
+  });
   let editor = $state<VerticalEditor>();
   let notationMode = $state(false);
   let transcription = $state<Transcription>();
   function columnChange(index: number) {
-    currentColumn = index;
+    selectedColumn = index;
+    hoveredColumn = null;
     hoveredLine = null;
+  }
+  function columnHover(index: number | null) {
+    hoveredColumn = index !== null && index >= 0 ? index : null;
   }
   function selectLine(lineIndex: number) {
     const column = alignment.indexOf(lineIndex);
@@ -679,6 +705,8 @@
     tempNotes = restored.notes;
     acknowledgedNotes = restored.acknowledgedNotes;
     editing = true;
+    hoveredColumn = null;
+    hoveredLine = null;
     recovered = "";
     saveState = locked.tempTextChanged
       ? `下書き保存${new Date(locked.updatedAt ?? Date.now()).toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })}`
@@ -838,7 +866,8 @@
       lockSlow = false;
       lockFailed = false;
       editing = false;
-      currentColumn = -1;
+      selectedColumn = -1;
+      hoveredColumn = null;
       hoveredLine = null;
       localOcr = null;
       closeNotes();
@@ -905,22 +934,31 @@
     }, 6000);
     return () => clearTimeout(timer);
   });
+  let appliedDeepLink = "";
   $effect(() => {
     const requested = column;
     const pageIndex = index;
     const count = columns.length;
     const pending = pagesPending;
     verifying;
-    if (requested === undefined || pending) return;
+    // A route without a column re-arms the latch, so returning to the same
+    // deep link (Back, another search hit) applies it again.
+    if (requested === undefined) {
+      appliedDeepLink = "";
+      return;
+    }
+    if (pending) return;
+    const key = `${pageIndex}:${requested}`;
+    // Once per page and column: later source syncs must not yank the caret
+    // or the selection back to the deep-linked column.
+    if (appliedDeepLink === key) return;
     void tick().then(() => {
       if (pageIndex !== index || requested !== column || requested >= count)
         return;
+      appliedDeepLink = key;
       columnChange(requested);
-      document
-        .querySelector(
-          `.transcription-reader [data-column-index="${requested}"]`,
-        )
-        ?.scrollIntoView({ block: "nearest", inline: "nearest" });
+      if (editing) editor?.focusColumn(requested);
+      else transcription?.focusColumn(requested);
     });
   });
   $effect(() => {
@@ -1409,8 +1447,10 @@
             source={displayedSource}
             {horizontal}
             bind:half
+            selected={selectedColumn}
             {highlightedColumn}
             oncolumnchange={columnChange}
+            onhover={columnHover}
           />
         </div>
       {/if}

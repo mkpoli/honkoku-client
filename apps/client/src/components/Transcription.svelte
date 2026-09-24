@@ -1,6 +1,5 @@
 <script lang="ts">
   import "../../../../packages/editor/style.css";
-  import { onDestroy } from "svelte";
   import {
     renderReadingLine,
     sectionLabel,
@@ -10,20 +9,20 @@
     source,
     horizontal = false,
     half = $bindable(""),
+    selected = -1,
     highlightedColumn = -1,
     oncolumnchange,
+    onhover,
   }: {
     source: string;
     horizontal?: boolean;
     half?: string;
+    selected?: number;
     highlightedColumn?: number;
     oncolumnchange?: (index: number) => void;
+    onhover?: (index: number | null) => void;
   } = $props();
   let host: HTMLDivElement;
-  let timer: ReturnType<typeof setTimeout>;
-  let pinned = false;
-  let currentColumn = $state(-1);
-  $effect(() => { source; currentColumn = -1; });
   let groups = $derived.by(() => {
     const indices = new Map(
       transcriptionColumns(source).map((column, index) => [
@@ -55,22 +54,17 @@
     if (group.columns.length || group.label) groups.push(group);
     return groups;
   });
-  function change(index: number) {
-    clearTimeout(timer);
-    pinned = false;
+  function hover(index: number | null) {
+    onhover?.(index);
+  }
+  function select(index: number) {
     oncolumnchange?.(index);
   }
   export function focusColumn(index: number) {
-    currentColumn = index;
-    change(index);
-    pinned = true;
+    select(index);
     host
       .querySelector(`[data-column-index="${index}"]`)
       ?.scrollIntoView({ block: "nearest", inline: "nearest" });
-    timer = setTimeout(() => {
-      pinned = false;
-      oncolumnchange?.(-1);
-    }, 2000);
   }
   function measureColumns(element: HTMLElement) {
     const apply = () => {
@@ -86,7 +80,6 @@
     apply();
     return { destroy: () => observer.disconnect() };
   }
-  onDestroy(() => clearTimeout(timer));
 </script>
 
 <div class="transcription" class:horizontal bind:this={host}>
@@ -106,18 +99,17 @@
         {#each group.columns as column}
           <div
             class="transcription-column"
-            class:editor-active-column={currentColumn === column.index && column.index >= 0}
+            class:editor-active-column={selected === column.index && column.index >= 0}
             class:alignment-active-column={column.index >= 0 &&
               highlightedColumn === column.index}
             data-column-index={column.index >= 0 ? column.index : undefined}
             style:padding-inline-start={column.indent ? `${column.indent}em` : undefined}
             role="button"
             tabindex={column.index >= 0 ? 0 : -1}
-            onmouseenter={() => change(column.index)}
-            onmouseleave={() => {
-              if (!pinned) change(-1);
-            }}
-            onfocus={() => { currentColumn = column.index; change(column.index); }}
+            aria-pressed={selected === column.index && column.index >= 0}
+            onmouseenter={() => hover(column.index)}
+            onmouseleave={() => hover(null)}
+            onfocus={() => select(column.index)}
             onclick={() => focusColumn(column.index)}
             onkeydown={(event) => {
               if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
