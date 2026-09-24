@@ -61,9 +61,9 @@ select:focus-visible,
   outline-offset: 2px;
 }
 /*
- * Scrollbars: a thin rounded thumb on a clear track, no arrow buttons.
- * The thumb is inset by a transparent border and fills it on hover, so it
- * looks thinner at rest without the bar changing size.
+ * Scrollbars: a thin rounded thumb on a clear track, no arrow buttons. The
+ * thumb is inset by a transparent border and widens from 4px to 6px on hover
+ * without the bar changing size.
  */
 ::-webkit-scrollbar {
   width: 10px;
@@ -79,24 +79,21 @@ select:focus-visible,
 ::-webkit-scrollbar-thumb {
   border: 3px solid transparent;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--text-muted) 40%, transparent) padding-box;
-  min-width: 32px;
+  background: color-mix(in srgb, var(--text-muted) 55%, transparent) padding-box;
+}
+::-webkit-scrollbar-thumb:vertical {
   min-height: 32px;
 }
-::-webkit-scrollbar-thumb:hover {
-  border-width: 2px;
-  background-color: color-mix(in srgb, var(--text-muted) 70%, transparent);
+::-webkit-scrollbar-thumb:horizontal {
+  min-width: 32px;
 }
+::-webkit-scrollbar-thumb:hover,
 ::-webkit-scrollbar-thumb:active {
   border-width: 2px;
-  background-color: var(--accent);
+  background-color: color-mix(in srgb, var(--text-muted) 80%, transparent);
 }
-@supports not selector(::-webkit-scrollbar) {
-  * {
-    scrollbar-width: thin;
-    scrollbar-color: color-mix(in srgb, var(--text-muted) 40%, transparent)
-      transparent;
-  }
+::-webkit-scrollbar-thumb:active {
+  background-color: var(--text-muted);
 }
 ::selection {
   background: var(--selection);
