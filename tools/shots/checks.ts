@@ -2189,37 +2189,34 @@ export async function checkKunten(
       );
     }
     console.log("Kunten: punctuation after okurigana");
+    // Okurigana offset from the column centre, in column ems.
+    const okuriganaOffset = (selectors: string[]) =>
+      page.evaluate(
+        (selectors) =>
+          selectors.map((selector) => {
+            const root = document.querySelector(selector)!;
+            const column = root.querySelector(".transcription-column")!;
+            const box = column.getBoundingClientRect();
+            const em = parseFloat(getComputedStyle(column).fontSize);
+            const okuri = root
+              .querySelector(".kunten-okurigana")!
+              .getBoundingClientRect();
+            return (okuri.left - (box.left + box.right) / 2) / em;
+          }),
+        selectors,
+      );
     await set("船も打破￣リ、かな");
     await page.evaluate(() => document.fonts.ready);
-    const punctuation = await page.evaluate(() =>
-      [".vertical-editor", ".editor-source-panel .transcription"].map(
-        (selector) => {
-          const root = document.querySelector(selector)!;
-          const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-          let comma: Node | null;
-          while (
-            (comma = walker.nextNode()) &&
-            !comma.textContent!.startsWith("、")
-          );
-          const range = document.createRange();
-          range.setStart(comma!, 0);
-          range.setEnd(comma!, 1);
-          const cell = range.getBoundingClientRect();
-          const em = parseFloat(
-            getComputedStyle(comma!.parentElement!).fontSize,
-          );
-          // The okurigana starts past the column's right edge, clear of 、's ink.
-          return {
-            okuri: root
-              .querySelector(".kunten-okurigana")!
-              .getBoundingClientRect().left,
-            edge: (cell.left + cell.right) / 2 + em / 2,
-          };
-        },
-      ),
-    );
-    for (const { okuri, edge } of punctuation)
-      assert.ok(okuri >= edge - 1, JSON.stringify({ okuri, edge }));
+    // Past the column's right edge, clear of the ink of 、 below it.
+    for (const offset of await okuriganaOffset([
+      ".vertical-editor",
+      ".editor-source-panel .transcription",
+    ]))
+      assert.ok(offset >= 0.45, `okurigana offset ${offset}`);
+    // A ruby holds the outer track, so its okurigana stays at the column edge.
+    await set("《振り仮名：志｜こころざし》￣シ、次");
+    for (const offset of await okuriganaOffset([".vertical-editor"]))
+      assert.ok(offset < 0.3, `okurigana offset after ruby ${offset}`);
     if (theme === "light")
       await page.screenshot({
         path: resolve(".local/shots", "17-kunten-layout-light.png"),
