@@ -87,6 +87,11 @@ def handle(request, cancelled):
             for i, role in enumerate(roles):
                 progress(request_id, "models", i, len(roles), "モデルを取得（289MB）")
                 models.ensure(roles=[role], quiet=True, digest=True)
+            # Files of other model versions, including their fp32 conversions, are no longer used.
+            current = f"kuzushiji-{models.DEFAULT_VERSION}-"
+            for path in models.model_dir().glob("kuzushiji-*"):
+                if not path.name.startswith(current):
+                    path.unlink()
             progress(request_id, "complete", len(roles), len(roles), "完了")
             result = status()
         elif method == "process":
