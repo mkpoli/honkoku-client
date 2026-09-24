@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "honkoku-client",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "identifier": "li.mkpo.honkoku-client",
   "build": {
     "beforeDevCommand": "devrun bun run dev",
