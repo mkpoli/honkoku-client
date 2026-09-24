@@ -948,7 +948,13 @@
     const count = columns.length;
     const pending = pagesPending;
     verifying;
-    if (requested === undefined || pending) return;
+    // A route without a column re-arms the latch, so returning to the same
+    // deep link (Back, another search hit) applies it again.
+    if (requested === undefined) {
+      appliedDeepLink = "";
+      return;
+    }
+    if (pending) return;
     const key = `${pageIndex}:${requested}`;
     // Once per page and column: later source syncs must not yank the caret
     // or the selection back to the deep-linked column.
