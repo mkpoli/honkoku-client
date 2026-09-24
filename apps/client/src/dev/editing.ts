@@ -153,7 +153,13 @@ export function fixtureEdit(
         projectTitle: null,
         excerpt: page.text,
       });
-      return { page: structuredClone(page), timelineEventId: id, count };
+      return {
+        page: structuredClone(page),
+        timelineEventId: id,
+        count,
+        isReview,
+        isApproval: options.isApproval ?? false,
+      };
     }
   }
   return structuredClone(page);
