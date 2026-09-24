@@ -748,6 +748,7 @@
     };
   });
   let result = $state<SavedPage>();
+  let startButton = $state<HTMLButtonElement>();
   let recovered = $state("");
   let queue: Drafts | undefined;
   let operation: Promise<void> | undefined;
@@ -1218,6 +1219,7 @@
     window.addEventListener("pagehide", unload);
     window.addEventListener("beforeunload", unload);
     const keys = (e: KeyboardEvent) => {
+      if (result) return;
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s" && editing) {
         e.preventDefault();
         save(
@@ -1292,7 +1294,10 @@
   {#if result}<SaveResult
       saved={result}
       entryLabel={entryLabel(entry.label)}
-      onclose={() => (result = undefined)}
+      onclose={() => {
+        result = undefined;
+        void tick().then(() => startButton?.focus());
+      }}
     />{/if}
   <div class="workbench-toolbar">
     <div class="toolbar-leading">
@@ -1425,6 +1430,7 @@
           aria-label="編集の開始"
         >
           <button
+            bind:this={startButton}
             class="primary"
             disabled={busy || pagesPending || verifying}
             onclick={start}>編集開始</button

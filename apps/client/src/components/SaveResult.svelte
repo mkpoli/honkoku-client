@@ -46,9 +46,6 @@
   {onclose}
   aria-labelledby="save-result-title"
 >
-  <button class="close" aria-label="閉じる" onclick={() => dialog.close()}
-    >×</button
-  >
   <p class="kicker">{completed ? "翻刻完了" : "保存完了"}</p>
   <h2 id="save-result-title">おつかれさま！</h2>
   <p class="where">『{entryLabel}』コマ{saved.page.index + 1}</p>
@@ -96,17 +93,6 @@
   }
   dialog::backdrop {
     background: #0005;
-  }
-  .close {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    border: 0;
-    background: transparent;
-    font-size: 22px;
-    line-height: 1;
-    padding: 4px 8px;
-    color: var(--text-muted);
   }
   p {
     margin: 0;

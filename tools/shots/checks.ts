@@ -14,10 +14,7 @@ async function closeSaveResult(page: Page) {
   const dialog = page.getByRole("dialog", { name: "おつかれさま！" });
   await dialog.waitFor();
   const text = await dialog.innerText();
-  await dialog
-    .getByRole("button", { name: "閉じる", exact: true })
-    .last()
-    .click();
+  await dialog.getByRole("button", { name: "閉じる", exact: true }).click();
   await dialog.waitFor({ state: "detached" });
   return text;
 }
@@ -395,7 +392,6 @@ export async function checkEditing(
     assert.equal(
       await result
         .getByRole("button", { name: "閉じる", exact: true })
-        .last()
         .evaluate((b) => b === document.activeElement),
       true,
       "閉じる takes focus",
@@ -406,7 +402,13 @@ export async function checkEditing(
         `../../.local/shots/07-save-result-${theme}${suffix}.png`,
       ),
     });
+    await page.keyboard.press("ArrowLeft");
+    assert.ok(page.url().endsWith("/pages/3"), "page keys wait for the dialog");
     await closeSaveResult(page);
+    // 編集開始 takes focus once the dialog closes.
+    await page.waitForFunction(
+      () => document.activeElement?.textContent === "編集開始",
+    );
     assert.ok(
       (
         await page.locator(".status-strip a").nth(3).getAttribute("class")
