@@ -243,9 +243,13 @@ export interface SaveOptions {
   comment?: string;
   isApproval?: boolean;
 }
+/** A committed save, with the figures of the timeline event it wrote. */
 export interface SavedPage {
   page: Page;
   timelineEventId: string;
+  count: number;
+  isReview: boolean;
+  isApproval: boolean;
 }
 export interface PageLockState {
   pageId: string;
@@ -256,17 +260,7 @@ export interface PageLockState {
   updateTime: string;
 }
 
-export interface SavedPage {
-  /** Character count from the save's timeline event, when supplied by the backend. */
-  count?: number;
-}
-
 export type SignInProvider = "google.com" | "twitter.com";
-
-/** Native saves include the count read from the committed timeline event. */
-export interface SavedPageWithCount extends SavedPage {
-  count: number;
-}
 
 export interface EntrySummary {
   [key: string]: unknown;

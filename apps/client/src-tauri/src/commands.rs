@@ -421,6 +421,8 @@ pub struct SavedPage {
     page: Page,
     timeline_event_id: String,
     count: u64,
+    is_review: bool,
+    is_approval: bool,
 }
 struct LiveEditingSession {
     session: Mutex<Option<EditingSession>>,
@@ -568,8 +570,11 @@ async fn saved_with_count(
     saved: &CoreSavedPage,
 ) -> Result<SavedPage, AppError> {
     #[derive(Deserialize)]
+    #[serde(rename_all = "camelCase")]
     struct SavedEvent {
         count: u64,
+        is_review: bool,
+        is_approval: bool,
     }
     let event: SavedEvent = client
         .document(&format!("timelineEvents/{}", saved.timeline_event_id))
@@ -582,6 +587,8 @@ async fn saved_with_count(
         page: saved.page.clone(),
         timeline_event_id: saved.timeline_event_id.clone(),
         count: event.count,
+        is_review: event.is_review,
+        is_approval: event.is_approval,
     })
 }
 #[tauri::command]
@@ -635,7 +642,7 @@ mod saved_count_tests {
                 ("503 Service Unavailable", "{}"),
                 (
                     "200 OK",
-                    r#"{"name":"projects/test/databases/(default)/documents/timelineEvents/event","fields":{"count":{"integerValue":"123"}}}"#,
+                    r#"{"name":"projects/test/databases/(default)/documents/timelineEvents/event","fields":{"count":{"integerValue":"123"},"isReview":{"booleanValue":true},"isApproval":{"booleanValue":false}}}"#,
                 ),
             ] {
                 let (mut socket, _) = listener.accept().unwrap();
@@ -679,6 +686,8 @@ mod saved_count_tests {
         let value = serde_json::to_value(result).unwrap();
         assert_eq!(value["timelineEventId"], "event");
         assert_eq!(value["count"], 123);
+        assert_eq!(value["isReview"], true);
+        assert_eq!(value["isApproval"], false);
         assert_eq!(value["page"]["text"], "字");
         server.join().unwrap();
     }

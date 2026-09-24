@@ -23,6 +23,7 @@
     SaveOptions,
     PageNote,
     JsonValue,
+    SavedPage,
   } from "@honkoku/client-api/types";
   import {
     alignColumns,
@@ -67,7 +68,6 @@
     pageDiscard,
     pageLockState,
     listPages,
-    homeTimeline,
   } from "@honkoku/client-api/invoke";
   import { errorMessage } from "../lib";
   import { Drafts } from "../drafts";
@@ -80,6 +80,7 @@
   import { graphemes } from "./glyph-regions";
   import Facsimile from "./Facsimile.svelte";
   import Thumbnail from "./Thumbnail.svelte";
+  import SaveResult from "./SaveResult.svelte";
   let {
     entry,
     pages,
@@ -746,11 +747,11 @@
       alive = false;
     };
   });
-  let celebration = $state<number | null | undefined>();
+  let result = $state<SavedPage>();
+  let startButton = $state<HTMLButtonElement>();
   let recovered = $state("");
   let queue: Drafts | undefined;
   let operation: Promise<void> | undefined;
-  let toastTimer: ReturnType<typeof setTimeout>;
   let lastOptions: SaveOptions | undefined;
   function savedOptions(): SaveOptions | undefined {
     try {
@@ -842,9 +843,8 @@
       });
   }
   function begin(locked: Page, restore = false, verified = true) {
-    celebration = undefined;
+    result = undefined;
     approvalChange = false;
-    clearTimeout(toastTimer);
     lastOptions = savedOptions();
     onpage(locked);
     const local = restore ? localDraft() : undefined;
@@ -941,25 +941,8 @@
       editing = false;
       forget();
       saveState = "保存済み";
-      if (saved.page.status === "completed") {
-        completionSound();
-        celebration = saved.count ?? null;
-        toastTimer = setTimeout(() => {
-          celebration = undefined;
-        }, 2000);
-        if (saved.count === undefined) {
-          const savedIndex = index;
-          void homeTimeline({ project_id: entry.projectId }, 100)
-            .then((items) => {
-              const event = items.find(
-                (item) => item.event.id === saved.timelineEventId,
-              )?.event;
-              if (index === savedIndex && celebration !== undefined && event)
-                celebration = event.count;
-            })
-            .catch(() => {});
-        }
-      }
+      if (saved.page.status === "completed") completionSound();
+      result = saved;
     });
   }
   function discard() {
@@ -1032,8 +1015,7 @@
       notice = "";
       savePopover = false;
       discardPopover = false;
-      celebration = undefined;
-      clearTimeout(toastTimer);
+      result = undefined;
       clearTimeout(glyphTimer);
       void queue?.stop();
       queue = undefined;
@@ -1237,6 +1219,7 @@
     window.addEventListener("pagehide", unload);
     window.addEventListener("beforeunload", unload);
     const keys = (e: KeyboardEvent) => {
+      if (result) return;
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s" && editing) {
         e.preventDefault();
         save(
@@ -1292,7 +1275,6 @@
       window.removeEventListener("keydown", keys);
       window.removeEventListener("pagehide", unload);
       window.removeEventListener("beforeunload", unload);
-      clearTimeout(toastTimer);
       clearTimeout(glyphTimer);
       void queue?.stop();
     };
@@ -1306,17 +1288,17 @@
         >再試行</button
       >
     </div>{/if}
-  {#if notice || celebration !== undefined}<div
-      class="workbench-notification caption"
-      role="status"
-    >
-      {#if celebration !== undefined}<span class="completion-toast"
-          >✓完了{celebration !== null
-            ? `・${celebration.toLocaleString("ja-JP")}文字`
-            : ""}</span
-        >
-      {:else}<span class="edit-notice">{notice}</span>{/if}
+  {#if notice}<div class="workbench-notification caption" role="status">
+      <span class="edit-notice">{notice}</span>
     </div>{/if}
+  {#if result}<SaveResult
+      saved={result}
+      entryLabel={entryLabel(entry.label)}
+      onclose={() => {
+        result = undefined;
+        void tick().then(() => startButton?.focus());
+      }}
+    />{/if}
   <div class="workbench-toolbar">
     <div class="toolbar-leading">
       {#if leading}{@render leading()}{/if}
@@ -1448,6 +1430,7 @@
           aria-label="編集の開始"
         >
           <button
+            bind:this={startButton}
             class="primary"
             disabled={busy || pagesPending || verifying}
             onclick={start}>編集開始</button

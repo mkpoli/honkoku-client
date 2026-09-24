@@ -9,6 +9,15 @@ async function viewerReady(page: Page) {
     return viewer && viewer.world.getItemCount() > 0 && viewer.getFullyLoaded();
   });
 }
+/** Every save ends in the result dialog; returns its text after closing it. */
+async function closeSaveResult(page: Page) {
+  const dialog = page.getByRole("dialog", { name: "おつかれさま！" });
+  await dialog.waitFor();
+  const text = await dialog.innerText();
+  await dialog.getByRole("button", { name: "閉じる", exact: true }).click();
+  await dialog.waitFor({ state: "detached" });
+  return text;
+}
 const entry = "0916dafb80cdc48ca7687afcad4a4f35";
 const collection = "3R4VhlBfvOYeqPY13cJm";
 export async function checkInteractions(browser: Browser, origin: string) {
@@ -374,10 +383,32 @@ export async function checkEditing(
       .getByRole("textbox", { name: "コメント", exact: true })
       .fill("本文を確認");
     await page.getByRole("button", { name: "保存を確定", exact: true }).click();
-    await page
-      .locator(".completion-toast")
-      .filter({ hasText: "2文字" })
-      .waitFor();
+    const result = page.getByRole("dialog", { name: "おつかれさま！" });
+    await result.getByText("2ポイント獲得しました！").waitFor();
+    assert.match(
+      await result.innerText(),
+      /翻刻完了[\s\S]*『[^』]+』コマ4[\s\S]*2\s*文字/,
+    );
+    assert.equal(
+      await result
+        .getByRole("button", { name: "閉じる", exact: true })
+        .evaluate((b) => b === document.activeElement),
+      true,
+      "閉じる takes focus",
+    );
+    await page.screenshot({
+      path: resolve(
+        import.meta.dir,
+        `../../.local/shots/07-save-result-${theme}${suffix}.png`,
+      ),
+    });
+    await page.keyboard.press("ArrowLeft");
+    assert.ok(page.url().endsWith("/pages/3"), "page keys wait for the dialog");
+    await closeSaveResult(page);
+    // 編集開始 takes focus once the dialog closes.
+    await page.waitForFunction(
+      () => document.activeElement?.textContent === "編集開始",
+    );
     assert.ok(
       (
         await page.locator(".status-strip a").nth(3).getAttribute("class")
@@ -429,6 +460,7 @@ export async function checkEditing(
     await page.getByRole("button", { name: "記法", exact: true }).click();
     assert.equal(await raw.inputValue(), "再開する本文");
     await page.keyboard.press("Control+s");
+    await closeSaveResult(page);
     await page.getByRole("button", { name: "編集開始", exact: true }).waitFor();
     assert.ok(
       (
@@ -591,6 +623,7 @@ export async function checkEditing(
         await fixtureInvoke("session_import", {});
       });
       await page.keyboard.press("Control+s");
+      await closeSaveResult(page);
       await page
         .getByRole("button", { name: "編集開始", exact: true })
         .waitFor();
@@ -1113,6 +1146,7 @@ export async function checkQuietWorkbench(
     await page.keyboard.press("Escape");
     await button("保存").click();
     await button("保存を確定").click();
+    await closeSaveResult(page);
     await button("編集開始").waitFor();
     const saved = await page.evaluate(async (entryId) => {
       const { fixtureInvoke } = await import("/src/dev/fixtures.ts");
@@ -1622,6 +1656,7 @@ export async function checkWorkbenchParity(
     assert.equal(await raw.inputValue(), "サーバーの新しい下書き");
     await button("保存").click();
     await button("保存を確定").click();
+    await closeSaveResult(page);
     await button("編集開始").waitFor();
     assert.match(
       (await page
@@ -2873,12 +2908,17 @@ export async function checkRecognition(
         ),
       });
     await save.getByRole("button", { name: "保存を確定", exact: true }).click();
+    assert.match(
+      await closeSaveResult(page),
+      /120ポイント獲得しました！[\s\S]*翻刻文を添削・チェックした場合はポイントが増えます/,
+    );
     await page.getByRole("button", { name: "編集開始", exact: true }).waitFor();
     await page.getByText("✓1／2", { exact: true }).waitFor();
     await page.getByRole("button", { name: "編集開始", exact: true }).click();
     await page.getByRole("button", { name: "保存", exact: true }).click();
     await page.getByLabel("チェックを取り消す", { exact: true }).check();
     await page.getByRole("button", { name: "保存を確定", exact: true }).click();
+    assert.doesNotMatch(await closeSaveResult(page), /ポイントが増えます/);
     await page.getByRole("button", { name: "編集開始", exact: true }).waitFor();
     assert.equal(await page.getByText("✓1／2", { exact: true }).count(), 0);
     // Discover sharing that starts after a read-only page is already open.
