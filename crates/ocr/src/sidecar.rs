@@ -316,7 +316,7 @@ impl OcrEngine for OcrSidecar {
                 version: None,
                 device: "cpu".into(),
                 models_ready: false,
-                model_version: "v18".into(),
+                model_version: crate::MODEL_VERSION.into(),
                 cuda_available: OcrEnvironment::driver_available().await,
                 cuda_error: None,
                 environment_ready: false,

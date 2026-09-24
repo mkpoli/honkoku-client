@@ -10,7 +10,7 @@ pub(crate) fn command(program: impl AsRef<std::ffi::OsStr>) -> tokio::process::C
 }
 mod page;
 mod sidecar;
-pub use environment::OcrEnvironment;
+pub use environment::{MODEL_VERSION, OcrEnvironment, PACKAGE_VERSION};
 pub use page::{OcrBox, OcrLine, OcrPage, run_page};
 use serde::{Deserialize, Serialize};
 pub use sidecar::OcrSidecar;
