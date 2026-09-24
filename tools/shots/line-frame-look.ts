@@ -50,11 +50,13 @@ console.log(
   "raw aspect",
   (raw.height / raw.width).toFixed(2),
 );
+// The overlay is the raw OCR box; the drawn frame sits outside it.
+const margin = Math.max(60, box.height * 0.3, box.width * 0.3);
 const clip = {
-  x: Math.max(0, box.x - 50),
-  y: Math.max(0, box.y - 50),
-  width: Math.min(1600 - Math.max(0, box.x - 50), box.width + 100),
-  height: Math.min(1000 - Math.max(0, box.y - 50), box.height + 100),
+  x: Math.max(0, box.x - margin),
+  y: Math.max(0, box.y - margin),
+  width: Math.min(1600 - Math.max(0, box.x - margin), box.width + 2 * margin),
+  height: Math.min(1000 - Math.max(0, box.y - margin), box.height + 2 * margin),
 };
 await page.screenshot({ path: resolve(output, "line-frame-crop.png"), clip });
 await page.screenshot({ path: resolve(output, "line-frame-full.png") });

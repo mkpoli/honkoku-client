@@ -1,5 +1,5 @@
 import { test, expect } from "bun:test";
-import { lineFramePads, lineFrameRect } from "./line-frame";
+import { lineFrameInsets, lineFramePads, lineFrameRect } from "./line-frame";
 
 test("vertical lines grow mostly in height so the whole column sits inside", () => {
   const frame = lineFrameRect({ x: 100, y: 50, width: 80, height: 1200 });
@@ -30,4 +30,16 @@ test("the frame is exactly the line inset by the shared pads", () => {
   expect(frame.y).toBe(line.y - padY);
   expect(frame.width).toBe(line.width + 2 * padX);
   expect(frame.height).toBe(line.height + 2 * padY);
+});
+
+test("insets express the pads relative to the raw box", () => {
+  const line = { x: 0, y: 0, width: 80, height: 1200 };
+  const { padX, padY } = lineFramePads(line);
+  const insets = lineFrameInsets(line);
+  expect(insets.x).toBeCloseTo((padX / 80) * 100);
+  expect(insets.y).toBeCloseTo((padY / 1200) * 100);
+  expect(lineFrameInsets({ x: 0, y: 0, width: 0, height: 0 })).toEqual({
+    x: 0,
+    y: 0,
+  });
 });

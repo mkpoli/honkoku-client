@@ -23,6 +23,19 @@ export function lineFramePads(line: LineBox): { padX: number; padY: number } {
     : { padX: padAlong, padY: padAcross };
 }
 
+/**
+ * The pads as percentages of the line box, for drawing the frame around an
+ * overlay that stays on the raw box so neighbouring frames never overlap as
+ * hit areas.
+ */
+export function lineFrameInsets(line: LineBox): { x: number; y: number } {
+  const { padX, padY } = lineFramePads(line);
+  return {
+    x: line.width > 0 ? (padX / line.width) * 100 : 0,
+    y: line.height > 0 ? (padY / line.height) * 100 : 0,
+  };
+}
+
 export function lineFrameRect(line: LineBox): LineBox {
   const { padX, padY } = lineFramePads(line);
   return {
