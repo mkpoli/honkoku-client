@@ -2,6 +2,7 @@
   import "../../../../packages/editor/style.css";
   import { fitText, type LineFit } from "@honkoku/editor/fit-text";
   import {
+    lineNumbers,
     renderReadingLine,
     sectionLabel,
     transcriptionColumns,
@@ -35,10 +36,11 @@
     );
     const groups: {
       label: string;
-      columns: { html: string; index: number; indent?:number }[];
+      columns: { html: string; index: number; indent?:number; number: number | null }[];
     }[] = [];
-    let group = { label: "", columns: [] as { html: string; index: number; indent?:number }[] };
+    let group = { label: "", columns: [] as { html: string; index: number; indent?:number; number: number | null }[] };
     const blocks: number[]=[];
+    const numbers = lineNumbers(source);
     for (const [sourceIndex, line] of source.split(/\r\n|\r|\n/).entries()) {
       const block=/^％(表紙|字下げ[一二三])$/.exec(line);
       if(block) { blocks.push(({一:1,二:2,三:3} as Record<string,number>)[block[1].slice(-1)] ?? 0); continue; }
@@ -52,6 +54,7 @@
           html: renderReadingLine(line),
           indent: blocks.at(-1) ?? 0,
           index: indices.get(sourceIndex) ?? -1,
+          number: numbers[sourceIndex],
         });
     }
     if (group.columns.length || group.label) groups.push(group);
@@ -111,6 +114,7 @@
             class:alignment-active-column={column.index >= 0 &&
               highlightedColumn === column.index}
             data-column-index={column.index >= 0 ? column.index : undefined}
+            data-line-number={column.number ?? undefined}
             style:padding-inline-start={column.indent ? `${column.indent}em` : undefined}
             role="button"
             tabindex={column.index >= 0 ? 0 : -1}

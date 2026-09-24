@@ -197,6 +197,7 @@ export {
   bodyWithoutSections,
   isSectionMarker,
   layoutTemplates,
+  lineNumbers,
   sectionInner,
   sectionLabel,
   sectionLabelsIn,

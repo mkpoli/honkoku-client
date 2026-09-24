@@ -1739,6 +1739,73 @@ button.line-overlay:focus-visible::before {
   outline: 2px solid var(--focus);
   outline-offset: 1px;
 }
+/*
+ * Line numbers: above each vertical column, in a left gutter beside each
+ * horizontal row, and on the matching line frame in the image.
+ */
+.line-numbers {
+  --line-number-gap: 20px;
+}
+.line-numbers .transcription-column[data-line-number]::before {
+  content: attr(data-line-number);
+  font: 500 11px/16px var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+  pointer-events: none;
+  user-select: none;
+}
+.line-numbers .transcription-column.alignment-active-column::before,
+.line-numbers .transcription-column.editor-active-column::before {
+  color: var(--accent);
+}
+.line-numbers .transcription:not(.horizontal) .transcription-column[data-line-number] {
+  position: relative;
+}
+.line-numbers .transcription:not(.horizontal) .transcription-column[data-line-number]::before {
+  position: absolute;
+  top: calc(-1 * var(--line-number-gap));
+  left: 0;
+  right: 0;
+  writing-mode: horizontal-tb;
+  text-align: center;
+}
+/* The label rises into the pane's top padding to make room, so the columns keep their height. */
+.line-numbers .transcription:not(.horizontal) .column-label {
+  margin-top: calc(-1 * var(--line-number-gap));
+  padding-bottom: calc(var(--line-number-gap) + 8px);
+}
+/* In rows the number sits on the row's baseline, in a gutter before its text. */
+.line-numbers .transcription.horizontal .transcription-column {
+  margin-inline-start: 32px;
+}
+.line-numbers .transcription.horizontal .transcription-column[data-line-number]::before {
+  display: inline-block;
+  width: 24px;
+  margin-inline-start: -32px;
+  margin-inline-end: 8px;
+  text-align: end;
+}
+.line-numbers button.line-overlay[data-line-number]::after {
+  content: attr(data-line-number);
+  position: absolute;
+  bottom: calc(100% + var(--frame-y, 0%) + 3px);
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 16px;
+  padding: 0 3px;
+  border-radius: 3px;
+  font: 500 10px/14px var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+  background: var(--surface);
+  box-shadow: 0 0 0 1px var(--border);
+  pointer-events: none;
+}
+.line-numbers button.line-overlay.highlighted[data-line-number]::after {
+  color: var(--accent-text);
+  background: var(--accent);
+  box-shadow: none;
+}
 button.line-overlay.line-hidden {
   visibility: hidden;
   pointer-events: none;

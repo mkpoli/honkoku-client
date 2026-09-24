@@ -19,6 +19,24 @@ export function sectionLabel(line: string): string | null {
   return sectionLine.exec(line)?.[1] ?? null;
 }
 
+/**
+ * The number each source line shows, counted from 1 within its section: a
+ * section marker starts a new count. Blank lines, section markers and ％
+ * directives get no number, so a blank line appears as an empty column that
+ * the count passes over.
+ */
+export function lineNumbers(text: string): (number | null)[] {
+  let count = 0;
+  return text.split(/\r\n|\r|\n/).map((line) => {
+    if (sectionLabel(line) !== null) {
+      count = 0;
+      return null;
+    }
+    if (!line.trim() || /^\s*％/.test(line)) return null;
+    return ++count;
+  });
+}
+
 export function sectionLabelsIn(text: string): string[] {
   const labels: string[] = [];
   for (const line of text.split(/\r\n|\r|\n/)) {

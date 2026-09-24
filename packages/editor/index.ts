@@ -19,6 +19,7 @@ import { keymap } from "prosemirror-keymap";
 import { baseKeymap } from "prosemirror-commands";
 import {
   transcriptionColumns,
+  lineNumbers,
   parse,
   parseLine,
   allowsChild,
@@ -960,18 +961,24 @@ export function createEditor(
     },
     props: {
       decorations(state) {
-        const columns = transcriptionColumns(toMarkup(state.doc));
+        const markup = toMarkup(state.doc);
+        const columns = new Map(
+          transcriptionColumns(markup).map((c, index) => [c.sourceIndex, index]),
+        );
+        const numbers = lineNumbers(markup);
         const active = alignmentPlugin.getState(state);
         const values: Decoration[] = [];
         state.doc.forEach((node, pos, sourceIndex) => {
-          const index = columns.findIndex((c) => c.sourceIndex === sourceIndex);
-          if (index >= 0)
-            values.push(
-              Decoration.node(pos, pos + node.nodeSize, {
-                "data-column-index": String(index),
-                class: index === active ? "alignment-active-column" : "",
-              }),
-            );
+          const index = columns.get(sourceIndex);
+          if (index === undefined) return;
+          const number = numbers[sourceIndex];
+          values.push(
+            Decoration.node(pos, pos + node.nodeSize, {
+              "data-column-index": String(index),
+              ...(number !== null && { "data-line-number": String(number) }),
+              class: index === active ? "alignment-active-column" : "",
+            }),
+          );
         });
         return DecorationSet.create(state.doc, values);
       },
