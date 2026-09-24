@@ -6,6 +6,7 @@ import {
   sectionLabelsIn,
   sectionSlot,
   suggestPageTemplate,
+  lineNumbers,
 } from "./layout";
 
 const spread = (body: string) => `【右丁】\n${body}\n【左丁】\n${body}`;
@@ -154,4 +155,23 @@ describe("page template from sibling pages", () => {
     expect(suggestPageTemplate([""])).toBeNull();
     expect(suggestPageTemplate([unmarked("短い表紙")])).toBeNull();
   });
+});
+
+test("line numbers count text lines and restart at each section", () => {
+  expect(
+    lineNumbers("【右丁】\n一行目\n\n二行目\n【左丁】\n一\n二\n三"),
+  ).toEqual([null, 1, null, 2, null, 1, 2, 3]);
+  expect(lineNumbers("序\r\n％字下げ一\r\n本文\r\n％\r\n結")).toEqual([
+    1,
+    null,
+    2,
+    null,
+    3,
+  ]);
+  expect(lineNumbers("【上段】\n甲\n【下段】\n乙")).toEqual([
+    null,
+    1,
+    null,
+    1,
+  ]);
 });
