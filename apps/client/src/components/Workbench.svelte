@@ -292,10 +292,34 @@
     requestReview = $state(false),
     comment = $state("");
   let lockName = $state("名前を確認中");
-  let menuOpen = $state(false);
+  let menuOpen = $state(false),
+    menuRoot = $state<HTMLDivElement>(),
+    menuToggle = $state<HTMLButtonElement>();
+  $effect(() => {
+    if (!menuOpen) return;
+    const click = (event: MouseEvent) => {
+      if (menuRoot && !menuRoot.contains(event.target as Node)) menuOpen = false;
+    };
+    const key = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || event.defaultPrevented) return;
+      const inside = menuRoot?.contains(document.activeElement);
+      if (!inside && document.activeElement !== document.body) return;
+      menuOpen = false;
+      if (inside) menuToggle?.focus();
+    };
+    document.addEventListener("click", click);
+    document.addEventListener("keydown", key);
+    return () => {
+      document.removeEventListener("click", click);
+      document.removeEventListener("keydown", key);
+    };
+  });
   let historyOpen = $state(false),
     bibliographyOpen = $state(false),
     exportOpen = $state(false);
+  $effect(() => {
+    if (!menuOpen) exportOpen = false;
+  });
   let exportScope = $state("page"),
     exportFormat = $state<ExportFormat>("txt"),
     exportBusy = $state(false);
@@ -1336,8 +1360,9 @@
           recognizing = false;
         }}>履歴</button
       >
-      <div class="workbench-menu">
+      <div class="workbench-menu" bind:this={menuRoot}>
         <button
+          bind:this={menuToggle}
           aria-label="表示設定"
           aria-expanded={menuOpen}
           onclick={() => (menuOpen = !menuOpen)}>⋯</button
