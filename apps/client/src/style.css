@@ -1125,23 +1125,30 @@ main {
 .pane-toolbar h2 {
   margin: 0;
 }
-.zoom-controls {
+.text-scale-controls button[aria-pressed="true"] {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.zoom-controls,
+.text-scale-controls {
   display: flex;
   align-items: center;
   gap: 8px;
 }
-.zoom-controls button {
+.zoom-controls button,
+.text-scale-controls button {
   padding: 2px 8px;
 }
-.zoom-controls > span {
+.zoom-controls > span,
+.text-scale-controls > .numeric {
   font-size: 13px;
   min-width: 40px;
   text-align: center;
 }
 .transcription {
   font-family: var(--font-serif);
-  font-size: 26px;
-  line-height: 44px;
+  font-size: calc(26px * var(--text-scale, 1));
+  line-height: calc(44 / 26);
   flex: 1;
   min-height: 0;
   overflow-x: auto;
@@ -1156,7 +1163,7 @@ main {
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
-  min-width: 44px;
+  min-width: calc(44px * var(--text-scale, 1));
   min-height: 0;
   max-height: none;
   padding: 0 8px;
@@ -1190,16 +1197,15 @@ main {
   writing-mode: vertical-rl;
   text-orientation: mixed;
   white-space: pre-wrap;
-  min-width: 44px;
+  min-width: calc(44px * var(--text-scale, 1));
   max-height: none;
-  padding: 0 4px;
+  padding: 0 calc(4px * var(--text-scale, 1));
   overflow-wrap: anywhere;
   height: var(--column-height, 100%);
   flex: 0 0 auto;
 }
 .transcription.horizontal {
   display: block;
-  line-height: 44px;
 }
 .horizontal .column-group {
   border-left: 0;
@@ -1211,7 +1217,7 @@ main {
 }
 .horizontal .transcription-column {
   writing-mode: horizontal-tb;
-  min-height: 44px;
+  min-height: calc(44px * var(--text-scale, 1));
   height: auto;
   white-space: pre-wrap;
 }
@@ -1220,7 +1226,7 @@ main {
 }
 .markup-comment {
   color: var(--text-muted);
-  font-size: 18px;
+  font-size: calc(18px * var(--text-scale, 1));
 }
 .markup-glyph {
   border: 1px solid var(--border-strong);
@@ -1228,8 +1234,8 @@ main {
   line-height: 1.2;
 }
 .markup-reference {
-  font: 500 13px/18px var(--font-sans);
-  padding: 0 3px;
+  font: 500 calc(13px * var(--text-scale, 1)) / calc(18 / 13) var(--font-sans);
+  padding: 0 calc(3px * var(--text-scale, 1));
   writing-mode: horizontal-tb;
   vertical-align: super;
   display: inline-block;
@@ -2157,6 +2163,20 @@ button.line-overlay.line-hidden {
 .workbench-menu,
 .editing-pages details {
   position: relative;
+}
+/* A dot on ⋯ while a line is too long to fit and wraps. */
+.workbench-menu > button.has-notice {
+  position: relative;
+}
+.workbench-menu > button.has-notice::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
 }
 .menu-options,
 .editing-page-links {

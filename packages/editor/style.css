@@ -56,13 +56,22 @@
   flex-shrink: 0;
 }
 .vertical-editor .transcription-column {
-  min-block-size: 44px;
+  min-block-size: calc(44px * var(--text-scale, 1));
   block-size: auto;
   height: auto;
-  min-width: 44px;
-  padding: 0 4px;
+  min-width: calc(44px * var(--text-scale, 1));
+  padding: 0 calc(4px * var(--text-scale, 1));
   margin: 0;
   border-inline-start: 1px solid transparent;
+}
+/* fitText lays every column out unwrapped at scale 1 for one synchronous read. */
+.text-fit-measuring {
+  --text-scale: 1;
+}
+.text-fit-measuring .transcription-column {
+  white-space: pre !important;
+  overflow-wrap: normal !important;
+  height: max-content !important;
 }
 .vertical-editor ::selection {
   background: var(--selection);
@@ -70,7 +79,7 @@
 }
 .vertical-editor .editor-half-divider {
   border-block-start: 1px solid var(--border-strong);
-  padding-block-start: 12px;
+  padding-block-start: calc(12px * var(--text-scale, 1));
 }
 .editor-source-anchor {
   display: inline-block;
@@ -80,7 +89,7 @@
 }
 .markup-divider {
   color: var(--text-muted);
-  font: 400 13px/18px var(--font-sans);
+  font: 400 calc(13px * var(--text-scale, 1)) / calc(18 / 13) var(--font-sans);
 }
 .editor-annotation {
   line-height: 1;
@@ -188,7 +197,7 @@
 }
 .editor-box {
   border: 1px solid currentColor;
-  padding: 2px;
+  padding: calc(2px * var(--text-scale, 1));
 }
 /* Both sides reserve the longer run's height in the vertical column. */
 .kunten-mark {
