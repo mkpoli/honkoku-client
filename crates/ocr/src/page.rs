@@ -173,7 +173,7 @@ mod tests {
     #[test]
     fn canvas_and_site_use_distinct_coordinate_spaces() -> Result<()> {
         let mut page: OcrPage = serde_json::from_value(
-            json!({"width":3000,"height":2000,"processed_width":3000,"processed_height":2000,"model":"v18","lines":[{"reading_order":1,"x":1500,"y":200,"width":50,"height":1000,"confidence":0.95,"koji":"字（じ）","plain":"字じ","raw":"<ruby>字<rt>じ</rt></ruby>"}],"timings":{},"warnings":[]}),
+            json!({"width":3000,"height":2000,"processed_width":3000,"processed_height":2000,"model":"v19","lines":[{"reading_order":1,"x":1500,"y":200,"width":50,"height":1000,"confidence":0.95,"koji":"字（じ）","plain":"字じ","raw":"<ruby>字<rt>じ</rt></ruby>"}],"timings":{},"warnings":[]}),
         )?;
         page.to_canvas(6000, 4000)?;
         assert_eq!(page.lines[0].x, 3000.0);

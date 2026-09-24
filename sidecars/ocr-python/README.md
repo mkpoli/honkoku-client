@@ -16,4 +16,4 @@ Python3.12の常駐プロセス。標準入力と標準出力にUTF-8の改行�
 
 行は読み順に並び、`reading_order, x, y, width, height, confidence, koji, plain, raw`を含む。座標は入力画像のEXIF回転適用後の画素空間。`confidence`は行検出の確信度。`raw`はモデルのHTML形式、`koji`は挿入用記法。`timings`の単位は秒。
 
-環境管理側がCPU版またはGPU版を選んで`honkoku-ocr-py==0.3.0`をインストールする。GPU環境は`HONKOKU_OCR_DEVICE=cuda`を指定する。モデルの保存先は`HONKOKU_OCR_MODELS`。モデルの取得には約289MB、GPUランタイムには追加のディスク容量が必要。
+環境管理側がCPU版またはGPU版を選んで`honkoku-ocr-py==0.4.0`をインストールする。GPU環境は`HONKOKU_OCR_DEVICE=cuda`を指定する。モデルの保存先は`HONKOKU_OCR_MODELS`。モデルの取得には約289MB、GPUランタイムには追加のディスク容量が必要。

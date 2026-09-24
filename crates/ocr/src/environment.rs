@@ -11,6 +11,11 @@ use tokio::{
 };
 
 const SERVER: &str = include_str!("../../../sidecars/ocr-python/server.py");
+/// The honkoku-ocr-py release the environment installs. An environment recorded with
+/// another release is not ready, so raising this asks existing installs to set up again.
+pub const PACKAGE_VERSION: &str = "0.4.0";
+/// The default recognition model of `PACKAGE_VERSION`.
+pub const MODEL_VERSION: &str = "v19";
 #[derive(Clone)]
 pub struct OcrEnvironment {
     pub directory: PathBuf,
@@ -20,6 +25,15 @@ struct Record {
     requested_gpu: bool,
     use_gpu: bool,
     versions: serde_json::Value,
+}
+impl Record {
+    fn package_version(&self) -> Option<&str> {
+        self.versions
+            .as_array()?
+            .iter()
+            .find(|package| package["name"] == "honkoku-ocr-py")?["version"]
+            .as_str()
+    }
 }
 impl OcrEnvironment {
     pub fn new(app_data_dir: impl AsRef<Path>) -> Self {
@@ -34,14 +48,18 @@ impl OcrEnvironment {
             "bin/python"
         })
     }
+    fn record(&self) -> Option<Record> {
+        let bytes = std::fs::read(self.directory.join("environment.json")).ok()?;
+        serde_json::from_slice(&bytes).ok()
+    }
     pub fn ready(&self) -> bool {
-        self.python().is_file() && self.directory.join("environment.json").is_file()
+        self.python().is_file()
+            && self
+                .record()
+                .is_some_and(|record| record.package_version() == Some(PACKAGE_VERSION))
     }
     pub fn use_gpu(&self) -> bool {
-        std::fs::read(self.directory.join("environment.json"))
-            .ok()
-            .and_then(|bytes| serde_json::from_slice::<Record>(&bytes).ok())
-            .is_some_and(|record| record.use_gpu)
+        self.record().is_some_and(|record| record.use_gpu)
     }
     pub async fn driver_available() -> bool {
         crate::command("nvidia-smi")
@@ -103,19 +121,20 @@ impl OcrEnvironment {
         if use_gpu {
             // onnxruntime-gpu 1.29 links CUDA 13; the runtime wheels for CUDA 13 carry no
             // "-cu13" suffix except cuDNN, and onnxruntime.preload_dlls() finds them.
-            install.args([
-                "honkoku-ocr-py==0.3.0",
-                "onnxruntime-gpu>=1.29",
-                "nvidia-cuda-runtime",
-                "nvidia-cublas",
-                "nvidia-cudnn-cu13",
-                "nvidia-cufft",
-                "nvidia-curand",
-                "nvidia-cuda-nvrtc",
-                "nvidia-nvjitlink",
-            ]);
+            install
+                .arg(format!("honkoku-ocr-py=={PACKAGE_VERSION}"))
+                .args([
+                    "onnxruntime-gpu>=1.29",
+                    "nvidia-cuda-runtime",
+                    "nvidia-cublas",
+                    "nvidia-cudnn-cu13",
+                    "nvidia-cufft",
+                    "nvidia-curand",
+                    "nvidia-cuda-nvrtc",
+                    "nvidia-nvjitlink",
+                ]);
         } else {
-            install.arg("honkoku-ocr-py[cpu]==0.3.0");
+            install.arg(format!("honkoku-ocr-py[cpu]=={PACKAGE_VERSION}"));
         }
         stream(install, progress).await?;
         let output = crate::command("uv")
@@ -177,4 +196,35 @@ async fn stream(mut command: Command, progress: ProgressHandler) -> Result<()> {
         return Err(Error::Setup("OCR環境のインストールに失敗しました。".into()));
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn installed(environment: &OcrEnvironment, version: &str) {
+        std::fs::create_dir_all(environment.python().parent().unwrap()).unwrap();
+        std::fs::write(environment.python(), "").unwrap();
+        let record = serde_json::json!({
+            "requested_gpu": false,
+            "use_gpu": false,
+            "versions": [{"name": "numpy", "version": "2.5.2"}, {"name": "honkoku-ocr-py", "version": version}],
+        });
+        std::fs::write(
+            environment.directory.join("environment.json"),
+            record.to_string(),
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn ready_only_with_the_pinned_package() {
+        let temp = tempfile::tempdir().unwrap();
+        let environment = OcrEnvironment::new(temp.path());
+        assert!(!environment.ready());
+        installed(&environment, "0.0.0");
+        assert!(!environment.ready());
+        installed(&environment, PACKAGE_VERSION);
+        assert!(environment.ready());
+    }
 }
