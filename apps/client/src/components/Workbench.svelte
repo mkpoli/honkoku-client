@@ -275,8 +275,9 @@
       if (menuRoot && !menuRoot.contains(event.target as Node)) menuOpen = false;
     };
     const key = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
+      if (event.key !== "Escape" || event.defaultPrevented) return;
       const inside = menuRoot?.contains(document.activeElement);
+      if (!inside && document.activeElement !== document.body) return;
       menuOpen = false;
       if (inside) menuToggle?.focus();
     };
@@ -290,6 +291,9 @@
   let historyOpen = $state(false),
     bibliographyOpen = $state(false),
     exportOpen = $state(false);
+  $effect(() => {
+    if (!menuOpen) exportOpen = false;
+  });
   let exportScope = $state("page"),
     exportFormat = $state<ExportFormat>("txt"),
     exportBusy = $state(false);

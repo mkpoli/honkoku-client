@@ -3050,6 +3050,11 @@ export async function checkWorkbenchMenuClose(
     await toggle.click();
     await page.getByRole("button", { name: "翻刻文をダウンロード" }).click();
     await page.locator(".export-submenu").waitFor();
+    await page.locator(".facsimile-canvas").click({ position: { x: 40, y: 40 } });
+    await menu.waitFor({ state: "detached" });
+    await toggle.click();
+    await menu.waitFor();
+    assert.equal(await page.locator(".export-submenu").count(), 0);
     await page.locator(".workbench-panes").click({ position: { x: 20, y: 20 } });
     await menu.waitFor({ state: "detached" });
     assert.deepEqual(errors, []);
