@@ -6,7 +6,8 @@
   "exports": {
     ".": "./index.ts",
     "./VerticalEditor.svelte": "./VerticalEditor.svelte",
-    "./palette": "./palette.ts"
+    "./palette": "./palette.ts",
+    "./fit-text": "./fit-text.ts"
   },
   "dependencies": {
     "@honkoku/markup": "workspace:*",
