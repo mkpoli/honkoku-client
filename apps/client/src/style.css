@@ -1619,25 +1619,9 @@ main {
 .status-strip > a {
   transition: background-color 300ms ease;
 }
-.completion-toast {
-  color: var(--gold);
-}
-@keyframes completion-fade {
-  0%,
-  100% {
-    opacity: 0;
-  }
-  15%,
-  80% {
-    opacity: 1;
-  }
-}
 @media (prefers-reduced-motion: reduce) {
   .status-strip > a {
     transition: none;
-  }
-  .completion-toast {
-    animation: none;
   }
 }
 
