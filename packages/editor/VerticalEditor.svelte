@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount, untrack, tick } from "svelte";
+  import { fitText, type LineFit } from "./fit-text";
   import {
     historyKey,
     caretContext,
@@ -33,6 +34,7 @@
   import "./style.css";
   let {
     source = $bindable(""),
+    onmeasure,
     onupdate,
     onready,
     oncolumnchange,
@@ -46,6 +48,7 @@
     pageId = "",
   }: {
     source: string;
+    onmeasure?: (lines: LineFit[], typing: boolean) => void;
     otherPageTexts?: string[];
     pageId?: string;
     onglyph?: (character: string, open: boolean) => void;
@@ -658,7 +661,12 @@
     {/if}
   </section>
   <div class="editor-body" class:editor-raw-mode={raw}>
-    <div class="transcription editor-scroll" class:horizontal hidden={raw}>
+    <div
+      class="transcription editor-scroll"
+      class:horizontal
+      hidden={raw}
+      use:fitText={{ onmeasure, horizontal }}
+    >
       <div bind:this={host} class="editor-mount"></div>
     </div>
     {#if raw}<div class="editor-notation">

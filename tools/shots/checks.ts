@@ -3085,3 +3085,162 @@ export async function checkWorkbenchMenuClose(
     await context.close();
   }
 }
+
+/** Visual lines per column, and whether any text sits past its column's end. */
+async function columnFit(page: Page) {
+  return page.evaluate(() => {
+    const scroller = document.querySelector<HTMLElement>(
+      ".editor-scroll:not([hidden]), .transcription-reader .transcription",
+    )!;
+    return [
+      ...scroller.querySelectorAll<HTMLElement>(".transcription-column"),
+    ].map((column) => {
+      const font = parseFloat(getComputedStyle(column).fontSize);
+      const walker = document.createTreeWalker(column, NodeFilter.SHOW_TEXT);
+      const rects: DOMRect[] = [];
+      for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+        const range = document.createRange();
+        range.selectNodeContents(node);
+        rects.push(...[...range.getClientRects()].filter((r) => r.width && r.height));
+      }
+      // A visual line is a band of glyph boxes; rubies and badges sit within half a glyph of it.
+      const lefts = rects.map((r) => r.left).sort((a, b) => a - b);
+      let lines = lefts.length ? 1 : 0;
+      for (let i = 1; i < lefts.length; i++)
+        if (lefts[i] - lefts[i - 1] > font * 0.75) lines++;
+      const box = column.getBoundingClientRect();
+      return { lines, clipped: rects.some((r) => r.bottom > box.bottom + 1) };
+    });
+  });
+}
+
+export async function checkTextScale(
+  browser: Browser,
+  origin: string,
+  theme: "light" | "dark",
+) {
+  const context = await browser.newContext({
+    viewport: { width: 1600, height: 1000 },
+    locale: "ja-JP",
+    colorScheme: theme,
+    reducedMotion: "reduce",
+  });
+  const page = await context.newPage();
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  const scale = () =>
+    page.evaluate(() =>
+      parseFloat(
+        document
+          .querySelector<HTMLElement>(".transcription-panel")!
+          .style.getPropertyValue("--text-scale"),
+      ),
+    );
+  /** The applied scale once it has held for longer than the editor's typing pause. */
+  async function settled() {
+    let last = NaN;
+    let steady = 0;
+    for (let i = 0; i < 60; i++) {
+      await page.waitForTimeout(250);
+      const now = await scale();
+      steady = now === last ? steady + 1 : 0;
+      last = now;
+      if (steady === 3) return now;
+    }
+    throw Error("text scale did not settle");
+  }
+  const menu = page.locator(".menu-options");
+  const controls = menu.locator(".text-scale-controls");
+  async function openMenu() {
+    if (!(await menu.count()))
+      await page.getByRole("button", { name: "表示設定", exact: true }).click();
+    await controls.waitFor();
+  }
+  const oneLineEach = (fit: { lines: number; clipped: boolean }[]) =>
+    fit.every((c) => c.lines === 1 && !c.clipped);
+  try {
+    await page.goto(`${origin}/#/entries/${entry}/pages/3`);
+    await page.locator(".transcription-column").first().waitFor();
+    await page.evaluate(() => document.fonts.ready);
+    await settled();
+    let fit = await columnFit(page);
+    assert.ok(oneLineEach(fit), `reader: ${JSON.stringify(fit)}`);
+    const reader = await scale();
+
+    // A page opened in 横書き is fitted as soon as it returns to 縦書き.
+    await openMenu();
+    await menu.getByRole("button", { name: "縦書き", exact: true }).click();
+    await page.locator(".transcription.horizontal").waitFor();
+    assert.equal(await settled(), 1, "horizontal text is not fitted");
+    await page.keyboard.press("ArrowRight");
+    await page.waitForURL("**/pages/4");
+    await page.keyboard.press("ArrowLeft");
+    await page.waitForURL("**/pages/3");
+    await openMenu();
+    await menu.getByRole("button", { name: "横書き", exact: true }).click();
+    await page.locator(".transcription:not(.horizontal) .transcription-column").first().waitFor();
+    assert.equal(await settled(), reader, "vertical text is fitted again");
+    assert.ok(oneLineEach(await columnFit(page)));
+    await page.getByRole("button", { name: "編集開始", exact: true }).click();
+    await page.locator(".vertical-editor .transcription-column").first().waitFor();
+    const tall = await settled();
+    fit = await columnFit(page);
+    assert.ok(oneLineEach(fit), `editor: ${JSON.stringify(fit)}`);
+    assert.ok(tall > 0.5, "the editor keeps a readable size");
+    assert.equal(
+      await page.locator(".editor-toolbar .text-scale-controls").count(),
+      0,
+      "the size control stays out of the editor toolbar",
+    );
+
+    await page.setViewportSize({ width: 1600, height: 640 });
+    assert.ok((await settled()) < tall, "a shorter pane shrinks the text");
+    assert.ok(oneLineEach(await columnFit(page)));
+    await page.setViewportSize({ width: 1600, height: 1000 });
+    assert.equal(await settled(), tall, "the size returns with the pane");
+
+    // One line far longer than the rest wraps on its own; the page keeps its size.
+    await page.getByRole("button", { name: "記法", exact: true }).click();
+    const raw = page.getByRole("textbox", { name: "原文を編集", exact: true });
+    const lines = (await raw.inputValue()).split("\n");
+    lines.splice(3, 0, "山".repeat(160));
+    await raw.fill(lines.join("\n"));
+    await page.getByRole("button", { name: "記法", exact: true }).click();
+    assert.equal(await settled(), tall);
+    fit = await columnFit(page);
+    assert.equal(fit.filter((c) => c.lines > 1).length, 1, JSON.stringify(fit));
+    assert.ok(fit.every((c) => !c.clipped));
+    assert.equal(
+      await page.getByRole("button", { name: "表示設定", exact: true }).getAttribute("title"),
+      "長すぎる行は折り返しています",
+    );
+    await openMenu();
+    await menu.getByText("長すぎる行は折り返しています").waitFor();
+    await controls.getByText(`${Math.round(tall * 100)}%`).waitFor();
+    if (theme === "light")
+      await page.screenshot({
+        path: resolve(import.meta.dir, "../../.local/shots/23-text-scale-light.png"),
+      });
+
+    // Manual steps leave automatic fitting and persist across reloads.
+    await controls.getByRole("button", { name: "本文を縮小", exact: true }).click();
+    assert.equal(
+      await controls.getByRole("button", { name: "自動", exact: true }).getAttribute("aria-pressed"),
+      "false",
+    );
+    const manual = await settled();
+    assert.ok(manual < tall);
+    await page.reload();
+    await page.locator(".transcription-column").first().waitFor();
+    assert.equal(await settled(), manual);
+    await openMenu();
+    await controls.getByRole("button", { name: "自動", exact: true }).click();
+    assert.ok((await settled()) > manual);
+    assert.deepEqual(errors, []);
+    console.log(
+      `Text fit checks passed (${theme}): one line per column, pane resize, outlier wrap, menu control, manual scale.`,
+    );
+  } finally {
+    await context.close();
+  }
+}

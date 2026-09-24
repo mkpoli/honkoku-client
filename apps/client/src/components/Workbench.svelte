@@ -35,6 +35,12 @@
     TextSelection,
     textareaSource,
   } from "@honkoku/editor";
+  import {
+    fitTextScale,
+    manualScaleRange,
+    wrappingLines,
+    type LineFit,
+  } from "@honkoku/editor/fit-text";
   import Transcription from "./Transcription.svelte";
   import {
     date,
@@ -241,6 +247,98 @@
   );
   let selectedColumn = $state(-1);
   let hoveredColumn = $state<number | null>(null);
+  const textScaleKey = "honkoku.text-scale";
+  const clampScale = (scale: number) =>
+    Math.min(
+      manualScaleRange.max,
+      Math.max(manualScaleRange.min, Math.round(scale * 100) / 100),
+    );
+  const savedScale = (() => {
+    try {
+      return JSON.parse(localStorage.getItem(textScaleKey) ?? "null");
+    } catch {
+      return null;
+    }
+  })();
+  let automaticScale = $state(savedScale?.automatic !== false);
+  let manualScale = $state(
+    Number.isFinite(savedScale?.scale) ? clampScale(savedScale.scale) : 1,
+  );
+  let lineFits = $state<LineFit[] | null>(null);
+  let autoScale = $state(1);
+  /**
+   * A new layout (page, pane size, reader or editor) takes its fitted size at
+   * once. While typing, the size still shrinks at once so no line wraps, but
+   * grows only by a visible step, so typing near the end of the longest line
+   * does not keep resizing the page.
+   */
+  function measured(lines: LineFit[], typing: boolean) {
+    lineFits = lines;
+    const target = fitTextScale(lines);
+    if (!typing || target < autoScale || target - autoScale >= 0.05)
+      autoScale = target;
+  }
+  let textScale = $derived(
+    !automaticScale ? manualScale : horizontal ? 1 : autoScale,
+  );
+  let textWraps = $derived(
+    !horizontal && !!lineFits && wrappingLines(lineFits, textScale).length > 0,
+  );
+  function rememberTextScale() {
+    try {
+      localStorage.setItem(
+        textScaleKey,
+        JSON.stringify({ automatic: automaticScale, scale: manualScale }),
+      );
+    } catch {}
+  }
+  /** Step the text size by 10% from what is shown now, leaving automatic fitting. */
+  function changeScale(delta: number) {
+    const step =
+      delta > 0
+        ? Math.floor(textScale * 10 + 1e-8)
+        : Math.ceil(textScale * 10 - 1e-8);
+    manualScale = clampScale((step + delta) / 10);
+    automaticScale = false;
+    rememberTextScale();
+  }
+  function toggleAutomaticScale() {
+    if (automaticScale) manualScale = clampScale(textScale);
+    automaticScale = !automaticScale;
+    rememberTextScale();
+  }
+  /**
+   * Ctrl+wheel over the text steps once per mouse notch. A trackpad pinch
+   * sends many small pixel deltas, which add up to a step; a pause or a change
+   * of direction starts the count again.
+   */
+  function textWheel(element: HTMLElement) {
+    let pending = 0;
+    let idle: ReturnType<typeof setTimeout> | undefined;
+    const wheel = (event: WheelEvent) => {
+      if (!event.ctrlKey || !event.deltaY) return;
+      if ((event.target as Element).closest(".ocr-drawer")) return;
+      event.preventDefault();
+      clearTimeout(idle);
+      idle = setTimeout(() => (pending = 0), 250);
+      if (event.deltaMode !== WheelEvent.DOM_DELTA_PIXEL) {
+        changeScale(event.deltaY < 0 ? 1 : -1);
+        return;
+      }
+      if (Math.sign(pending) !== Math.sign(event.deltaY)) pending = 0;
+      pending += event.deltaY;
+      if (Math.abs(pending) < 100) return;
+      changeScale(pending < 0 ? 1 : -1);
+      pending = 0;
+    };
+    element.addEventListener("wheel", wheel, { passive: false });
+    return {
+      destroy() {
+        clearTimeout(idle);
+        element.removeEventListener("wheel", wheel);
+      },
+    };
+  }
   let hoveredLine = $state<number | null>(null);
   let highlightedColumn = $derived(
     hoveredColumn !== null
@@ -1365,6 +1463,8 @@
           bind:this={menuToggle}
           aria-label="表示設定"
           aria-expanded={menuOpen}
+          class:has-notice={textWraps}
+          title={textWraps ? "長すぎる行は折り返しています" : undefined}
           onclick={() => (menuOpen = !menuOpen)}>⋯</button
         >
         {#if menuOpen}<div class="menu-options">
@@ -1429,6 +1529,25 @@
                 menuOpen = false;
               }}>{horizontal ? "横書き" : "縦書き"}</button
             >
+            <div
+              class="text-scale-controls"
+              role="group"
+              aria-label="本文の大きさ"
+              title="Ctrl+ホイールでも変えられます"
+            >
+              <span>本文</span><button
+                aria-label="本文を縮小"
+                disabled={textScale <= manualScaleRange.min}
+                onclick={() => changeScale(-1)}>−</button
+              ><span class="numeric">{Math.round(textScale * 100)}%</span><button
+                aria-label="本文を拡大"
+                disabled={textScale >= manualScaleRange.max}
+                onclick={() => changeScale(1)}>＋</button
+              ><button aria-pressed={automaticScale} onclick={toggleAutomaticScale}
+                >自動</button
+              >
+            </div>
+            {#if textWraps}<p class="caption muted">長すぎる行は折り返しています</p>{/if}
           </div>{/if}
       </div>
       {#if trailing}{@render trailing()}{/if}
@@ -1441,7 +1560,12 @@
         aria-label="端末に残っている本文"></textarea>
     </details>{/if}
   <div class="workbench-panes" class:swapped>
-    <section class="panel transcription-panel" use:references>
+    <section
+      class="panel transcription-panel"
+      style:--text-scale={textScale}
+      use:textWheel
+      use:references
+    >
       {#if pagesPending}<Skeleton
           shape="columns"
           count={8}
@@ -1451,6 +1575,7 @@
         >
           {#if notationMode}<div class="pane-toolbar"><span class="caption muted">記法で編集中</span></div>{/if}
           <VerticalEditor
+            onmeasure={measured}
             onnotationchange={(active) => (notationMode = active)}
             {horizontal}
             accountId={session?.uid}
@@ -1468,6 +1593,7 @@
         </div>{:else}
         <div class="transcription-reader">
           <Transcription
+            onmeasure={measured}
             bind:this={transcription}
             source={displayedSource}
             {horizontal}

@@ -1,5 +1,6 @@
 <script lang="ts">
   import "../../../../packages/editor/style.css";
+  import { fitText, type LineFit } from "@honkoku/editor/fit-text";
   import {
     renderReadingLine,
     sectionLabel,
@@ -13,6 +14,7 @@
     highlightedColumn = -1,
     oncolumnchange,
     onhover,
+    onmeasure,
   }: {
     source: string;
     horizontal?: boolean;
@@ -21,6 +23,7 @@
     highlightedColumn?: number;
     oncolumnchange?: (index: number) => void;
     onhover?: (index: number | null) => void;
+    onmeasure?: (lines: LineFit[], typing: boolean) => void;
   } = $props();
   let host: HTMLDivElement;
   let groups = $derived.by(() => {
@@ -82,7 +85,12 @@
   }
 </script>
 
-<div class="transcription" class:horizontal bind:this={host}>
+<div
+  class="transcription"
+  class:horizontal
+  bind:this={host}
+  use:fitText={{ onmeasure, horizontal }}
+>
   {#each groups as group, i}
     <section
       class="column-group"
