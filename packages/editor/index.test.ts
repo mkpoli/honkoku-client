@@ -139,6 +139,16 @@ test("title command wraps the selection and keeps the caret after it", () => {
   wrapSelection("title")(empty.state, empty.dispatch);
   empty.dispatch(empty.state.tr.insertText("題"));
   expect(empty.source).toBe("前《題：題》後");
+  for (const text of ["a｜b", "a《b", "a》b", "a【b"]) {
+    const bad = editor(text);
+    bad.dispatch(
+      bad.state.tr.setSelection(
+        TextSelection.create(bad.state.doc, 1, bad.state.doc.content.size - 1),
+      ),
+    );
+    expect(wrapSelection("title")(bad.state, bad.dispatch)).toBe(false);
+    expect(bad.source).toBe(text);
+  }
 });
 test("column insertion, deletion and nonadjacent patches", () => {
   const e = editor("一二\r\n三四\r五六\n七八");

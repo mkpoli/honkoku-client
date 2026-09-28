@@ -454,6 +454,11 @@ export const insertAnnotation =
     );
     return true;
   };
+/** Whether `《題：text》` reads back as one title. */
+export function titleFits(text: string): boolean {
+  const nodes = parseLine(`《題：${text}》`);
+  return nodes.length === 1 && nodes[0].kind === "title";
+}
 export const wrapSelection =
   (kind: ConstructKind, reading = ""): Command =>
   (state, dispatch) => {
@@ -465,6 +470,7 @@ export const wrapSelection =
         state.selection.$to.parentOffset,
       ),
     );
+    if (kind === "title" && !titleFits(value)) return false;
     const node =
       kind === "title"
         ? annotation(kind, [value])

@@ -9,6 +9,7 @@
     createEditor,
     textareaSource,
     wrapSelection,
+    titleFits,
     insertText,
     insertOkurigana,
     okuriganaFromSelection,
@@ -340,6 +341,10 @@
       return;
     }
     if (raw && title === "題") {
+      if (!titleFits(selection)) {
+        status = "ここにはこの記号を入れられません。";
+        return;
+      }
       await insertRaw(`《題：${selection}》`, true, 3 + selection.length);
     } else if (raw) {
       const base = title === "割書" ? "" : selection;
