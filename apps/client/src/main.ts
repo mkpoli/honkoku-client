@@ -21,8 +21,15 @@ function follow(urls: string[] | null) {
 
 if (isTauri()) {
   try {
-    follow(await getCurrent());
-    await onOpenUrl(follow);
+    // Subscribe first so a link that arrives during startup is not lost; a
+    // link delivered meanwhile is newer than the startup one.
+    let received = false;
+    await onOpenUrl((urls) => {
+      received = true;
+      follow(urls);
+    });
+    const initial = await getCurrent();
+    if (!received) follow(initial);
   } catch {
     /* Without the link plugin the client still opens its home. */
   }
