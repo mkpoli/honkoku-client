@@ -92,6 +92,14 @@ export async function checkEditor(browser: Browser, origin: string) {
     await page.keyboard.press("ArrowRight");
     await page.keyboard.press("Control+z");
     assert.equal(await source(page), "峰\r\n変えない＃００１\r《未知：原文》");
+    await select(page, 1, 2);
+    await page.getByRole("button", { name: "題", exact: true }).click();
+    await page.keyboard.insertText("嶺");
+    assert.equal(
+      await source(page),
+      "《題：峰嶺》\r\n変えない＃００１\r《未知：原文》",
+    );
+    await equal(page);
     await reset(page, "前後\r\n保存＃００１");
     await select(page, 2);
     const cdp = await context.newCDPSession(page);
@@ -248,6 +256,7 @@ export async function checkEditor(browser: Browser, origin: string) {
       ["Control+r", "前《振り仮名：仮名｜》後"],
       ["Control+w", "前《割書：仮名｜》後"],
       ["Control+m", "前《見せ消ち：仮名｜》後"],
+      ["Control+t", "前《題：仮名》後"],
     ]) {
       await reset(page, "前後");
       await select(page, 2);

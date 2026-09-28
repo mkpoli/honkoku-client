@@ -9,6 +9,7 @@
     createEditor,
     textareaSource,
     wrapSelection,
+    titleFits,
     insertText,
     insertOkurigana,
     okuriganaFromSelection,
@@ -101,8 +102,8 @@
       alignMirror();
     } else editor?.view.focus();
   }
-  type Construct = "振り仮名" | "割書" | "見せ消ち" | "注記";
-  const commands: Construct[] = ["振り仮名", "割書", "見せ消ち", "注記"];
+  type Construct = "振り仮名" | "割書" | "見せ消ち" | "題" | "注記";
+  const commands: Construct[] = ["振り仮名", "割書", "見せ消ち", "題", "注記"];
   let status = $state("");
   let contextPath = $state<CaretContext[]>([]);
   let note = $state<{ index: number; content: string; x: number; y: number }>();
@@ -339,12 +340,23 @@
       editNote(index, "");
       return;
     }
-    if (raw) {
+    if (raw && title === "題") {
+      if (!titleFits(selection)) {
+        status = "ここにはこの記号を入れられません。";
+        return;
+      }
+      await insertRaw(`《題：${selection}》`, true, 3 + selection.length);
+    } else if (raw) {
       const base = title === "割書" ? "" : selection;
       await insertRaw(`《${title}：${base}｜》`, true, title.length + 2);
     } else {
       const kind = (
-        { 振り仮名: "ruby", 割書: "warigaki", 見せ消ち: "misekechi" } as const
+        {
+          振り仮名: "ruby",
+          割書: "warigaki",
+          見せ消ち: "misekechi",
+          題: "title",
+        } as const
       )[title];
       if (!editor?.run(wrapSelection(kind)))
         status = "ここにはこの記号を入れられません。";
@@ -387,7 +399,7 @@
       return;
     }
     const title = (
-      { r: "振り仮名", w: "割書", m: "見せ消ち", n: "注記" } as const
+      { r: "振り仮名", w: "割書", m: "見せ消ち", t: "題", n: "注記" } as const
     )[event.key.toLowerCase() as "r"];
     if (title) {
       event.preventDefault();
