@@ -187,3 +187,59 @@ async fn per_host_requests_are_bounded() -> Result<()> {
     assert!(started.elapsed() >= Duration::from_millis(290));
     Ok(())
 }
+
+#[test]
+fn entries_with_raw_iiif_canvases_are_readable() -> Result<()> {
+    let entry: Entry = serde_json::from_str(include_str!(
+        "../../../fixtures/api/entry-B97526B43D33B4F752C2BB4A6C581FCD.json"
+    ))?;
+    let canvas = &entry.canvases.as_ref().expect("canvases")[0];
+    assert_eq!(
+        canvas.id,
+        "https://d-archive.u-gakugei.ac.jp/iiif/2/07129354/page00001"
+    );
+    assert_eq!(
+        canvas.info_json_url.as_deref(),
+        Some("https://d-archive.u-gakugei.ac.jp/iiif/2/library%2F07129354%2F00001.tif/info.json")
+    );
+    assert_eq!(
+        canvas.image_url.as_deref(),
+        Some("https://d-archive.u-gakugei.ac.jp/iiif/2/library/07129354/00001")
+    );
+    assert_eq!(canvas.thumbnail_url, canvas.image_url);
+    assert_eq!(canvas.extra["label"], "1");
+    // What the cache stores reads back unchanged.
+    let cached: Entry = serde_json::from_value(serde_json::to_value(&entry)?)?;
+    assert_eq!(cached, entry);
+    Ok(())
+}
+
+#[test]
+fn presentation_three_canvases_and_platform_fields() -> Result<()> {
+    let entry: Entry = serde_json::from_value(json!({
+        "id": "e", "projectId": "p", "collectionId": "c", "index": 0, "label": "e",
+        "manifestUrl": "https://library.example/manifest",
+        "canvases": [
+            {"id": "https://library.example/canvas/1", "width": 1000, "height": 800,
+             "items": [{"items": [{"body": {"id": "https://library.example/image/full/max/0/default.jpg",
+               "service": [{"id": "https://library.example/image/", "type": "ImageService3"}]}}]}],
+             "thumbnail": [{"id": "https://library.example/thumb.jpg"}]},
+            {"id": "c2", "width": 1, "height": 1, "infoJsonUrl": "https://platform.example/info.json",
+             "images": [{"resource": {"service": {"@id": "https://library.example/other"}}}]}
+        ]
+    }))?;
+    let canvases = entry.canvases.expect("canvases");
+    assert_eq!(
+        canvases[0].info_json_url.as_deref(),
+        Some("https://library.example/image/info.json")
+    );
+    assert_eq!(
+        canvases[0].thumbnail_url.as_deref(),
+        Some("https://library.example/thumb.jpg")
+    );
+    assert_eq!(
+        canvases[1].info_json_url.as_deref(),
+        Some("https://platform.example/info.json")
+    );
+    Ok(())
+}

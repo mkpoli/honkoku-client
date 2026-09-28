@@ -921,20 +921,9 @@ pub async fn region_refresh(
         ReadRegion::Collection { id } => {
             serde_json::to_value(client.cached_collection(&state.storage, &id, true).await?)
         }
-        ReadRegion::Entry { id } => match client.cached_entry(&state.storage, &id, true).await {
-            Ok(entry) => serde_json::to_value(entry),
-            Err(honkoku_core::Error::Json(_)) => {
-                let mut value: Value = client.document(&format!("entries/{id}")).await?;
-                if let Some(canvases) = value["canvases"].as_array_mut() {
-                    canvases.iter_mut().for_each(crate::normalize_canvas);
-                }
-                let copy = value.clone();
-                honkoku_core::cache::blocking(&state.storage, move |db| db.put_entry(&copy))
-                    .await?;
-                Ok(value)
-            }
-            Err(error) => return Err(error.into()),
-        },
+        ReadRegion::Entry { id } => {
+            serde_json::to_value(client.cached_entry(&state.storage, &id, true).await?)
+        }
         ReadRegion::Pages { id } => {
             serde_json::to_value(client.cached_pages(&state.storage, &id, true).await?)
         }
