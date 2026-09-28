@@ -12,6 +12,7 @@
   "dependencies": {
     "@honkoku/client-api": "workspace:*",
     "@honkoku/ui": "workspace:*",
+    "@tauri-apps/plugin-deep-link": "2.4.10",
     "@tauri-apps/plugin-opener": "2.5.5",
     "dompurify": "3.4.15",
     "marked": "18.0.12",

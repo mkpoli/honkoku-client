@@ -176,11 +176,29 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 fn run() -> Result<(), Box<dyn std::error::Error>> {
     early_diagnostic(&format!("start {}", env!("CARGO_PKG_VERSION")));
     tauri::Builder::default()
+        // A second launch, such as a honkoku-client:// link, hands its URL to
+        // the running window through the deep-link plugin and exits.
+        .plugin(tauri_plugin_single_instance::init(|app, _, _| {
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.unminimize();
+                let _ = window.set_focus();
+            }
+        }))
+        .plugin(tauri_plugin_deep_link::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .register_asynchronous_uri_scheme_protocol("honkoku-iiif", iiif_protocol::handle)
         .setup(|app| {
             install_diagnostics(app);
+            // Installers register the scheme; this also covers the portable
+            // Windows executable and AppImage, and follows the binary if it moves.
+            #[cfg(any(windows, target_os = "linux"))]
+            {
+                use tauri_plugin_deep_link::DeepLinkExt;
+                if let Err(error) = app.deep_link().register_all() {
+                    diagnostic(app, &format!("link scheme not registered: {error}"));
+                }
+            }
             let result = (|| -> Result<(), Box<dyn std::error::Error>> {
                 iiif_protocol::initialize(app)?;
                 app.manage(

@@ -1,5 +1,12 @@
 import { expect, test } from "bun:test";
-import { greetingUrl, learnUrl, siteHref, siteOpenLabel, wikiUrl } from "./site";
+import {
+  greetingUrl,
+  learnUrl,
+  siteHref,
+  siteOpenLabel,
+  siteRoute,
+  wikiUrl,
+} from "./site";
 
 test("site URLs follow the website's route table", () => {
   expect(siteHref({})).toBe("https://app.honkoku.org/");
@@ -56,4 +63,47 @@ test("menu destinations match the website's own links", () => {
   );
   expect(wikiUrl).toBe("https://wiki.honkoku.org/doku.php?id=start");
   expect(learnUrl).toBe("https://kula-kuzushiji.web.app/learn");
+});
+
+test("website URLs open the same screen in the client", () => {
+  for (const route of [
+    {},
+    { projectId: "ainu" },
+    { projectId: "ainu", collectionId: "資料" },
+    { projectId: "ainu", guidelines: true },
+    { search: true, query: "蝦夷 & 𛀁?" },
+    { entryId: "entry", pageIndex: 0 },
+    { entryId: "entry", pageIndex: 17 },
+  ])
+    expect(siteRoute(siteHref(route)!)).toEqual(route);
+});
+
+test("client links carry the website address under their own scheme", () => {
+  expect(
+    siteRoute(
+      "honkoku-client://app.honkoku.org/transcription/62c6743982041882d0aefd6582ac6a84/3/notes",
+    ),
+  ).toEqual({ entryId: "62c6743982041882d0aefd6582ac6a84", pageIndex: 2 });
+  expect(
+    siteRoute("https://app.honkoku.org/translations/entries/ainu/entry"),
+  ).toEqual({
+    entryId: "entry",
+  });
+  expect(siteRoute("https://app.honkoku.org/projects/ainu/forum/post")).toEqual(
+    {
+      projectId: "ainu",
+    },
+  );
+  expect(siteRoute("https://app.honkoku.org/projects/official")).toEqual({});
+  expect(siteRoute("https://app.honkoku.org/transcription/entry/0")).toEqual({
+    entryId: "entry",
+  });
+  expect(siteRoute("https://app.honkoku.org/projects/%zz")).toEqual({});
+  expect(siteRoute("https://app.honkoku.org/editingHistory")).toEqual({});
+});
+
+test("other hosts are not client links", () => {
+  expect(siteRoute("https://example.org/projects/ainu")).toBeUndefined();
+  expect(siteRoute("honkoku-client://example.org/")).toBeUndefined();
+  expect(siteRoute("not a url")).toBeUndefined();
 });
