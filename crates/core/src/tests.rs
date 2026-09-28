@@ -224,6 +224,12 @@ fn presentation_three_canvases_and_platform_fields() -> Result<()> {
              "items": [{"items": [{"body": {"id": "https://library.example/image/full/max/0/default.jpg",
                "service": [{"id": "https://library.example/image/", "type": "ImageService3"}]}}]}],
              "thumbnail": [{"id": "https://library.example/thumb.jpg"}]},
+            {"id": "c3", "width": 1, "height": 1,
+             "items": [{"items": [{"body": {"type": "Choice", "items": [
+               {"id": "https://library.example/natural.jpg",
+                "service": [{"id": "https://library.example/auth", "type": "AuthProbeService2"},
+                            {"id": "https://library.example/natural", "type": "ImageService3"}]},
+               {"id": "https://library.example/xray.jpg"}]}}]}]},
             {"id": "c2", "width": 1, "height": 1, "infoJsonUrl": "https://platform.example/info.json",
              "imageUrl": "https://platform.example/current.jpg",
              "images": [{"resource": {"@id": "https://library.example/obsolete.jpg",
@@ -241,10 +247,18 @@ fn presentation_three_canvases_and_platform_fields() -> Result<()> {
     );
     assert_eq!(
         canvases[1].info_json_url.as_deref(),
+        Some("https://library.example/natural/info.json")
+    );
+    assert_eq!(
+        canvases[1].image_url.as_deref(),
+        Some("https://library.example/natural.jpg")
+    );
+    assert_eq!(
+        canvases[2].info_json_url.as_deref(),
         Some("https://platform.example/info.json")
     );
     assert_eq!(
-        canvases[1].thumbnail_url.as_deref(),
+        canvases[2].thumbnail_url.as_deref(),
         Some("https://platform.example/current.jpg")
     );
     Ok(())

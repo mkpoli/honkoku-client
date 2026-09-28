@@ -259,15 +259,31 @@ fn complete_canvas(canvas: &mut Value) {
     };
     let text = |value: &Value| value.as_str().map(str::to_owned);
     let id_of = |value: &Value| text(&value["@id"]).or_else(|| text(&value["id"]));
-    // Presentation 2 puts the image at images[0].resource, 3 at items[0].items[0].body.
+    // Presentation 2 puts the image at images[0].resource, 3 at items[0].items[0].body,
+    // where a Choice lists alternative images and the first is the default.
     let original = Value::Object(fields.clone());
     let resource = if original["images"].is_array() {
         &original["images"][0]["resource"]
     } else {
-        &original["items"][0]["items"][0]["body"]
+        let body = &original["items"][0]["items"][0]["body"];
+        if body["type"] == "Choice" {
+            &body["items"][0]
+        } else {
+            body
+        }
+    };
+    let is_image_service = |service: &&Value| {
+        let kind = text(&service["type"]).or_else(|| text(&service["@type"]));
+        kind.is_some_and(|kind| kind.starts_with("ImageService") || kind == "iiif:ImageProfile")
+            || text(&service["profile"])
+                .is_some_and(|profile| profile.contains("iiif.io/api/image"))
     };
     let service = match &resource["service"] {
-        Value::Array(services) => services.first().unwrap_or(&Value::Null),
+        Value::Array(services) => services
+            .iter()
+            .find(is_image_service)
+            .or_else(|| services.first())
+            .unwrap_or(&Value::Null),
         service => service,
     };
     let mut fill = |key: &str, value: Option<String>| {
