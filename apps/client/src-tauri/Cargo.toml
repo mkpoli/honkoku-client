@@ -22,6 +22,10 @@ honkoku-iiif.workspace = true
 reqwest = { version = "=0.13.5", default-features = false, features = ["rustls", "stream"] }
 futures-util = "0.3"
 tauri-plugin-opener = "2.5.5"
+tauri-plugin-deep-link = "=2.4.10"
 
 [features]
 custom-protocol = ["tauri/custom-protocol"]
+
+[target.'cfg(any(windows, target_os = "linux", target_os = "macos"))'.dependencies]
+tauri-plugin-single-instance = { version = "=2.4.5", features = ["deep-link"] }

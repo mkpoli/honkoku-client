@@ -21,6 +21,8 @@ tools/shots/tauri.sh out.png ['#/route']       # a screenshot of the real WebKit
 
 Signing in: press ログイン in the client and choose Google or X; the platform's own sign-in opens in a window and the session is kept by the application. The CLI signs in from a session captured with `bun tools/session/login.ts` (`honkoku login --import`); `tools/session/README.md` has the details.
 
+Opening from the website: the client handles `honkoku-client://` links, which are a website address under the client's scheme (`honkoku-client://app.honkoku.org/transcription/<entry>/<page>`). Pages, entries, collections, projects, guidelines and searches open the same screen; other addresses open the home screen. The userscript [`apps/userscript/open-in-client.user.js`](https://raw.githubusercontent.com/mkpoli/honkoku-client/main/apps/userscript/open-in-client.user.js) adds a クライアントで開く button to app.honkoku.org; install it with Violentmonkey or Tampermonkey. Installers register the scheme, and the application registers itself again at every start so the portable Windows executable and AppImages work too (on Linux this needs `xdg-mime` and `update-desktop-database`).
+
 Builds: every push to `main` runs the checks; a `v*` tag or a manual run of the CI workflow also attaches installers for Windows (NSIS and MSI), Linux (deb, AppImage, rpm) and macOS (dmg) to the run. From Linux, `tools/build-windows.sh` cross-compiles a portable `honkoku-client.exe` with cargo-xwin and copies it to a Windows folder.
 
 The CLI (`cargo run -p honkoku-cli -- …`) offers `projects`, `project`, `collection`, `entry`, `pages`, `whoami`, `notifications`, `timeline`, `ranking`, and `announcements`, each with `--json`; cached responses are reused for ten minutes unless `--refresh` is given.
@@ -32,6 +34,7 @@ The CLI (`cargo run -p honkoku-cli -- …`) offers `projects`, `project`, `colle
 - `crates/iiif`: IIIF Presentation 2/3 normalisation, Image API 1/2/3 URLs, the fetcher and disk cache.
 - `crates/text`: plain-text excerpts from the platform's markup.
 - `apps/cli`: the `honkoku` command.
+- `apps/userscript`: the browser userscript that opens the current website page in the client.
 - `apps/client`: the Svelte application and its `src-tauri` shell, which serves cached images over the `honkoku-iiif` scheme.
 - `packages/ui`: design tokens for light and dark themes.
 - `packages/client-api`: wire types and typed command wrappers, with a fixture transport for browser development.

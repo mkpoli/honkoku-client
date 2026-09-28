@@ -49,5 +49,14 @@
         "installerIcon": "icons/icon.ico"
       }
     }
+  },
+  "plugins": {
+    "deep-link": {
+      "desktop": {
+        "schemes": [
+          "honkoku-client"
+        ]
+      }
+    }
   }
 }
