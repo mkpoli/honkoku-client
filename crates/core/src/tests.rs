@@ -225,7 +225,9 @@ fn presentation_three_canvases_and_platform_fields() -> Result<()> {
                "service": [{"id": "https://library.example/image/", "type": "ImageService3"}]}}]}],
              "thumbnail": [{"id": "https://library.example/thumb.jpg"}]},
             {"id": "c2", "width": 1, "height": 1, "infoJsonUrl": "https://platform.example/info.json",
-             "images": [{"resource": {"service": {"@id": "https://library.example/other"}}}]}
+             "imageUrl": "https://platform.example/current.jpg",
+             "images": [{"resource": {"@id": "https://library.example/obsolete.jpg",
+               "service": {"@id": "https://library.example/other"}}}]}
         ]
     }))?;
     let canvases = entry.canvases.expect("canvases");
@@ -240,6 +242,10 @@ fn presentation_three_canvases_and_platform_fields() -> Result<()> {
     assert_eq!(
         canvases[1].info_json_url.as_deref(),
         Some("https://platform.example/info.json")
+    );
+    assert_eq!(
+        canvases[1].thumbnail_url.as_deref(),
+        Some("https://platform.example/current.jpg")
     );
     Ok(())
 }

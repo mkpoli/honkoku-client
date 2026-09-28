@@ -282,14 +282,22 @@ fn complete_canvas(canvas: &mut Value) {
         "infoJsonUrl",
         id_of(service).map(|id| format!("{}/info.json", id.trim_end_matches('/'))),
     );
-    let image = id_of(resource);
-    fill("imageUrl", image.clone());
+    fill("imageUrl", id_of(resource));
     let thumbnail = &original["thumbnail"];
     let thumbnail = match thumbnail {
         Value::Array(items) => items.first().and_then(id_of),
         _ => text(thumbnail).or_else(|| id_of(thumbnail)),
     };
-    fill("thumbnailUrl", thumbnail.or(image));
+    // Without a thumbnail, the canvas's own image stands in, stored or derived.
+    let image = fields
+        .get("imageUrl")
+        .and_then(Value::as_str)
+        .map(str::to_owned);
+    if fields.get("thumbnailUrl").is_none_or(Value::is_null)
+        && let Some(url) = thumbnail.or(image)
+    {
+        fields.insert("thumbnailUrl".into(), url.into());
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
