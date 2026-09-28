@@ -112,56 +112,7 @@ async fn list_pages(entry_id: String, state: State<'_, AppState>) -> Result<Vec<
         .await?)
 }
 async fn read_entry(state: &AppState, client: &HonkokuClient, id: &str) -> Result<Entry, AppError> {
-    match client.cached_entry(&state.storage, id, false).await {
-        Ok(entry) => Ok(entry),
-        Err(honkoku_core::Error::Json(_)) => {
-            let mut value: serde_json::Value = client.document(&format!("entries/{id}")).await?;
-            if let Some(canvases) = value["canvases"].as_array_mut() {
-                for canvas in canvases {
-                    normalize_canvas(canvas);
-                }
-            }
-            let entry: Entry = serde_json::from_value(value).map_err(honkoku_core::Error::Json)?;
-            let copy = entry.clone();
-            honkoku_core::cache::blocking(&state.storage, move |db| db.put_entry(&copy)).await?;
-            Ok(entry)
-        }
-        Err(error) => Err(error.into()),
-    }
-}
-fn normalize_canvas(canvas: &mut serde_json::Value) {
-    let original = canvas.clone();
-    if original["id"].is_null() {
-        canvas["id"] = original["@id"].clone();
-    }
-    let resource = &original["images"][0]["resource"];
-    let service = if resource["service"].is_array() {
-        &resource["service"][0]
-    } else {
-        &resource["service"]
-    };
-    let service_id = service["@id"].as_str().or_else(|| service["id"].as_str());
-    if original["infoJsonUrl"].is_null()
-        && let Some(id) = service_id
-    {
-        canvas["infoJsonUrl"] =
-            serde_json::json!(format!("{}/info.json", id.trim_end_matches('/')));
-    }
-    if original["imageUrl"].is_null() {
-        canvas["imageUrl"] = resource
-            .get("@id")
-            .or_else(|| resource.get("id"))
-            .cloned()
-            .unwrap_or_default();
-    }
-    if original["thumbnailUrl"].is_null() {
-        canvas["thumbnailUrl"] = original["thumbnail"]
-            .as_str()
-            .map(serde_json::Value::from)
-            .or_else(|| original["thumbnail"].get("@id").cloned())
-            .or_else(|| original["thumbnail"].get("id").cloned())
-            .unwrap_or_else(|| canvas["imageUrl"].clone());
-    }
+    Ok(client.cached_entry(&state.storage, id, false).await?)
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -415,25 +366,4 @@ fn install_diagnostics(app: &tauri::App) {
         append_line(&path, &format!("panic: {info}"));
         previous(info);
     }));
-}
-
-#[cfg(test)]
-mod entry_tests {
-    use super::*;
-    #[test]
-    fn presentation_two_canvas_becomes_readable_without_losing_metadata() {
-        let mut canvas = serde_json::json!({"@id":"https://library.example/canvas/1","width":1000,"height":800,"label":"一","images":[{"resource":{"@id":"https://library.example/image/full/full/0/default.jpg","service":{"@id":"https://library.example/image"}}}],"thumbnail":{"@id":"https://library.example/thumb.jpg"}});
-        normalize_canvas(&mut canvas);
-        let typed: honkoku_core::model::Canvas = serde_json::from_value(canvas).unwrap();
-        assert_eq!(typed.id, "https://library.example/canvas/1");
-        assert_eq!(
-            typed.info_json_url.as_deref(),
-            Some("https://library.example/image/info.json")
-        );
-        assert_eq!(
-            typed.thumbnail_url.as_deref(),
-            Some("https://library.example/thumb.jpg")
-        );
-        assert_eq!(typed.extra["label"], "一");
-    }
 }

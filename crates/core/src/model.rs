@@ -207,7 +207,11 @@ pub struct Entry {
     pub created_at: Option<Timestamp>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub updated_at: Option<Timestamp>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        default,
+        deserialize_with = "raw_canvases",
+        skip_serializing_if = "Option::is_none"
+    )]
     pub canvases: Option<Vec<Canvas>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub transcriptions: Option<Vec<Page>>,
@@ -229,6 +233,63 @@ pub struct Canvas {
     pub thumbnail_url: Option<String>,
     #[serde(flatten)]
     pub extra: Map<String, Value>,
+}
+
+/// Entries imported from some manifests keep the IIIF canvas as published
+/// (`@id`, `images[].resource.service`) without the platform's own fields;
+/// those are filled in from the canvas before it is read.
+fn raw_canvases<'de, D: Deserializer<'de>>(
+    deserializer: D,
+) -> Result<Option<Vec<Canvas>>, D::Error> {
+    let Some(values) = Option::<Vec<Value>>::deserialize(deserializer)? else {
+        return Ok(None);
+    };
+    values
+        .into_iter()
+        .map(|mut value| {
+            complete_canvas(&mut value);
+            serde_json::from_value(value).map_err(serde::de::Error::custom)
+        })
+        .collect::<Result<_, _>>()
+        .map(Some)
+}
+fn complete_canvas(canvas: &mut Value) {
+    let Some(fields) = canvas.as_object_mut() else {
+        return;
+    };
+    let text = |value: &Value| value.as_str().map(str::to_owned);
+    let id_of = |value: &Value| text(&value["@id"]).or_else(|| text(&value["id"]));
+    // Presentation 2 puts the image at images[0].resource, 3 at items[0].items[0].body.
+    let original = Value::Object(fields.clone());
+    let resource = if original["images"].is_array() {
+        &original["images"][0]["resource"]
+    } else {
+        &original["items"][0]["items"][0]["body"]
+    };
+    let service = match &resource["service"] {
+        Value::Array(services) => services.first().unwrap_or(&Value::Null),
+        service => service,
+    };
+    let mut fill = |key: &str, value: Option<String>| {
+        if fields.get(key).is_none_or(Value::is_null)
+            && let Some(value) = value
+        {
+            fields.insert(key.into(), value.into());
+        }
+    };
+    fill("id", id_of(&original));
+    fill(
+        "infoJsonUrl",
+        id_of(service).map(|id| format!("{}/info.json", id.trim_end_matches('/'))),
+    );
+    let image = id_of(resource);
+    fill("imageUrl", image.clone());
+    let thumbnail = &original["thumbnail"];
+    let thumbnail = match thumbnail {
+        Value::Array(items) => items.first().and_then(id_of),
+        _ => text(thumbnail).or_else(|| id_of(thumbnail)),
+    };
+    fill("thumbnailUrl", thumbnail.or(image));
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]

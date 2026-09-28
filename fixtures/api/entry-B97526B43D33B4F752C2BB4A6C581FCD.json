@@ -1,0 +1,246 @@
+{
+  "id": "B97526B43D33B4F752C2BB4A6C581FCD",
+  "viewingDirection": "right-to-left",
+  "thumbnail": "https://d-archive.u-gakugei.ac.jp/iiif/2/library%2F07129354%2F00001.tif/full/400,/0/default.jpg",
+  "metadata": [
+    {
+      "label": "請求記号",
+      "value": "291.36/Sa25"
+    },
+    {
+      "label": "コレクション名",
+      "value": "その他教育史資料"
+    },
+    {
+      "label": "コメント",
+      "value": "校教材として活用できるコンテンツとして教育情報メタデータを入力"
+    },
+    {
+      "label": "著者（姓＋名）",
+      "value": "斎藤, 長秋[編輯]"
+    },
+    {
+      "label": "別言語の著者（姓+名）",
+      "value": "松濤軒, 斎藤, 長秋"
+    },
+    {
+      "label": "著者（ヨミ）（姓＋名）",
+      "value": "サイトウ, チョウシュウ"
+    },
+    {
+      "label": "所属",
+      "value": "附属図書館"
+    },
+    {
+      "label": "教科・領域",
+      "value": "社会\n家庭\n総合的な学習"
+    },
+    {
+      "label": "教育情報の種別",
+      "value": "教材"
+    },
+    {
+      "label": "その他のタイトル",
+      "value": "江戸名所圖會"
+    },
+    {
+      "label": "資料ID",
+      "value": "07129354"
+    },
+    {
+      "label": "書誌情報（発行年：リテラル）",
+      "value": "天保5 [1834]"
+    },
+    {
+      "label": "書誌情報（発行年）",
+      "value": "1834"
+    },
+    {
+      "label": "言語",
+      "value": "jpn"
+    },
+    {
+      "label": "所在",
+      "value": "日本近代教育史資料(東京学芸大学附属図書館)"
+    },
+    {
+      "label": "資源タイプ・NII",
+      "value": "Book"
+    },
+    {
+      "label": "出版者",
+      "value": "須原屋伊三郎"
+    },
+    {
+      "label": "権利",
+      "value": "Creative Commons Attribution 4.0 International"
+    },
+    {
+      "label": "デジタルアーカイブ用権利情報",
+      "value": "コンテンツ（画像等本文データ）およびメタデータの二次利用に関する詳細情報、原資料の利用については、<strong><a data-entity-substitution=\"canonical\" data-entity-type=\"node\" data-entity-uuid=\"14680f95-3c29-40ff-81cf-c3d7d201c24f\" href=\"/node/2\">利用案内のページ</a></strong>をご覧ください。"
+    },
+    {
+      "label": "学校種別",
+      "value": "小学校\n中学校"
+    },
+    {
+      "label": "学年",
+      "value": "小3\n小4\n小6\n中1\n中2\n中3"
+    },
+    {
+      "label": "主題",
+      "value": "江戸名所図会"
+    },
+    {
+      "label": "時代",
+      "value": "江戸時代"
+    },
+    {
+      "label": "タイトル",
+      "value": "江戸名所図会 20巻 巻之4"
+    },
+    {
+      "label": "タイトル（ヨミ：ローマ字）",
+      "value": "edo meisho zue"
+    },
+    {
+      "label": "タイトル（ヨミ）",
+      "value": "エド メイショ ズエ"
+    }
+  ],
+  "index": 99,
+  "label": "江戸名所図会 20巻 巻之4",
+  "size": 83,
+  "canvases": [
+    {
+      "images": [
+        {
+          "resource": {
+            "@type": "dctypes:Image",
+            "service": {
+              "profile": "http://iiif.io/api/image/2/level1.json",
+              "@id": "https://d-archive.u-gakugei.ac.jp/iiif/2/library%2F07129354%2F00001.tif",
+              "@context": "http://iiif.io/api/image/2/context.json"
+            },
+            "format": "image/jpeg",
+            "description": "[paragraph:field_description]",
+            "@id": "https://d-archive.u-gakugei.ac.jp/iiif/2/library/07129354/00001"
+          },
+          "@type": "oa:Annotation",
+          "motivation": "sc:painting",
+          "@id": "https://d-archive.u-gakugei.ac.jp/iiif/2/07129354/img00001",
+          "on": "https://d-archive.u-gakugei.ac.jp/iiif/2/07129354/page00001"
+        }
+      ],
+      "@type": "sc:Canvas",
+      "width": 3000,
+      "@id": "https://d-archive.u-gakugei.ac.jp/iiif/2/07129354/page00001",
+      "label": "1",
+      "height": 2000
+    },
+    {
+      "images": [
+        {
+          "resource": {
+            "service": {
+              "profile": "http://iiif.io/api/image/2/level1.json",
+              "@id": "https://d-archive.u-gakugei.ac.jp/iiif/2/library%2F07129354%2F00002.tif",
+              "@context": "http://iiif.io/api/image/2/context.json"
+            },
+            "@type": "dctypes:Image",
+            "format": "image/jpeg",
+            "description": "[paragraph:field_description]",
+            "@id": "https://d-archive.u-gakugei.ac.jp/iiif/2/library/07129354/00002"
+          },
+          "@type": "oa:Annotation",
+          "motivation": "sc:painting",
+          "@id": "https://d-archive.u-gakugei.ac.jp/iiif/2/07129354/img00002",
+          "on": "https://d-archive.u-gakugei.ac.jp/iiif/2/07129354/page00002"
+        }
+      ],
+      "@type": "sc:Canvas",
+      "width": 3000,
+      "label": "2",
+      "@id": "https://d-archive.u-gakugei.ac.jp/iiif/2/07129354/page00002",
+      "height": 2000
+    }
+  ],
+  "manifestUrl": "https://d-archive.u-gakugei.ac.jp/iiif/item/07129354/manifest.json",
+  "r18": false,
+  "attribution": "東京学芸大学教育コンテンツアーカイブ",
+  "logo": {
+    "@id": "https://d-archive.u-gakugei.ac.jp/themes/custom/ugakugei_archive/images/da_logo.gif"
+  },
+  "collectionId": "5E6C7A1644EDD684CFC0BB92F450C0F2",
+  "projectId": "gakugei",
+  "count": 10233,
+  "manifestVersion": 2,
+  "tileSources": [
+    "https://d-archive.u-gakugei.ac.jp/iiif/2/library%2F07129354%2F00001.tif",
+    "https://d-archive.u-gakugei.ac.jp/iiif/2/library%2F07129354%2F00002.tif"
+  ],
+  "initiated": 1,
+  "progress": 82,
+  "transcriptions": [
+    {
+      "id": "B97526B43D33B4F752C2BB4A6C581FCD_0",
+      "canvasId": "https://d-archive.u-gakugei.ac.jp/iiif/2/07129354/page00001",
+      "tempChanged": false,
+      "index": 0,
+      "entryId": "B97526B43D33B4F752C2BB4A6C581FCD",
+      "syncMode": false,
+      "requestReview": false,
+      "share": false,
+      "prevStatus": "completed",
+      "timestamp": {
+        "_seconds": 1676128440,
+        "_nanoseconds": 681000000
+      },
+      "projectId": "gakugei",
+      "updatedAt": {
+        "_seconds": 1764593676,
+        "_nanoseconds": 475000000
+      },
+      "notes": [],
+      "editedBy": "KUVo313vpUQy0cOxAQy1wNlK28I3",
+      "text": "【表紙】\n《題：江戸名所図会　四》\n\n\n",
+      "status": "completed",
+      "translations": {
+        "translationJa": "【表紙】\n江戸名所図会　巻之四",
+        "translationEn": "【Cover】\nEdo Meisho Zue (Illustrated Guide to Famous Places in Edo), Volume 4",
+        "annotationsJa": "1. 「江戸名所図会」は、江戸時代後期（天保5年、1834年）に斎藤長秋（松濤軒）によって編纂された江戸の名所や風俗を詳細に記録した地誌です。\n2. 「巻之四」の「之」は、古典的な助詞で現代の「の」に相当します。\n3. この作品は全20巻からなる大作で、江戸の地理、歴史、文化を豊富な挿絵とともに紹介しており、江戸時代の庶民文化や都市生活を知る上で極めて重要な史料です。",
+        "annotationsEn": "1. \"Edo Meisho Zue\" is a comprehensive topographical guide to famous places and customs of Edo, compiled by Saito Chōshū (Shōtōken) in the late Edo period (Tenpō 5, 1834).\n2. The character \"之\" in \"巻之四\" is a classical particle equivalent to the modern \"の\" (no), meaning \"of\" or indicating possession.\n3. This work consists of 20 volumes in total and serves as an invaluable historical source for understanding Edo period popular culture and urban life, featuring detailed descriptions of Edo's geography, history, and culture accompanied by numerous illustrations."
+      }
+    },
+    {
+      "id": "B97526B43D33B4F752C2BB4A6C581FCD_1",
+      "canvasId": "https://d-archive.u-gakugei.ac.jp/iiif/2/07129354/page00002",
+      "tempChanged": false,
+      "index": 1,
+      "entryId": "B97526B43D33B4F752C2BB4A6C581FCD",
+      "syncMode": false,
+      "share": false,
+      "prevStatus": "completed",
+      "requestReview": false,
+      "timestamp": {
+        "_seconds": 1672029169,
+        "_nanoseconds": 478000000
+      },
+      "projectId": "gakugei",
+      "notes": [],
+      "editedBy": "KUVo313vpUQy0cOxAQy1wNlK28I3",
+      "updatedAt": {
+        "_seconds": 1764597398,
+        "_nanoseconds": 788000000
+      },
+      "text": "【見返し】\n\n【左丁】\n江戸名所図会（えとめいしよつゑ）巻之二\n　　　天璇之部（てんせんのふ）目録（もくろく）\n　東海寺（とうかいし）《割書：仏殿（ふつてん）　山門（さんもん）　中門（ちゆうもん）　鐘楼（しゆろう）　要津橋（えうしんきやう）　千歳杉（せんさいすき）｜浴鳳池（よくほうち）　釣玄室（てうけんしつ）　豢竜井（けんりうせい）　万年石（まんねんせき）　法宝堂（ほふほうたう）　方丈（はうじやう）》\n　《割書：開山沢庵和尚廟（かいさんたくあんおしやうのひやう）　県居大人墓（あかたゐうしのはか）　南郭先生墓（なんくわくせんせいのはか）　鎌倉権五郎景政霊祠（かまくらこんこらうかけまさのれいし）｜牛頭天王社（こつてんわう　　）　同 祭礼（さいれい）の図（つ）　坂稲荷（さかいなり）　人麻呂（ひとまろ）の碑（ひ）》\n　御殿山（こてんやま）《割書：鐘鋳（かねゐ）｜の松（まつ）》　問答河岸（もんたふかし）　《振り仮名：磯の清水｜いそ　しみつ》　品川駅（しなかはのえき）《割書：同 汐干（しほひ）｜の図》\n　光厳寺（くわんこんし）　長徳寺（ちやうとくし）　《振り仮名：中の橋｜なか　はし》　洲崎弁財天（すさきへんさいてん）\n　貴船明神社（きふねみやうしん　　）　寄木明神社（よりきみやうしん　　）《割書：兜島（かふとしま）｜　》　本光寺（ほんくわうし）《割書：開山日什（かいさんにちしう）｜上人 墓（はか）》　大竜寺（たいりうし）\n　天竜寺（てんりうし）　海竜寺（かいりうし）　常行三昧寺（しやうきやうさんまいし）　妙国寺（みやうこくし）《割書：本堂（ほんたう）｜五層塔（こしうの　　）》\n　《割書：多宝塔（たほうたふ）　諏訪明神社（すはみやうしん　　）　二王門（にわうもん）　｜総門（さうもん）　鐘楼（しゆろう）》\n　海晏寺（かいあんし）《割書：鮫頭観音（さめつくわんおん）　北条時頼朝臣石塔（はうてうときよりあそんのせきたふ）　二階堂出羽守（にかいたうてはのかみの）石塔　梶原景時（かちはらかけとき）石塔｜北条時宗（はうてうときむね）石塔　境内楓樹（けいたいかへて）　千貫牡丹（せんくわんほたん）　千貫松（せんくわんまつ）　竜淵　両渓橋（りやうけいきやう）》\n　《割書：蓬莱山（はうらいさん）　梶原屋敷（かちはらやしき）　石地蔵（いしちさう）　権現御手洗池（こんけんみたらし　　）｜延命水（えんめいすゐ）　明神森（みやうしんのもり）　山王社（さんわう　　）　八幡宮（はちまんくう）》　鮫頭明神社（さめつみやうしん　　）\n　上古海道（しやうこかいたう）　来福寺（らいふくし）《割書：本尊経読地蔵尊（ほんそんきやうよみちさうそん）　延命桜（えんめいさくら）｜梶原塚（かちはらつか）　梶原松（かちはらまつ）》　納経塚（なうきやうつか）\n　西光寺（さいくわうし）　光福寺（くわうふくし）　了海上人産湯井（りやうかいしやうにんうふゆのゐ）　鹿島明神（かしまみやうしん）\n\n\n",
+      "status": "completed",
+      "translations": {
+        "translationJa": "【見返し】\n\n【左丁】\n江戸名所図会（えどめいしょずえ）巻之二\n　　　天璇之部（てんせんのぶ）目録（もくろく）\n　東海寺（とうかいじ）《仏殿　山門　中門　鐘楼　要津橋　千歳杉｜浴鳳池　釣玄室　豢竜井　万年石　法宝堂　方丈》\n　《開山沢庵和尚廟　県居大人墓　南郭先生墓　鎌倉権五郎景政霊祠｜牛頭天王社　同祭礼の図　坂稲荷　人麻呂の碑》\n　御殿山《鐘鋳の松》　問答河岸　磯の清水　品川宿《同汐干の図》\n　光厳寺　長徳寺　中の橋　洲崎弁財天\n　貴船明神社　寄木明神社《兜島》　本光寺《開山日什上人墓》　大龍寺\n　天龍寺　海龍寺　常行三昧寺　妙国寺《本堂｜五重塔》\n　《多宝塔　諏訪明神社　仁王門　｜総門　鐘楼》\n　海晏寺《鮫頭観音　北条時頼朝臣石塔　二階堂出羽守石塔　梶原景時石塔｜北条時宗石塔　境内楓樹　千貫牡丹　千貫松　竜淵　両渓橋》\n　《蓬莱山　梶原屋敷　石地蔵　権現御手洗池｜延命水　明神森　山王社　八幡宮》　鮫頭明神社\n　上古海道　来福寺《本尊経読地蔵尊　延命桜｜梶原塚　梶原松》　納経塚\n　西光寺　光福寺　了海上人産湯井　鹿島明神",
+        "translationEn": "【Title Page】\n\n【Left Page】\nEdo Meisho Zue (Illustrated Guide to Famous Places in Edo), Volume 2\n　　　Tenzen Section Table of Contents\n　Tōkai-ji Temple (Buddha Hall, Main Gate, Middle Gate, Bell Tower, Yōshin Bridge, Senzai Cedar Tree | Yokuhō Pond, Chōgen-shitsu, Kenryū Well, Mannen Stone, Hōhō Hall, Hōjō)\n　(Founding Abbot Takuan's Mausoleum, Agata-i Master's Grave, Nankaku Sensei's Grave, Kamakura Gongorō Kagemasa's Spirit Shrine | Gozutennō Shrine, Festival Illustration, Saka Inari Shrine, Hitomaro Monument)\n　Gotenyama (Bell-Casting Pine)　Mondō Wharf　Iso Spring Water　Shinagawa Post Station (Low Tide Illustration)\n　Kōgon-ji Temple　Chōtoku-ji Temple　Naka-no-hashi Bridge　Susaki Benzaiten\n　Kifune Myōjin Shrine　Yoriki Myōjin Shrine (Kabuto Island)　Honkō-ji Temple (Founding Abbot Nichijū's Grave)　Tairyū-ji Temple\n　Tenryū-ji Temple　Kairyū-ji Temple　Jōgyō Sanmai-ji Temple　Myōkoku-ji Temple (Main Hall | Five-story Pagoda)\n　(Multi-treasure Pagoda, Suwa Myōjin Shrine, Niō Gate | Main Gate, Bell Tower)\n　Kaian-ji Temple (Samegashira Kannon, Hōjō Tokiyori's Stone Pagoda, Nikaidō Dewa-no-kami's Stone Pagoda, Kajiwara Kagetoki's Stone Pagoda | Hōjō Tokimune's Stone Pagoda, Temple Grounds Maple Trees, Thousand-kan Peony, Thousand-kan Pine, Dragon Abyss, Ryōkei Bridge)\n　(Mount Hōrai, Kajiwara Residence, Stone Jizō, Gongen Sacred Washing Pond | Longevity Water, Myōjin Forest, Sannō Shrine, Hachiman Shrine)　Samegashira Myōjin Shrine\n　Ancient Kaidō Road　Raifuku-ji Temple (Principal Image: Sutra-Reading Jizō, Longevity Cherry Tree | Kajiwara Mound, Kajiwara Pine)　Sutra Burial Mound\n　Saikō-ji Temple　Kōfuku-ji Temple　Ryōkai Shōnin's Birth Water Well　Kashima Myōjin",
+        "annotationsJa": "1. 天璇之部：天璇（てんせん）は北斗七星の一つを指すが、ここでは地理的な区分を表す部門名として使われている。\n2. 沢庵和尚：江戸時代初期の禅僧（1573-1645）。徳川家光の師でもあり、沢庵漬けの考案者としても知られる。\n3. 県居大人：本居宣長の師である賀茂真淵（1697-1769）の別名。国学者として有名。\n4. 南郭先生：荻生徂徂徂徂（1666-1728）の門人である服部南郭（1683-1759）。儒学者・詩人。\n5. 鎌倉権五郎景政：平安時代後期の武将。後三年の役で活躍し、片目を射られても戦い続けたという武勇伝で有名。\n6. 牛頭天王：疫病除けの神として信仰された。現在の素戔嗚尊と同一視される。\n7. 人麻呂の碑：柿本人麻呂を顕彰した石碑。歌人として著名な万葉歌人。\n8. 千貫：非常に価値が高いことを表す表現。千貫の重さに相当するほど貴重という意味。\n9. 梶原景時：鎌倉時代初期の武将（?-1200）。源頼朝の重臣だったが後に滅ぼされた。\n10. 北条時頼・時宗：鎌倉幕府の執権。時頼（1227-1263）は第5代、時宗（1251-1284）は第8代執権。",
+        "annotationsEn": "1. Tenzen Section: Tenzen refers to one of the Big Dipper stars, but here it's used as a geographical division name for organizing the content.\n2. Takuan Oshō: A Zen monk from the early Edo period (1573-1645), teacher to Tokugawa Iemitsu, and known as the inventor of takuan pickles.\n3. Agata-i Ushi: Another name for Kamo no Mabuchi (1697-1769), a National Learning scholar and teacher of Motoori Norinaga.\n4. Nankaku Sensei: Hattori Nankaku (1683-1759), a Confucian scholar and poet, disciple of Ogyū Sorai.\n5. Kamakura Gongorō Kagemasa: A warrior from the late Heian period famous for continuing to fight even after being shot in the eye during the Later Three-Year War.\n6. Gozutennō: A deity worshipped for protection against epidemics, later identified with Susanoo-no-Mikoto.\n7. Hitomaro Monument: A stone monument commemorating Kakinomoto no Hitomaro, a famous poet of the Man'yōshū.\n8. Senkan (Thousand-kan): An expression meaning extremely valuable, worth a thousand kan (an old unit of weight/currency).\n9. Kajiwara Kagetoki: An early Kamakura period warrior (?-1200), retainer to Minamoto no Yoritomo who was later destroyed.\n10. Hōjō Tokiyori and Tokimune: Kamakura shogunate regents. Tokiyori (1227-1263) was the 5th regent, Tokimune (1251-1284) the 8th regent."
+      }
+    }
+  ]
+}
