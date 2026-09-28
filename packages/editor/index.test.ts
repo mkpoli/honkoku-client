@@ -125,6 +125,21 @@ test("ruby command, source edits and undo share one history", () => {
   undo(e.state, e.dispatch);
   expect(e.source).toBe("峰\r\n原文");
 });
+test("title command wraps the selection and keeps the caret after it", () => {
+  const e = editor("前地震年代記後");
+  e.dispatch(e.state.tr.setSelection(TextSelection.create(e.state.doc, 2, 7)));
+  expect(wrapSelection("title")(e.state, e.dispatch)).toBe(true);
+  expect(e.source).toBe("前《題：地震年代記》後");
+  e.dispatch(e.state.tr.insertText("録"));
+  expect(e.source).toBe("前《題：地震年代記録》後");
+  const empty = editor("前後");
+  empty.dispatch(
+    empty.state.tr.setSelection(TextSelection.create(empty.state.doc, 2)),
+  );
+  wrapSelection("title")(empty.state, empty.dispatch);
+  empty.dispatch(empty.state.tr.insertText("題"));
+  expect(empty.source).toBe("前《題：題》後");
+});
 test("column insertion, deletion and nonadjacent patches", () => {
   const e = editor("一二\r\n三四\r五六\n七八");
   e.dispatch(e.state.tr.setSelection(TextSelection.create(e.state.doc, 2)));

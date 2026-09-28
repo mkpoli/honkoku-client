@@ -420,7 +420,7 @@ export function sourcePatches(tr: Transaction): SourcePatch[] {
   }
   return patches;
 }
-export type ConstructKind = "ruby" | "warigaki" | "misekechi";
+export type ConstructKind = "ruby" | "warigaki" | "misekechi" | "title";
 function canInsert(state: EditorState, kind: string): boolean {
   const { $from, $to } = state.selection;
   if (!$from.sameParent($to)) return false;
@@ -465,10 +465,16 @@ export const wrapSelection =
         state.selection.$to.parentOffset,
       ),
     );
-    const node = annotation(kind, [kind === "warigaki" ? "" : value, reading]);
+    const node =
+      kind === "title"
+        ? annotation(kind, [value])
+        : annotation(kind, [kind === "warigaki" ? "" : value, reading]);
     const tr = closeHistory(state.tr).replaceWith(from, to, node);
-    const first = from + 2;
-    const target = first;
+    // A title has no second field, so the caret stays after the wrapped text.
+    const target =
+      kind === "title" && value
+        ? from + 2 + node.firstChild!.content.size
+        : from + 2;
     dispatch?.(
       tr.setSelection(TextSelection.create(tr.doc, target)).scrollIntoView(),
     );
