@@ -1,10 +1,15 @@
 <script lang="ts">
   import { pageHistory } from "@honkoku/client-api/invoke";
   import type { TimelineItem } from "@honkoku/client-api/types";
-  import { diffSource, diffTokens, type Change } from "@honkoku/markup";
+  import {
+    diffSource,
+    diffTokens,
+    textAfter,
+    widthLabel,
+    type Change,
+  } from "@honkoku/markup";
   import { errorMessage, relative } from "../lib";
   import Avatar from "./Avatar.svelte";
-  const wide = (text: string) => /[\u3000\uff01-\uffef]/u.test(text);
   let {
     entryId,
     index,
@@ -146,19 +151,19 @@
       >
     </div>
     <div class="history-diff" class:horizontal aria-label="翻刻文の差分">
-      {#each changes as change}{#if change.kind === "insert"}<ins
+      {#each changes as change, i}{#if change.kind === "insert"}<ins
             title={change.widthOnly ? "文字幅の変更（半角・全角）" : "追加"}
-            >{@render changedText(change)}</ins
+            >{@render changedText(change, textAfter(changes, i))}</ins
           >{:else if change.kind === "delete"}<del
             title={change.widthOnly ? "文字幅の変更（半角・全角）" : "削除"}
-            >{@render changedText(change)}</del
+            >{@render changedText(change, textAfter(changes, i))}</del
           >{:else}<span>{change.text}</span>{/if}{/each}
     </div>
   {/if}
 </aside>
 
-{#snippet changedText(change: Change)}
-  {#each diffTokens(change) as token}{#if token.mark}<span
+{#snippet changedText(change: Change, after: string)}
+  {#each diffTokens(change, after) as token}{#if token.mark}<span
         class="whitespace-mark"
         role="img"
         aria-label={token.label}
@@ -166,7 +171,7 @@
       >{#if token.lineBreak}{"\n"}{/if}{:else}{token.text}{/if}{/each}{#if change.widthOnly}<small
       class="width-mark"
       title="文字幅の変更（半角・全角）"
-      >{wide(change.text) ? "全" : "半"}</small
+      >{widthLabel(change.text)}</small
     >{/if}
 {/snippet}
 

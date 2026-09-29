@@ -189,7 +189,14 @@ export function renderInline(nodes: Inline[]): string {
 }
 
 export { alignColumns, transcriptionColumns, plainColumn } from "./align";
-export { diffSource, diffTokens, type Change, type DiffToken } from "./diff";
+export {
+  diffSource,
+  diffTokens,
+  textAfter,
+  widthLabel,
+  type Change,
+  type DiffToken,
+} from "./diff";
 export { exportTranscription } from "./export";
 export type { ExportFormat, ExportPage } from "./export";
 export { elements } from "./elements";

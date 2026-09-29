@@ -11,8 +11,20 @@ export interface DiffToken {
   lineBreak?: boolean;
 }
 
-/** Keep source text intact; only changed whitespace gets a display mark. */
-export function diffTokens(change: Change): DiffToken[] {
+/** Text that follows change `i` in the version it belongs to. */
+export function textAfter(changes: Change[], i: number): string {
+  const side = changes[i].kind;
+  for (const change of changes.slice(i + 1))
+    if (change.kind === "equal" || change.kind === side) return change.text;
+  return "";
+}
+
+/**
+ * Keep source text intact; only changed whitespace gets a display mark.
+ * `after` is the text that follows in the same version, so a CR whose LF is
+ * unchanged marks a line-ending change instead of starting a line.
+ */
+export function diffTokens(change: Change, after = ""): DiffToken[] {
   if (change.kind === "equal") return [{ text: change.text }];
   const tokens: DiffToken[] = [];
   let offset = 0;
@@ -20,25 +32,41 @@ export function diffTokens(change: Change): DiffToken[] {
     if (match.index > offset)
       tokens.push({ text: change.text.slice(offset, match.index) });
     const text = match[0];
-    const lineBreak = /^[\r\n\u2028\u2029]/u.test(text);
+    const end = match.index + text.length;
+    const lineBreak =
+      /^[\r\n\u2028\u2029]/u.test(text) &&
+      !(
+        text === "\r" &&
+        (end < change.text.length ? change.text[end] : after[0]) === "\n"
+      );
     const [mark, label] = lineBreak
       ? ["↵", "改行"]
-      : text === " "
-        ? ["·", "半角空白"]
-        : text === "\u3000"
-          ? ["⬚", "全角空白"]
-          : text === "\t"
-            ? ["⇥", "タブ"]
-            : [
-                "·",
-                `空白（U+${text.codePointAt(0)!.toString(16).toUpperCase().padStart(4, "0")}）`,
-              ];
+      : text === "\r"
+        ? ["␍", "改行コードの変更（CR）"]
+        : text === " "
+          ? ["·", "半角空白"]
+          : text === "\u3000"
+            ? ["⬚", "全角空白"]
+            : text === "\t"
+              ? ["⇥", "タブ"]
+              : [
+                  "·",
+                  `空白（U+${text.codePointAt(0)!.toString(16).toUpperCase().padStart(4, "0")}）`,
+                ];
     tokens.push({ text, mark, label, lineBreak });
     offset = match.index + text.length;
   }
   if (offset < change.text.length)
     tokens.push({ text: change.text.slice(offset) });
   return tokens;
+}
+
+/** Half-width forms: ASCII and the U+FF61–FFEF half-width block. */
+const narrow = /^[\u0020-\u007e\uff61-\uffdc\uffe8-\uffee]+$/u;
+/** 半 or 全 for the side of a width-only change, 混 when it mixes both. */
+export function widthLabel(text: string): "半" | "全" | "混" {
+  if (narrow.test(text)) return "半";
+  return [...text].some((ch) => narrow.test(ch)) ? "混" : "全";
 }
 
 const foldWidth = (text: string) =>

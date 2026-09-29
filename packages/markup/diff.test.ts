@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { diffSource, diffTokens } from "./diff";
+import { diffSource, diffTokens, textAfter, widthLabel } from "./diff";
 test("character diff shows replacement, additions, deletion and empty saves", () => {
   expect(diffSource("山に花あり", "山に雪あり")).toEqual([
     { kind: "equal", text: "山に" },
@@ -117,4 +117,26 @@ test("repeated whitespace keeps one mark per space and per line ending", () => {
   expect(
     diffTokens({ kind: "delete", text: " 　\n\n" }).map((t) => t.mark),
   ).toEqual(["·", "⬚", "↵", "↵"]);
+});
+test("width labels name the width of each side", () => {
+  expect(widthLabel("-")).toBe("半");
+  expect(widthLabel("ｶﾞ")).toBe("半");
+  expect(widthLabel("－")).toBe("全");
+  expect(widthLabel("ガ")).toBe("全");
+  expect(widthLabel("AＢ")).toBe("混");
+});
+test("a CR added before an unchanged LF is not a line break", () => {
+  const changes = diffSource("甲\n乙", "甲\r\n乙");
+  const tokens = changes.flatMap((change, i) =>
+    diffTokens(change, textAfter(changes, i)),
+  );
+  expect(tokens.filter((token) => token.lineBreak)).toEqual([]);
+  expect(tokens.find((token) => token.text === "\r")?.mark).toBe("␍");
+});
+test("a CR removed before an unchanged LF is not a line break", () => {
+  const changes = diffSource("甲\r\n乙", "甲\n乙");
+  const tokens = changes.flatMap((change, i) =>
+    diffTokens(change, textAfter(changes, i)),
+  );
+  expect(tokens.filter((token) => token.lineBreak)).toEqual([]);
 });
