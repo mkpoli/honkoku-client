@@ -462,6 +462,8 @@
     historyOpen = false;
     bibliographyOpen = false;
   });
+  // Bumped when notes are replaced wholesale, so the drawer drops any open form.
+  let notesGeneration = $state(0);
   function restoreHistory(version: HistoryVersion) {
     if (busy || verifying || composing) return;
     act(async () => {
@@ -470,6 +472,7 @@
         await tick();
       }
       const restored = restoreHistoryDraft(version, tempNotes);
+      if (restored.notes !== tempNotes) notesGeneration++;
       tempNotes = restored.notes;
       source = restored.source;
       closeNotes();
@@ -1735,7 +1738,7 @@
           highlighted={highlightedNote}
           selecting={clipping || annotationMode || recognizing}
         />
-        {#if notesOpen}{#key page.id}<NotesDrawer
+        {#if notesOpen}{#key `${page.id}:${notesGeneration}`}<NotesDrawer
               bind:this={notesDrawer}
               notes={annotationNotes}
               {editing}
