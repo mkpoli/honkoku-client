@@ -268,7 +268,7 @@ fn inline_ruby_readings_and_kwic() -> Result<()> {
 }
 
 #[test]
-fn previous_normalization_requires_rebuild() -> Result<()> {
+fn an_index_in_the_previous_format_is_rebuilt() -> Result<()> {
     let dir = tempfile::tempdir()?;
     let (current, _) = schema();
     let json = serde_json::to_string(&current)?
@@ -276,11 +276,13 @@ fn previous_normalization_requires_rebuild() -> Result<()> {
         .replace("pair_v2", "pair");
     let previous: Schema = serde_json::from_str(&json)?;
     Index::create_in_dir(dir.path(), previous)?;
+    fs::write(dir.path().join("pages.sqlite"), b"")?;
     assert!(
         matches!(Searcher::open(dir.path()), Err(Error::Invalid(message)) if message.contains("rebuild"))
     );
-    assert!(
-        matches!(IndexBuilder::open(dir.path()), Err(Error::Invalid(message)) if message.contains("rebuild"))
-    );
+    let mut builder = IndexBuilder::open(dir.path())?;
+    builder.apply_live([page("a", "p", 1, "富（ふ）士（じ）山")])?;
+    assert_eq!(Searcher::open(dir.path())?.search(query("ふじ"))?.total, 1);
+    builder.finish()?;
     Ok(())
 }

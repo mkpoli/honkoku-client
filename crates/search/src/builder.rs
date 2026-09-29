@@ -110,16 +110,17 @@ impl IndexBuilder {
         let path = path.as_ref();
         std::fs::create_dir_all(path)?;
         let (expected, fields) = schema();
+        // The directory is a cache: an index in an older format is discarded
+        // together with its page ledger, so the build starts from scratch.
+        if path.join("meta.json").exists() && Index::open_in_dir(path)?.schema() != expected {
+            std::fs::remove_dir_all(path)?;
+            std::fs::create_dir_all(path)?;
+        }
         let index = if path.join("meta.json").exists() {
             Index::open_in_dir(path)?
         } else {
             Index::create_in_dir(path, expected.clone())?
         };
-        if index.schema() != expected {
-            return Err(Error::Invalid(
-                "search index format changed; rebuild the index".into(),
-            ));
-        }
         register(&index);
         let writer = index.writer_with_options(
             tantivy::indexer::IndexWriterOptions::builder()
