@@ -1,9 +1,10 @@
 <script lang="ts">
   import { pageHistory } from "@honkoku/client-api/invoke";
   import type { TimelineItem } from "@honkoku/client-api/types";
-  import { diffSource } from "@honkoku/markup";
+  import { diffSource, diffTokens, type Change } from "@honkoku/markup";
   import { errorMessage, relative } from "../lib";
   import Avatar from "./Avatar.svelte";
+  const wide = (text: string) => /[\u3000\uff01-\uffef]/u.test(text);
   let {
     entryId,
     index,
@@ -136,6 +137,7 @@
       <p class="muted">
         {compareCurrent ? "選択した保存→現在の内容" : "前の保存→選択した保存"}
       </p>
+      <p class="muted">追加：実線囲み／削除：破線囲み</p>
       <button
         class="primary"
         {disabled}
@@ -145,12 +147,28 @@
     </div>
     <div class="history-diff" class:horizontal aria-label="翻刻文の差分">
       {#each changes as change}{#if change.kind === "insert"}<ins
-            >{change.text}</ins
-          >{:else if change.kind === "delete"}<del>{change.text}</del
+            title={change.widthOnly ? "文字幅の変更（半角・全角）" : "追加"}
+            >{@render changedText(change)}</ins
+          >{:else if change.kind === "delete"}<del
+            title={change.widthOnly ? "文字幅の変更（半角・全角）" : "削除"}
+            >{@render changedText(change)}</del
           >{:else}<span>{change.text}</span>{/if}{/each}
     </div>
   {/if}
 </aside>
+
+{#snippet changedText(change: Change)}
+  {#each diffTokens(change) as token}{#if token.mark}<span
+        class="whitespace-mark"
+        role="img"
+        aria-label={token.label}
+        title={token.label}>{token.mark}</span
+      >{#if token.lineBreak}{"\n"}{/if}{:else}{token.text}{/if}{/each}{#if change.widthOnly}<small
+      class="width-mark"
+      title="文字幅の変更（半角・全角）"
+      >{wide(change.text) ? "全" : "半"}</small
+    >{/if}
+{/snippet}
 
 <style>
   .history-list {
@@ -214,12 +232,32 @@
     writing-mode: horizontal-tb;
   }
   .history-diff ins {
-    color: var(--accent);
-    background: var(--accent-soft);
-    text-decoration: none;
+    background: light-dark(#d7eddf, #244635);
+    border: 1px solid currentColor;
   }
   .history-diff del {
-    color: light-dark(#a34d4d, #da9696);
-    text-decoration: line-through;
+    background: light-dark(#f8dedd, #553033);
+    border: 1px dashed currentColor;
+  }
+  .history-diff ins,
+  .history-diff del {
+    color: var(--text);
+    text-decoration: none;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+    text-orientation: upright;
+  }
+  .whitespace-mark {
+    display: inline-block;
+    min-inline-size: 1em;
+    text-align: center;
+    font-family: var(--font-sans);
+    text-orientation: upright;
+  }
+  .width-mark {
+    display: inline-block;
+    margin-inline: 0.2em;
+    font: 11px/1.4 var(--font-sans);
+    text-combine-upright: all;
   }
 </style>
