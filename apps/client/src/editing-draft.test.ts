@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 import {
   notesPending,
   restoreDraft,
+  reconcileNoteForm,
   readLocalDraft,
   writeLocalDraft,
   removeLocalDraft,
@@ -228,4 +229,25 @@ test("storage write failures are surfaced so the workbench can warn the user", (
   expect(() => writeLocalDraft(storage, "page", localWithForm)).toThrow(
     "quota",
   );
+});
+test("a restored note form keeps its index only while the slot holds the same note", () => {
+  const mine = {
+    id: "",
+    content: "A",
+    createdBy: "u",
+    createdAt: "2026-09-29T00:00:00Z",
+  };
+  const other = {
+    id: "",
+    content: "B",
+    createdBy: "u",
+    createdAt: "2026-09-29T01:00:00Z",
+  };
+  const form = { note: { ...mine, content: "A revision" }, index: 0 };
+  expect(reconcileNoteForm(form, [mine])).toEqual(form);
+  expect(reconcileNoteForm(form, [other])).toEqual({ note: form.note });
+  expect(reconcileNoteForm(form, [])).toEqual({ note: form.note });
+  expect(reconcileNoteForm({ note: form.note }, [other])).toEqual({
+    note: form.note,
+  });
 });

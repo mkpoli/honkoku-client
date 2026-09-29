@@ -46,6 +46,23 @@ export function notesPending(
 ): boolean {
   return JSON.stringify(notes) !== JSON.stringify(acknowledged);
 }
+/**
+ * A form editing an existing note keeps its index only while that slot still
+ * holds the same note; otherwise it comes back as a new note.
+ */
+export function reconcileNoteForm(
+  form: NoteFormDraft | undefined,
+  notes: (JsonValue | null)[],
+): NoteFormDraft | undefined {
+  if (!form || form.index === undefined) return form;
+  const slot = notes[form.index] as Partial<PageNote> | null | undefined;
+  const same =
+    !!slot &&
+    slot.id === form.note.id &&
+    slot.createdBy === form.note.createdBy &&
+    slot.createdAt === form.note.createdAt;
+  return same ? form : { note: form.note };
+}
 export function restoreDraft(page: Page, local?: LocalDraft) {
   const serverTime = timestamp(page.updatedAt),
     localTime = timestamp(local?.updatedAt);
@@ -66,11 +83,12 @@ export function restoreDraft(page: Page, local?: LocalDraft) {
   const unsentNotes =
     localNotes !== undefined &&
     JSON.stringify(localNotes) !== JSON.stringify(localAck ?? serverNotes);
+  const notes = unsentNotes ? localNotes! : serverNotes;
   return {
     // An unfinished form has never been sent, even if the server draft is newer.
-    noteForm: local?.noteForm,
+    noteForm: reconcileNoteForm(local?.noteForm, notes),
     source: local && unsavedLocal ? local.source : (page.tempText ?? page.text),
-    notes: unsentNotes ? localNotes! : serverNotes,
+    notes,
     acknowledgedNotes: JSON.parse(
       JSON.stringify(unsentNotes ? (localAck ?? serverNotes) : serverNotes),
     ) as (JsonValue | null)[],

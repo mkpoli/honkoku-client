@@ -874,7 +874,7 @@
         ) ?? source;
     tempNotes = restored.notes;
     acknowledgedNotes = restored.acknowledgedNotes;
-    noteForm = restored.noteForm ?? local?.noteForm;
+    noteForm = restored.noteForm;
     editing = true;
     hoveredColumn = null;
     hoveredLine = null;
