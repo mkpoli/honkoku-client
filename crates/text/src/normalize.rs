@@ -189,8 +189,19 @@ fn strip(input: &[(char, Span)], half_breaks: bool, side: Option<usize>) -> Mapp
         } else {
             match ch {
                 '《' | '【' => {
-                    stack.push((ch, Vec::new()));
-                    index += 1;
+                    // The command name and its colon are copied as they are, so a
+                    // ruby base can never start inside the header.
+                    let header = if ch == '《' {
+                        rest[1..]
+                            .iter()
+                            .take_while(|(c, _)| !matches!(c, '《' | '》'))
+                            .position(|(c, _)| *c == '：')
+                            .map_or(0, |i| i + 1)
+                    } else {
+                        0
+                    };
+                    stack.push((ch, rest[1..1 + header].to_vec()));
+                    index += 1 + header;
                     continue;
                 }
                 '》' | '】' => {
@@ -627,6 +638,7 @@ mod tests {
             ("＿四￣ひら", "￣ひら", "￣ひら"),
             ("《振り仮名：蝦夷｜えぞ》", "蝦夷", "えぞ"),
             ("《割書：富（ふ）｜士（じ）》", "富士", "ふじ"),
+            ("前《題：𠮷（よし）》後", "前𠮷後", "前よし後"),
         ] {
             assert_eq!(strict(source).text, visible, "{source}");
             assert_eq!(readings(source)[0].text, reading, "{source}");
