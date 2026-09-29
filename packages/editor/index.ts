@@ -599,7 +599,9 @@ export const extendOkurigana =
     if (!empty || !/^[ァ-ヶ]+$/u.test(text)) return false;
     const previous = $from.nodeBefore;
     if (previous?.type.name === "okurigana") {
-      const node = annotation("okurigana", [parts(previous)[0] + text]);
+      const node = annotation("okurigana", [parts(previous)[0] + text], {
+        form: previous.attrs.form,
+      });
       const tr = state.tr.replaceWith(from - previous.nodeSize, from, node);
       dispatch?.(
         tr
@@ -638,6 +640,7 @@ export const normalizeTypedOkurigana: Command = (state, dispatch) => {
   const prefixed = /￣([ァ-ヶ]+)$/u.exec(text.text!);
   let start: number;
   let kana: string;
+  let form: string | undefined;
   if (prefixed) {
     start = from - prefixed[0].length;
     kana = prefixed[1];
@@ -649,8 +652,9 @@ export const normalizeTypedOkurigana: Command = (state, dispatch) => {
     if (previous?.type.name !== "okurigana") return false;
     start = from - text.nodeSize - previous.nodeSize;
     kana = parts(previous)[0] + text.text!;
+    form = previous.attrs.form;
   }
-  const node = annotation("okurigana", [kana]);
+  const node = annotation("okurigana", [kana], form ? { form } : {});
   const tr = state.tr.replaceWith(start, from, node);
   dispatch?.(
     tr.setSelection(TextSelection.create(tr.doc, start + node.nodeSize)),
