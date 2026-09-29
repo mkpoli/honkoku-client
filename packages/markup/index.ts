@@ -8,6 +8,7 @@ export {
   tokenizeSource,
   inlineBrackets,
   notePreview,
+  returnMarks,
 } from "./syntax";
 export type {
   SyntaxTree,

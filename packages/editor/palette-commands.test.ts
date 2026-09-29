@@ -3,6 +3,7 @@ import { EditorState, TextSelection, type Command } from "prosemirror-state";
 import { fromMarkup, toMarkup } from "./index";
 import { insertEditorial, insertCombiningMark } from "./palette-commands";
 import { normalizePreset, presets, loadPresets, pageNotes } from "./presets";
+import { palette } from "./palette";
 function run(text: string, command: Command, from: number, to = from) {
   let state = EditorState.create({ doc: fromMarkup(text) });
   state = state.apply(
@@ -15,6 +16,18 @@ function run(text: string, command: Command, from: number, to = from) {
   ).toBe(true);
   return state;
 }
+test("every return mark in the palette parses as one mark", () => {
+  const marks = palette.find((group) => group.label === "返り点")!.characters;
+  expect(marks).toContain("＿四");
+  expect(marks).toContain("＿一レ");
+  for (const mark of marks) {
+    const doc = fromMarkup(`之${mark}`);
+    expect(doc.firstChild!.childCount).toBe(2);
+    expect(doc.firstChild!.lastChild!.type.name).toBe("return");
+    expect(doc.firstChild!.lastChild!.textContent).toBe(mark.slice(1));
+    expect(toMarkup(doc)).toBe(`之${mark}`);
+  }
+});
 test("note preset and selected text insert inline shells", () => {
   expect(toMarkup(run("春", insertEditorial("朱書"), 2).doc)).toBe(
     "春【朱書】",

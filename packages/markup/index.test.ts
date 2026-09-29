@@ -61,6 +61,35 @@ describe("transcription projection", () => {
       base: "葛\u{E0100}",
     });
   });
+  test("bracketed reading marks render like short forms", () => {
+    for (const mark of ["レ", "四", "一レ", "上レ", "甲レ", "天レ"]) {
+      const short = parseInline(`之＿${mark}￣カナ`);
+      const long = parseInline(`之《返り点：${mark}》《送り仮名：カナ》`);
+      expect(long).toEqual(short);
+      expect(renderInline(long)).toBe(renderInline(short));
+      expect(long.at(-1)).toEqual({
+        kind: "reading",
+        base: "之",
+        returnMark: mark,
+        okurigana: "カナ",
+      });
+    }
+    const mixed = parseInline("之《送り仮名：ト云》");
+    expect(mixed.at(-1)).toEqual({
+      kind: "reading",
+      base: "之",
+      returnMark: "",
+      okurigana: "ト云",
+    });
+    expect(renderInline(mixed)).toContain(
+      'class="markup-okurigana kunten-mark kunten-okurigana"',
+    );
+    expect(renderInline(mixed)).toContain(">ト云</span>");
+    expect(parseInline("不＿レ人").at(-1)).toEqual({
+      kind: "text",
+      text: "人",
+    });
+  });
   test("all data is escaped before HTML rendering", () => {
     const html = renderInline(
       parseInline(

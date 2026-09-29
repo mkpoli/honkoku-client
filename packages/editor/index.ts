@@ -162,6 +162,7 @@ const nodes: Record<string, NodeSpec> = {
   },
 };
 for (const name of [...Object.keys(annotationNames), "return", "okurigana"]) {
+  const form = ["return", "okurigana"].includes(name) ? "short" : "bracket";
   const count =
     name === "ruby"
       ? "{2,3}"
@@ -179,7 +180,7 @@ for (const name of [...Object.keys(annotationNames), "return", "okurigana"]) {
     attrs: {
       original: { default: null },
       originalParts: { default: null },
-      form: { default: "bracket" },
+      form: { default: form },
     },
     toDOM: (node) => [
       name === "ruby" ? "ruby" : "span",
@@ -198,7 +199,7 @@ for (const name of [...Object.keys(annotationNames), "return", "okurigana"]) {
         ...(inlineBrackets[name]
           ? { contentElement: ".inline-annotation-body" }
           : {}),
-        getAttrs: (e) => ({ form: e.getAttribute("data-form") ?? "bracket" }),
+        getAttrs: (e) => ({ form: e.getAttribute("data-form") ?? form }),
       },
     ],
   };
@@ -240,7 +241,7 @@ function project(node: SyntaxNode): PMNode {
     return annotation(node.kind, node.segments, {
       original: node.source,
       originalParts: node.segments,
-      form: node.form ?? "bracket",
+      ...(node.form ? { form: node.form } : {}),
     });
   return schema.nodes.source.create({ kind: node.kind, source: node.source });
 }
@@ -270,6 +271,11 @@ function inlineSource(node: PMNode): string {
     const [open, close] = inlineBrackets[node.type.name];
     return `${open}${values[0]}${close}`;
   }
+  if (
+    ["return", "okurigana"].includes(node.type.name) &&
+    node.attrs.form === "bracket"
+  )
+    return `《${contextNames[node.type.name]}：${values[0]}》`;
   if (node.type.name === "return")
     return node.attrs.form === "legacy"
       ? `｛＿${values[0]}｝`
@@ -317,8 +323,10 @@ export function selectedMarkup(doc: PMNode, from: number, to: number): string {
     const text = values.join(
       node.firstChild?.type.name === "segment" ? "｜" : "",
     );
-    if (text && node.type.name === "okurigana") return `￣${text}`;
-    if (text && node.type.name === "return") return `＿${text}`;
+    if (text && ["return", "okurigana"].includes(node.type.name))
+      return node.attrs.form === "bracket"
+        ? `《${contextNames[node.type.name]}：${text}》`
+        : `${node.type.name === "return" ? "＿" : "￣"}${text}`;
     return node.attrs.placeholder ? text.replace("\u200b", "") : text;
   }
   let result = "";
