@@ -37,7 +37,7 @@
   {#if age.ageMs !== null && page.updatedAt}<time
       datetime={page.updatedAt}
       title={new Date(page.updatedAt).toLocaleString("ja-JP")}
-      >最終更新{relative(page.updatedAt, now)}</time
+      >本文更新{relative(page.updatedAt, now)}</time
     >{:else}<span>更新日時不明</span>{/if}
   {#if age.idle}<span class="idle-label">放置中</span>{/if}
 </span>
