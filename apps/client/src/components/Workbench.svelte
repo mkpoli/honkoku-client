@@ -1,7 +1,15 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
   import { openSessions } from "../editing-sessions.svelte";
-  import { notesPending, restoreDraft, type LocalDraft } from "../editing-draft";
+  import {
+    notesPending,
+    restoreDraft,
+    readLocalDraft,
+    writeLocalDraft,
+    removeLocalDraft,
+    type LocalDraft,
+    type NoteFormDraft,
+  } from "../editing-draft";
   import type { Region } from "../region.svelte";
   import HistoryDrawer from "./HistoryDrawer.svelte";
   import BibliographyDrawer from "./BibliographyDrawer.svelte";
@@ -519,39 +527,50 @@
   let highlightedNote = $state<number | null>(null);
   let notesDrawer = $state<NotesDrawer>(),
     noteOverlays = $state<NoteOverlays>();
+  let noteForm = $state<NoteFormDraft>();
+  let pendingNoteSave = $state<SaveOptions>();
+  function changeNoteForm(form: NoteFormDraft | undefined) {
+    noteForm = form;
+    if (!form) pendingNoteSave = undefined;
+    remember();
+  }
   async function savePageNote(draft: PageNote, position?: number) {
-    if (!editing || busy || verifying || composing) return;
+    if (!editing || busy || verifying || composing)
+      throw Error("編集できる状態になってから再試行してください。");
     busy = true;
-    try {
-      await queue?.flush();
-      const now = new Date().toISOString(),
-        old = position === undefined ? undefined : pageNotes[position];
-      const note: PageNote = {
-        id: old?.id ?? "",
-        content: draft.content,
-        markdown: draft.content,
-        type: draft.type ?? "note",
-        createdBy: old?.createdBy || session!.uid,
-        createdAt: old?.createdAt || now,
-        updatedAt: now,
-      };
-      if (draft.image) note.image = draft.image;
-      if (draft.xywh) note.xywh = draft.xywh;
-      const updated = [...tempNotes];
-      updated[position ?? updated.length] = note as unknown as JsonValue;
-      const fresh = await pageDraftNotes(
-        entry.id,
-        index,
-        JSON.parse(JSON.stringify(updated)) as (JsonValue | null)[],
-      );
-      tempNotes = fresh.tempNotes ?? updated;
-      acknowledgedNotes = JSON.parse(JSON.stringify(tempNotes));
-      onpage(fresh);
-      remember();
-      saveState = "下書き保存";
-    } finally {
+    operation = writePageNote(draft, position).finally(() => {
       busy = false;
-    }
+      operation = undefined;
+    });
+    await operation;
+  }
+  async function writePageNote(draft: PageNote, position?: number) {
+    await queue?.flush();
+    const now = new Date().toISOString(),
+      old = position === undefined ? undefined : pageNotes[position];
+    const note: PageNote = {
+      id: old?.id ?? "",
+      content: draft.content,
+      markdown: draft.content,
+      type: draft.type ?? "note",
+      createdBy: old?.createdBy || session!.uid,
+      createdAt: old?.createdAt || now,
+      updatedAt: now,
+    };
+    if (draft.image) note.image = draft.image;
+    if (draft.xywh) note.xywh = draft.xywh;
+    const updated = [...tempNotes];
+    updated[position ?? updated.length] = note as unknown as JsonValue;
+    const fresh = await pageDraftNotes(
+      entry.id,
+      index,
+      JSON.parse(JSON.stringify(updated)) as (JsonValue | null)[],
+    );
+    tempNotes = fresh.tempNotes ?? updated;
+    acknowledgedNotes = JSON.parse(JSON.stringify(tempNotes));
+    onpage(fresh);
+    changeNoteForm(undefined);
+    saveState = "下書き保存";
   }
   async function deletePageNote(position: number) {
     if (!editing || busy || verifying || composing) return;
@@ -770,9 +789,7 @@
   const storageKey = () => `honkoku.edit.${session?.uid}.${entry.id}.${index}`;
   function localDraft(): LocalDraft | undefined {
     try {
-      return (
-        JSON.parse(localStorage.getItem(storageKey()) ?? "null") ?? undefined
-      );
+      return readLocalDraft(localStorage, storageKey());
     } catch {
       return;
     }
@@ -782,16 +799,14 @@
   let draftUpdatedAt: string | null | undefined;
   function remember() {
     try {
-      localStorage.setItem(
-        storageKey(),
-        JSON.stringify({
-          source,
-          notes: tempNotes,
-          draft: acknowledged,
-          acknowledgedNotes,
-          updatedAt: draftUpdatedAt,
-        }),
-      );
+      writeLocalDraft(localStorage, storageKey(), {
+        source,
+        notes: tempNotes,
+        draft: acknowledged,
+        acknowledgedNotes,
+        updatedAt: draftUpdatedAt,
+        noteForm,
+      });
     } catch {
       notice =
         "端末に下書きを保存できません。画面を閉じる前に保存してください。";
@@ -799,7 +814,7 @@
   }
   function forget() {
     try {
-      localStorage.removeItem(storageKey());
+      removeLocalDraft(localStorage, storageKey());
     } catch {}
   }
   async function reread() {
@@ -847,10 +862,10 @@
     approvalChange = false;
     lastOptions = savedOptions();
     onpage(locked);
-    const local = restore ? localDraft() : undefined;
+    const local = localDraft();
     acknowledged = locked.tempText ?? "";
     draftUpdatedAt = locked.updatedAt;
-    const restored = restoreDraft(locked, local);
+    const restored = restoreDraft(locked, restore ? local : undefined);
     source = restored.source;
     if (!source.trim() && !restored.unsavedLocal)
       source =
@@ -859,6 +874,7 @@
         ) ?? source;
     tempNotes = restored.notes;
     acknowledgedNotes = restored.acknowledgedNotes;
+    noteForm = restored.noteForm ?? local?.noteForm;
     editing = true;
     hoveredColumn = null;
     hoveredLine = null;
@@ -916,11 +932,22 @@
   function start() {
     act(async () => begin(await pageLock(entry.id, index, syncMode)));
   }
-  function save(options: SaveOptions) {
-    if (composing || !editing) return;
+  function save(options: SaveOptions, noteAction?: "add" | "drop") {
+    if (composing || !editing || busy || verifying) return;
+    if (noteForm && !noteAction) {
+      pendingNoteSave = { ...options };
+      savePopover = false;
+      discardPopover = false;
+      return;
+    }
+    if (noteForm && noteAction === "add" && !noteForm.note.content.trim())
+      return;
     prepareSound();
     act(async () => {
       savePopover = false;
+      pendingNoteSave = undefined;
+      if (noteForm && noteAction === "add")
+        await writePageNote(noteForm.note, noteForm.index);
       lastOptions = { ...options };
       try {
         sessionStorage.setItem(
@@ -939,6 +966,7 @@
       queue = undefined;
       onpage(saved.page);
       editing = false;
+      noteForm = undefined;
       forget();
       saveState = "保存済み";
       if (saved.page.status === "completed") completionSound();
@@ -957,6 +985,8 @@
       }
       editing = false;
       queue = undefined;
+      noteForm = undefined;
+      pendingNoteSave = undefined;
       forget();
       saveState = "";
       await reread();
@@ -1015,6 +1045,8 @@
       notice = "";
       savePopover = false;
       discardPopover = false;
+      pendingNoteSave = undefined;
+      noteForm = uid ? localDraft()?.noteForm : undefined;
       result = undefined;
       clearTimeout(glyphTimer);
       void queue?.stop();
@@ -1352,8 +1384,45 @@
             onclick={() => {
               savePopover = !savePopover;
               discardPopover = false;
+              pendingNoteSave = undefined;
             }}>保存</button
           >
+          {#if pendingNoteSave}<div
+              class="save-popover"
+              role="group"
+              aria-label="未保存の注釈"
+            >
+              <p class="note-save-prompt">
+                入力中の注釈があります。注釈を保存してから編集を終了しますか。
+              </p>
+              <div class="note-save-actions">
+                <button
+                  class="primary"
+                  disabled={busy ||
+                    composing ||
+                    verifying ||
+                    !noteForm?.note.content.trim()}
+                  onclick={() =>
+                    pendingNoteSave && save(pendingNoteSave, "add")}
+                  >注釈を保存して終了</button
+                ><button
+                  disabled={busy}
+                  onclick={() => {
+                    pendingNoteSave = undefined;
+                    notesOpen = true;
+                    glyphOpen = false;
+                    annotationMode = false;
+                    clipping = false;
+                    recognizing = false;
+                  }}>編集を続ける</button
+                ><button
+                  disabled={busy || composing || verifying}
+                  onclick={() =>
+                    pendingNoteSave && save(pendingNoteSave, "drop")}
+                  >注釈を破棄して終了</button
+                >
+              </div>
+            </div>{/if}
           {#if savePopover}<form
               class="save-popover"
               onsubmit={(e) => {
@@ -1412,10 +1481,15 @@
             onclick={() => {
               discardPopover = !discardPopover;
               savePopover = false;
+              pendingNoteSave = undefined;
             }}>破棄</button
           >
           {#if discardPopover}<div class="save-popover">
-              <p>変更を破棄しますか</p>
+              <p>
+                {noteForm
+                  ? "入力中の注釈を含む変更を破棄しますか"
+                  : "変更を破棄しますか"}
+              </p>
               <div>
                 <button onclick={discard} disabled={busy}>破棄する</button
                 ><button onclick={() => (discardPopover = false)}
@@ -1733,6 +1807,8 @@
         />
         {#if notesOpen}{#key page.id}<NotesDrawer
               bind:this={notesDrawer}
+              form={noteForm}
+              onformchange={changeNoteForm}
               notes={annotationNotes}
               {editing}
               disabled={busy || composing || verifying}
@@ -1883,3 +1959,12 @@
       </p>{/if}
   </div>
 {/if}
+
+<style>
+  .note-save-prompt {
+    white-space: normal;
+  }
+  .note-save-actions {
+    flex-direction: column;
+  }
+</style>

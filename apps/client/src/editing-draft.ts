@@ -1,10 +1,36 @@
-import type { JsonValue, Page } from "@honkoku/client-api/types";
+import type { JsonValue, Page, PageNote } from "@honkoku/client-api/types";
+export interface NoteFormDraft {
+  note: PageNote;
+  index?: number;
+}
 export interface LocalDraft {
   source: string;
   draft: string;
   notes?: (JsonValue | null)[];
   acknowledgedNotes?: (JsonValue | null)[];
   updatedAt?: string | null;
+  noteForm?: NoteFormDraft;
+}
+type DraftStorage = Pick<Storage, "getItem" | "setItem" | "removeItem">;
+export function readLocalDraft(
+  storage: DraftStorage,
+  key: string,
+): LocalDraft | undefined {
+  try {
+    return JSON.parse(storage.getItem(key) ?? "null") ?? undefined;
+  } catch {
+    return;
+  }
+}
+export function writeLocalDraft(
+  storage: DraftStorage,
+  key: string,
+  draft: LocalDraft,
+) {
+  storage.setItem(key, JSON.stringify(draft));
+}
+export function removeLocalDraft(storage: DraftStorage, key: string) {
+  storage.removeItem(key);
 }
 function timestamp(value?: string | null): bigint | undefined {
   if (!value) return;
@@ -41,8 +67,9 @@ export function restoreDraft(page: Page, local?: LocalDraft) {
     localNotes !== undefined &&
     JSON.stringify(localNotes) !== JSON.stringify(localAck ?? serverNotes);
   return {
-    source:
-      local && unsavedLocal ? local.source : (page.tempText ?? page.text),
+    // An unfinished form has never been sent, even if the server draft is newer.
+    noteForm: local?.noteForm,
+    source: local && unsavedLocal ? local.source : (page.tempText ?? page.text),
     notes: unsentNotes ? localNotes! : serverNotes,
     acknowledgedNotes: JSON.parse(
       JSON.stringify(unsentNotes ? (localAck ?? serverNotes) : serverNotes),
