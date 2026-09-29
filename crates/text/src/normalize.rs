@@ -16,54 +16,233 @@ pub struct Normalized {
 }
 type Mapped = Vec<(char, Span)>;
 
+// Keep these lexer classes in sync with packages/markup/legacy.ts, including
+// the site's historical hentaikana range and longest-token rule.
+fn non_jp(ch: char) -> bool {
+    matches!(ch, '.' | '/')
+        || !matches!(ch, '\n' | '#' | '\u{002d}'..='\u{2010}' | '\u{2015}' | '\u{2212}'
+            | '■'..='□' | '《'..='》' | '【'..='】' | '〔'..='〕'
+            | '\u{3040}'..='\u{30ff}' | '\u{31f0}'..='\u{31ff}' | '\u{3400}'..='\u{9fea}'
+            | '＃' | '％' | '（' | '）' | '／' | '＜' | '＞' | '［' | '］' | '｛'..='｝')
+}
+fn lexer_token(input: &[(char, Span)]) -> usize {
+    let classes: [fn(char) -> bool; 5] = [
+        non_jp,
+        |c| matches!(c, '\u{2e80}'..='\u{2fdf}' | '\u{3003}'..='\u{3007}' | '\u{3400}'..='\u{4dbf}' | '\u{4e00}'..='\u{9fff}' | '\u{f900}'..='\u{faff}'),
+        |c| matches!(c, '\u{3040}'..='\u{309f}'),
+        |c| matches!(c, '\u{30a0}'..='\u{30ff}' | '\u{31f0}'..='\u{31ff}'),
+        |c| matches!(c, '\u{0030}'..='\u{1b12}'),
+    ];
+    classes
+        .into_iter()
+        .map(|class| input.iter().take_while(|(c, _)| class(*c)).count())
+        .max()
+        .unwrap_or(0)
+}
+fn valid_reading(input: &[(char, Span)]) -> bool {
+    !input.is_empty()
+        && input
+            .iter()
+            .all(|item| lexer_token(std::slice::from_ref(item)) != 0)
+}
+fn returning(ch: char) -> bool {
+    "レ一二三四五六七八九十上中下甲乙丙丁天地人".contains(ch)
+}
+/// Length of a return mark after `＿`: one mark, optionally followed by レ.
+fn return_mark(rest: &[(char, Span)]) -> usize {
+    match rest.first() {
+        Some(('レ', _)) => 1,
+        Some((c, _)) if returning(*c) => {
+            1 + usize::from(rest.get(1).is_some_and(|(c, _)| *c == 'レ'))
+        }
+        _ => 0,
+    }
+}
+fn line_break(ch: char) -> bool {
+    matches!(ch, '\n' | '\r' | '\u{2028}' | '\u{2029}')
+}
+fn replace_base(base: &[(char, Span)], reading: &[(char, Span)]) -> Mapped {
+    match (base.first(), base.last()) {
+        (Some((_, first)), Some((_, last))) => {
+            let span = Span {
+                start: first.start,
+                end: last.end,
+            };
+            reading.iter().map(|(ch, _)| (*ch, span)).collect()
+        }
+        _ => Vec::new(),
+    }
+}
+// A recognized but invalid ruby consumes its entire raw token, just as parseLine does.
+fn legacy_ruby(input: &[(char, Span)], side: Option<usize>) -> Option<(usize, Mapped)> {
+    let prefix = usize::from(input.first()?.0 == '／');
+    let rest = &input[prefix..];
+    let first = rest.first()?.0;
+    let base_len = if first == '【' {
+        rest[1..]
+            .iter()
+            .position(|(c, _)| matches!(c, '【' | '】'))
+            .filter(|i| *i > 0 && rest[i + 1].0 == '】')
+            .map_or(0, |i| i + 2)
+    } else if matches!(first, '■' | '□') {
+        rest.iter().take_while(|(c, _)| *c == first).count()
+    } else {
+        lexer_token(rest)
+    };
+    if base_len == 0
+        || (base_len == 1 && matches!(first, '＿' | '￣' | '｜'))
+        || rest.get(base_len)?.0 != '（'
+    {
+        return None;
+    }
+    let Some(close) = rest[base_len + 1..]
+        .iter()
+        .position(|(c, _)| *c == '）')
+        .map(|i| i + base_len + 1)
+    else {
+        return Some((input.len(), input.to_vec()));
+    };
+    let size = prefix + close + 1;
+    let fields: Vec<_> = rest[base_len + 1..close]
+        .split(|(c, _)| *c == '｜')
+        .collect();
+    let base = if first == '【' {
+        &rest[1..base_len - 1]
+    } else {
+        &rest[..base_len]
+    };
+    if fields.len() > 2
+        || !fields.iter().all(|field| valid_reading(field))
+        || (first == '【' && !valid_reading(base))
+    {
+        return Some((size, input[..size].to_vec()));
+    }
+    Some((
+        size,
+        side.map_or_else(
+            || base.to_vec(),
+            |side| replace_base(base, fields[side.min(fields.len() - 1)]),
+        ),
+    ))
+}
+
 pub(crate) fn stripped(source: &str, half_breaks: bool) -> Mapped {
+    strip(&source_map(source), half_breaks, None)
+}
+fn source_map(source: &str) -> Mapped {
+    source
+        .chars()
+        .enumerate()
+        .map(|(index, ch)| {
+            (
+                ch,
+                Span {
+                    start: index as u32,
+                    end: index as u32 + 1,
+                },
+            )
+        })
+        .collect()
+}
+fn strip(input: &[(char, Span)], half_breaks: bool, side: Option<usize>) -> Mapped {
     let mut stack: Vec<(char, Mapped)> = Vec::new();
     let mut output = Vec::new();
-    let mut chars = source.chars().enumerate().peekable();
-    while let Some((index, ch)) = chars.next() {
-        let span = Span {
-            start: index as u32,
-            end: index as u32 + 1,
-        };
-        let text = match ch {
-            '《' | '【' => {
-                stack.push((ch, Vec::new()));
-                continue;
+    let mut index = 0;
+    let mut line_end = 0;
+    while index < input.len() {
+        if index >= line_end {
+            line_end = input[index..]
+                .iter()
+                .position(|(c, _)| line_break(*c))
+                .map_or(input.len(), |i| index + i);
+        }
+        let (ch, span) = input[index];
+        let rest = &input[index..line_end];
+        let mut size = 1;
+        let text = if ch != '※'
+            && let Some((length, ruby)) = legacy_ruby(rest, side)
+        {
+            size = length;
+            ruby
+        } else if let Some(close) = match ch {
+            '〔' => Some('〕'),
+            '｛' => Some('｝'),
+            '＜' => Some('＞'),
+            _ => None,
+        } && let Some(end) = rest[1..]
+            .iter()
+            .position(|(c, _)| *c == ch || *c == close)
+            .map(|i| i + 1)
+            && rest[end].0 == close
+        {
+            size = end + 1;
+            let content = &rest[1..end];
+            if ch == '｛'
+                && content.first().is_some_and(|(c, _)| *c == '＿')
+                && content.len() > 1
+                && return_mark(&content[1..]) == content.len() - 1
+            {
+                Vec::new()
+            } else {
+                strip(content, half_breaks, side)
             }
-            '》' | '】' => {
-                let opening = if ch == '》' { '《' } else { '【' };
-                if stack.last().is_some_and(|(kind, _)| *kind == opening) {
-                    stack
-                        .pop()
-                        .map(|(kind, body)| reduce(kind, body, half_breaks))
-                        .unwrap_or_default()
-                } else {
+        } else {
+            match ch {
+                '《' | '【' => {
+                    stack.push((ch, Vec::new()));
+                    index += 1;
+                    continue;
+                }
+                '》' | '】' => {
+                    let opening = if ch == '》' { '《' } else { '【' };
+                    if stack.last().is_some_and(|(kind, _)| *kind == opening) {
+                        stack
+                            .pop()
+                            .map(|(kind, body)| reduce(kind, body, half_breaks, side))
+                            .unwrap_or_default()
+                    } else {
+                        Vec::new()
+                    }
+                }
+                '※' => {
+                    size = line_end - index;
                     Vec::new()
                 }
-            }
-            '※' => {
-                while chars
-                    .peek()
-                    .is_some_and(|(_, ch)| *ch != '\n' && *ch != '\r')
-                {
-                    chars.next();
+                '＃' => {
+                    size += rest[1..]
+                        .iter()
+                        .take_while(|(c, _)| c.is_ascii_digit() || ('０'..='９').contains(c))
+                        .count();
+                    if size > 1 {
+                        Vec::new()
+                    } else {
+                        vec![(ch, span)]
+                    }
                 }
-                continue;
-            }
-            '＃' if chars
-                .peek()
-                .is_some_and(|(_, ch)| ch.is_ascii_digit() || ('０'..='９').contains(ch)) =>
-            {
-                while chars
-                    .peek()
-                    .is_some_and(|(_, ch)| ch.is_ascii_digit() || ('０'..='９').contains(ch))
-                {
-                    chars.next();
+                '＿' if return_mark(&rest[1..]) > 0 => {
+                    size = 1 + return_mark(&rest[1..]);
+                    Vec::new()
                 }
-                continue;
+                '￣' if rest.get(1).is_some_and(|(c, _)| ('ァ'..='ヶ').contains(c)) => {
+                    size += rest[1..]
+                        .iter()
+                        .take_while(|(c, _)| ('ァ'..='ヶ').contains(c))
+                        .count();
+                    Vec::new()
+                }
+                '／' => Vec::new(),
+                _ => {
+                    let run = lexer_token(rest);
+                    size = rest[..run]
+                        .iter()
+                        .take_while(|(c, _)| !"《》【】■□〓＃※＿￣／（）｜".contains(*c))
+                        .count()
+                        .max(1);
+                    input[index..index + size].to_vec()
+                }
             }
-            _ => vec![(ch, span)],
         };
+        index += size;
         if let Some((_, body)) = stack.last_mut() {
             body.extend(text);
         } else {
@@ -71,7 +250,7 @@ pub(crate) fn stripped(source: &str, half_breaks: bool) -> Mapped {
         }
     }
     while let Some((kind, body)) = stack.pop() {
-        let text = reduce(kind, body, half_breaks);
+        let text = reduce(kind, body, half_breaks, side);
         if let Some((_, parent)) = stack.last_mut() {
             parent.extend(text);
         } else {
@@ -80,7 +259,7 @@ pub(crate) fn stripped(source: &str, half_breaks: bool) -> Mapped {
     }
     output
 }
-fn reduce(kind: char, body: Mapped, half_breaks: bool) -> Mapped {
+fn reduce(kind: char, body: Mapped, half_breaks: bool, side: Option<usize>) -> Mapped {
     if kind == '【' {
         let name: String = body.iter().map(|(ch, _)| ch).collect();
         return if half_breaks && crate::is_section_name(&name) {
@@ -98,35 +277,65 @@ fn reduce(kind: char, body: Mapped, half_breaks: bool) -> Mapped {
     let text = &body[colon + 1..];
     let pipe = text.iter().position(|(ch, _)| *ch == '｜');
     match name.as_str() {
-        "振り仮名" | "圏点" => text[..pipe.unwrap_or(text.len())].to_vec(),
+        "振り仮名" => {
+            let base = &text[..pipe.unwrap_or(text.len())];
+            if let (Some(side), Some(pipe)) = (side, pipe)
+                && !text.iter().any(|(c, _)| line_break(*c))
+            {
+                let readings: Vec<_> = text[pipe + 1..].split(|(c, _)| *c == '｜').collect();
+                replace_base(base, readings[side.min(readings.len() - 1)])
+            } else {
+                base.to_vec()
+            }
+        }
+        "圏点" => text[..pipe.unwrap_or(text.len())].to_vec(),
+        "返り点" | "送り仮名" => Vec::new(),
         "見せ消ち" => pipe.map(|p| text[p + 1..].to_vec()).unwrap_or_default(),
         "割書" => text.iter().copied().filter(|(ch, _)| *ch != '｜').collect(),
         _ => text.to_vec(),
     }
 }
 pub fn strict(source: &str) -> Normalized {
-    let mut visible = stripped(source, false).into_iter().peekable();
-    collect(source.chars().enumerate().filter_map(|(index, ch)| {
-        let mapped = if visible
+    normalize_mapped(source, stripped(source, false))
+}
+/// Alternate line text with ruby bases replaced by right or left readings.
+/// Each reading scalar points to the entire base's original source span.
+pub fn readings(source: &str) -> Vec<Normalized> {
+    let input = source_map(source);
+    let mut result = Vec::new();
+    for side in 0..2 {
+        let normalized = normalize_mapped(source, strip(&input, false, Some(side)));
+        if !result.contains(&normalized) {
+            result.push(normalized);
+        }
+    }
+    result
+}
+fn normalize_mapped(source: &str, mapped: Mapped) -> Normalized {
+    let mut visible = mapped.into_iter().peekable();
+    let mut output = Vec::new();
+    for (index, ch) in source.chars().enumerate() {
+        while visible
             .peek()
             .is_some_and(|(_, span)| span.start as usize == index)
         {
-            visible.next()
-        } else {
-            None
-        };
-        if matches!(ch, '\n' | '\r' | '\u{2028}' | '\u{2029}') {
-            Some((
+            if let Some((ch, span)) = visible.next()
+                && !ch.is_whitespace()
+            {
+                output.push((ch, span));
+            }
+        }
+        if line_break(ch) {
+            output.push((
                 SEPARATOR,
                 Span {
                     start: index as u32,
                     end: index as u32 + 1,
                 },
-            ))
-        } else {
-            mapped.filter(|(ch, _)| !ch.is_whitespace())
+            ));
         }
-    }))
+    }
+    collect(output)
 }
 fn collect(chars: impl IntoIterator<Item = (char, Span)>) -> Normalized {
     let mut result = Normalized::default();
@@ -397,7 +606,109 @@ mod tests {
         assert_eq!(tail[0], tail[1]);
         assert_eq!(original[tail[0].start as usize], '也');
     }
+    #[test]
+    fn inline_forms_follow_legacy_grammar() {
+        for (source, visible, reading) in [
+            ("富（ふ）士（じ）山（さん）", "富士山", "ふじさん"),
+            ("／東京（とうきょう）", "東京", "とうきょう"),
+            ("ひらカナ（x）", "ひらカナ", "ひらx"),
+            ("説明（日本語）", "説明", "日本語"),
+            ("abc（ruby）", "abc", "ruby"),
+            ("かな（x）", "かな", "x"),
+            ("未（a＿レ）", "未", "a＿レ"),
+            ("未（a￣ヲ）", "未", "a￣ヲ"),
+            ("未（a※b）", "未", "a※b"),
+            ("【注】（x）", "注", "x"),
+            ("■■（x）□（y）", "■■□", "xy"),
+            ("之＿レ之￣ヲ之｛＿一｝", "之之之", "之之之"),
+            ("〔江戸〕｛人名｝＜日時＞", "江戸人名日時", "江戸人名日時"),
+            ("〔富（ふ）士（じ）〕", "富士", "ふじ"),
+            ("山／川", "山川", "山川"),
+            ("＿四￣ひら", "￣ひら", "￣ひら"),
+            ("《振り仮名：蝦夷｜えぞ》", "蝦夷", "えぞ"),
+            ("《割書：富（ふ）｜士（じ）》", "富士", "ふじ"),
+        ] {
+            assert_eq!(strict(source).text, visible, "{source}");
+            assert_eq!(readings(source)[0].text, reading, "{source}");
+        }
+        for source in [
+            "（説明）",
+            "未（）",
+            "未（a｜）",
+            "未（a＃b）",
+            "未（a《b》）",
+            "未（a｜b｜c）",
+            "未（a",
+            "〔江戸",
+            "｛人名",
+            "＜日時",
+        ] {
+            assert_eq!(strict(source).text, source, "{source}");
+            assert_eq!(readings(source)[0].text, source, "{source}");
+        }
+        // A base starts at the beginning of a lexer run, even when its classes overlap.
+        assert_eq!(strict("㐀神（x）").text, "㐀神");
+        assert_eq!(readings("㐀神（x）")[0].text, "x");
+        for source in ["未（いまだ｜ズ）", "《振り仮名：未｜いまだ｜ズ》"] {
+            let readings = readings(source);
+            assert_eq!(
+                readings.iter().map(|n| n.text.as_str()).collect::<Vec<_>>(),
+                ["いまだ", "ズ"]
+            );
+        }
+    }
+    #[test]
+    fn ruby_offsets_and_physical_lines() {
+        let source = "𛀁富（ふ）士（じ）山（さん）";
+        let visible = strict(source);
+        assert_eq!(visible.text, "𛀁富士山");
+        assert_eq!(
+            visible.offsets,
+            [
+                Span { start: 0, end: 1 },
+                Span { start: 1, end: 2 },
+                Span { start: 5, end: 6 },
+                Span { start: 9, end: 10 }
+            ]
+        );
+        let reading = &readings(source)[0];
+        assert_eq!(reading.text, "𛀁ふじさん");
+        assert_eq!(
+            reading.offsets,
+            [
+                Span { start: 0, end: 1 },
+                Span { start: 1, end: 2 },
+                Span { start: 5, end: 6 },
+                Span { start: 9, end: 10 },
+                Span { start: 9, end: 10 }
+            ]
+        );
+        let bracket = &readings("《振り仮名：蝦夷｜えぞ》")[0];
+        assert_eq!(bracket.offsets, [Span { start: 6, end: 8 }; 2]);
+        for separator in ["\n", "\r\n", "\u{2028}", "\u{2029}"] {
+            let source = format!("富（ふ）{separator}士（じ）");
+            assert_eq!(
+                strict(&source).text,
+                format!("富{}士", "\0".repeat(separator.chars().count()))
+            );
+            assert_eq!(
+                readings(&source)[0].text,
+                format!("ふ{}じ", "\0".repeat(separator.chars().count()))
+            );
+        }
+        assert_eq!(strict("富（ふ\n）士（じ）").text, "富（ふ\0）士");
+        assert_eq!(readings("《振り仮名：山｜や\nま》川")[0].text, "山\0川");
+    }
     proptest! {
+        #[test]
+        fn reading_offsets_are_monotone(source in "[富士山ふじさん《》振り仮名：（）｜〔〕｛｝＜＞＿レ￣ヲ／※＃\\n]{0,200}") {
+            let length = source.chars().count() as u32;
+            for normalized in readings(&source) {
+                prop_assert_eq!(normalized.text.chars().count(), normalized.offsets.len());
+                prop_assert!(normalized.offsets.iter().all(|s| s.start < s.end && s.end <= length));
+                prop_assert!(normalized.offsets.windows(2).all(|w| w[0].start <= w[1].start));
+            }
+        }
         #[test]
         fn strict_offsets_reference_original(source in any::<String>()) {
             let chars: Vec<_> = source.chars().collect();

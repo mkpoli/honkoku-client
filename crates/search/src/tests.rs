@@ -182,3 +182,105 @@ fn metadata_with_literal_newlines_and_column_indentation() -> Result<()> {
     builder.finish()?;
     Ok(())
 }
+
+#[test]
+fn inline_ruby_readings_and_kwic() -> Result<()> {
+    let dir = tempfile::tempdir()?;
+    let mut builder = IndexBuilder::open(dir.path())?;
+    let source = "𛀁富（ふ）士（じ）山（さん）へ\n《振り仮名：蝦夷｜えぞ》\n之＿レ〔江戸〕之￣ヲ";
+    builder.apply_live([
+        page("a", "p", 1, source),
+        page("b", "q", 2, "富（ふ）\n士（じ）山（さん）"),
+        page("c", "p", 3, "《振り仮名：未｜いまだ｜ズ》未（いまだ｜ズ）"),
+        page("d", "p", 4, "之（の）"),
+    ])?;
+    let search = Searcher::open(dir.path())?;
+    for text in ["富士山", "ふじさん", "フジサン"] {
+        for mode in [Mode::Strict, Mode::Folded] {
+            let results = search.search(Query {
+                mode,
+                ..query(text)
+            })?;
+            if text == "フジサン" && mode == Mode::Strict {
+                assert_eq!(results.total, 0);
+                continue;
+            }
+            assert_eq!(results.total, 1, "{text} {mode:?}");
+            assert_eq!(results.facets, [("p".into(), 1)]);
+            let hit = &results.hits[0];
+            assert_eq!(hit.occurrences.len(), 1);
+            let occurrence = &hit.occurrences[0];
+            assert_eq!(
+                (occurrence.original_start, occurrence.original_end),
+                (1, 10)
+            );
+            assert_eq!(occurrence.matched, "富（ふ）士（じ）山");
+            assert_eq!(occurrence.before, "𛀁");
+            assert!(occurrence.after.starts_with("（さん）へ"));
+            assert_eq!(occurrence.column, 0);
+        }
+    }
+    for text in ["えぞ", "ぞ"] {
+        let results = search.search(query(text))?;
+        assert_eq!(results.total, 1);
+        assert_eq!(results.hits[0].occurrences[0].matched, "蝦夷");
+        assert_eq!(results.hits[0].occurrences[0].column, 1);
+    }
+    for text in ["之", "江戸", "之江戸之", "ふじさんへ"] {
+        assert_eq!(
+            search
+                .search(Query {
+                    entry: Some("a".into()),
+                    ..query(text)
+                })?
+                .total,
+            1,
+            "{text}"
+        );
+    }
+    for text in ["いまだ", "ズ"] {
+        let results = search.search(query(text))?;
+        assert_eq!(results.total, 1);
+        assert_eq!(results.hits[0].occurrences.len(), 2);
+        assert!(
+            results.hits[0]
+                .occurrences
+                .iter()
+                .all(|o| o.matched == "未")
+        );
+    }
+    // The visible and reading paths can fold to the same hit.
+    let results = search.search(Query {
+        mode: Mode::Folded,
+        entry: Some("d".into()),
+        ..query("の")
+    })?;
+    assert_eq!(results.total, 1);
+    assert_eq!(results.hits[0].occurrences.len(), 1);
+    for text in ["山ふ", "へふ", "ふ士", "富じ", "ふじさんえぞ"] {
+        assert_eq!(search.search(query(text))?.total, 0, "{text}");
+    }
+    builder.apply_live([page("a", "p", 1, "富士山")])?;
+    assert_eq!(search.search(query("ふじさん"))?.total, 0);
+    assert_eq!(search.search(query("富士山"))?.total, 1);
+    builder.finish()?;
+    Ok(())
+}
+
+#[test]
+fn previous_normalization_requires_rebuild() -> Result<()> {
+    let dir = tempfile::tempdir()?;
+    let (current, _) = schema();
+    let json = serde_json::to_string(&current)?
+        .replace("scalar_v2", "scalar")
+        .replace("pair_v2", "pair");
+    let previous: Schema = serde_json::from_str(&json)?;
+    Index::create_in_dir(dir.path(), previous)?;
+    assert!(
+        matches!(Searcher::open(dir.path()), Err(Error::Invalid(message)) if message.contains("rebuild"))
+    );
+    assert!(
+        matches!(IndexBuilder::open(dir.path()), Err(Error::Invalid(message)) if message.contains("rebuild"))
+    );
+    Ok(())
+}
