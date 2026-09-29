@@ -3,6 +3,7 @@
   import type { TimelineItem } from "@honkoku/client-api/types";
   import { diffSource } from "@honkoku/markup";
   import { errorMessage, relative } from "../lib";
+  import { historyVersion, type HistoryVersion } from "../history-restore";
   import Avatar from "./Avatar.svelte";
   let {
     entryId,
@@ -18,13 +19,15 @@
     current: string;
     editing: boolean;
     disabled: boolean;
-    onrestore: (source: string) => void;
+    onrestore: (version: HistoryVersion) => void;
     onclose: () => void;
   } = $props();
   let items = $state<TimelineItem[]>([]),
     selected = $state(0),
     pending = $state(true),
     error = $state("");
+  let confirming = $state(false);
+  let version = $derived(historyVersion(items[selected]?.event.data));
   let horizontal = $state(false),
     compareCurrent = $state(false),
     limit = $state(100),
@@ -61,6 +64,7 @@
     error = "";
     items = [];
     selected = 0;
+    confirming = false;
     void pageHistory(id, page, count + 1)
       .then((values) => {
         if (alive) items = values;
@@ -99,7 +103,10 @@
         <button
           class="history-save"
           aria-pressed={selected === i}
-          onclick={() => (selected = i)}
+          onclick={() => {
+            selected = i;
+            confirming = false;
+          }}
         >
           <span class="history-author"
             ><Avatar user={item.actor} small />{item.actor?.displayName ??
@@ -136,12 +143,33 @@
       <p class="muted">
         {compareCurrent ? "選択した保存→現在の内容" : "前の保存→選択した保存"}
       </p>
-      <button
-        class="primary"
-        {disabled}
-        onclick={() => onrestore(text(items[selected]))}
-        >{editing ? "復元" : "編集を開始して復元"}</button
-      >
+      {#if version.notes === undefined}<p class="muted">
+          この履歴には注記が記録されていません。本文を復元し、現在の注記はそのまま残します。
+        </p>{/if}
+      {#if confirming}
+        <p>
+          {version.notes === undefined
+            ? "現在の本文をこの版の本文に置き換えますか？注記は変更しません。"
+            : "現在の本文と注記をこの版の本文と注記に置き換えますか？"}
+          復元した内容は下書きになります。
+        </p>
+        <button
+          class="primary"
+          {disabled}
+          onclick={() => {
+            onrestore(version);
+            confirming = false;
+          }}>復元する</button
+        >
+        <button onclick={() => (confirming = false)}>キャンセル</button>
+      {:else}
+        <button
+          class="primary"
+          {disabled}
+          onclick={() => (confirming = true)}
+          >{editing ? "復元" : "編集を開始して復元"}</button
+        >
+      {/if}
     </div>
     <div class="history-diff" class:horizontal aria-label="翻刻文の差分">
       {#each changes as change}{#if change.kind === "insert"}<ins
