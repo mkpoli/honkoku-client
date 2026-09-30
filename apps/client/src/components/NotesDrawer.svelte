@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { PageNote } from "@honkoku/client-api/types";
+  import type { NoteFormDraft } from "../editing-draft";
   import { date, errorMessage } from "../lib";
   import QueuedImage from "./QueuedImage.svelte";
   import Markdown from "./Markdown.svelte";
@@ -9,6 +10,8 @@
     disabled,
     authors,
     lockName,
+    form,
+    onformchange,
     onclose,
     onsave,
     ondelete,
@@ -20,6 +23,8 @@
     disabled: boolean;
     authors: Record<string, string>;
     lockName?: string;
+    form?: NoteFormDraft;
+    onformchange: (form: NoteFormDraft | undefined) => void;
     onclose: () => void;
     onsave: (note: PageNote, index?: number) => Promise<void>;
     ondelete: (index: number) => Promise<void>;
@@ -32,8 +37,8 @@
     { value: "transcription", label: "翻刻" },
     { value: "other", label: "その他" },
   ];
-  let draft = $state<PageNote>();
-  let draftIndex = $state<number>();
+  let draft = $derived(form?.note);
+  let draftIndex = $derived(form?.index);
   let deleting = $state<number>();
   let saving = $state(false),
     error = $state("");
@@ -50,15 +55,13 @@
   );
   export function create(region?: Pick<PageNote, "image" | "xywh">) {
     if (!editing || disabled || saving || draft) return;
-    draftIndex = undefined;
-    draft = { content: "", type: "note", ...region };
+    onformchange({ note: { content: "", type: "note", ...region } });
     error = "";
     requestAnimationFrame(() => textarea?.focus());
   }
   function edit(note: PageNote, index: number) {
     if (draft) return;
-    draftIndex = index;
-    draft = { ...note };
+    onformchange({ note: { ...note }, index });
     error = "";
     requestAnimationFrame(() => textarea?.focus());
   }
@@ -78,7 +81,6 @@
     error = "";
     try {
       await onsave(draft, draftIndex);
-      draft = undefined;
     } catch (e) {
       error = errorMessage(e);
     } finally {
@@ -103,7 +105,6 @@
   }
   $effect(() => {
     if (!editing) {
-      draft = undefined;
       deleting = undefined;
     }
   });
@@ -128,7 +129,7 @@
     </p>{/if}
   {#if error}<p role="alert">{error}</p>{/if}
   <div class="notes-scroll">
-    {#if draft && draftIndex === undefined}{@render editor()}{/if}
+    {#if draft && (draftIndex === undefined || !notes[draftIndex])}{@render editor()}{/if}
     {#each ordered as { note, index } (index)}
       {#if note}
         <article
@@ -202,27 +203,39 @@
         void save();
       }}
     >
-      <fieldset disabled={disabled || saving}>
+      <fieldset disabled={!editing || disabled || saving}>
         <legend>種類</legend>
         <div class="note-types">
           {#each types as type}<button
               type="button"
               aria-pressed={draft.type === type.value}
               onclick={() => {
-                if (draft) draft.type = type.value;
+                if (form)
+                  onformchange({
+                    ...form,
+                    note: { ...form.note, type: type.value },
+                  });
               }}>{type.label}</button
             >{/each}
         </div>
         <label
-          >本文<textarea bind:this={textarea} bind:value={draft.content}
-          ></textarea></label
+          >本文<textarea
+            bind:this={textarea}
+            value={draft.content}
+            oninput={(event) => {
+              if (form)
+                onformchange({
+                  ...form,
+                  note: { ...form.note, content: event.currentTarget.value },
+                });
+            }}></textarea></label
         >
         {#if draft.image}<div class="note-thumbnail">
             <QueuedImage url={draft.image} alt="選択した画像領域" />
           </div>{/if}
         <div class="note-actions">
           <button class="primary" disabled={!draft.content.trim()}>保存</button
-          ><button type="button" onclick={() => (draft = undefined)}
+          ><button type="button" onclick={() => onformchange(undefined)}
             >取消</button
           >
         </div>
