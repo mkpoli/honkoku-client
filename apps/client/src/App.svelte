@@ -47,6 +47,7 @@
   import ProjectScreen from "./components/Project.svelte";
   import EntryScreen from "./components/Entry.svelte";
   import Workbench from "./components/Workbench.svelte";
+  import LockStatus from "./components/LockStatus.svelte";
   import SignIn from "./components/SignIn.svelte";
   import SiteLinks from "./components/SiteLinks.svelte";
   import Avatar from "./components/Avatar.svelte";
@@ -418,7 +419,9 @@
   {@const current = pages.find((p) => p.index === route.pageIndex)}
   {#if current}<span class="status {statusClass(current.status)}"
       >{status(current.status).symbol}{status(current.status).label}</span
-    >{/if}
+    >{#if current.status === "editing" && (!session || current.tempEditedBy !== session.uid)}<LockStatus
+        page={current}
+      />{/if}{/if}
 {/snippet}
 {#snippet topControls()}
     <div class="top-controls">
