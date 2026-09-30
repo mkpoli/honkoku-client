@@ -333,6 +333,51 @@ export function selectedMarkup(doc: PMNode, from: number, to: number): string {
   });
   return result;
 }
+export function pasteMarkup(
+  view: Pick<EditorView, "state" | "dispatch">,
+  text: string,
+  onstatus: (message: string) => void,
+): boolean {
+  if (view.state.selection.$from.depth > 1) {
+    const children = parseLine(text);
+    const parent = view.state.selection.$from.node(
+      view.state.selection.$from.depth - 1,
+    ).type.name;
+    if (
+      /[\r\n]/.test(text) ||
+      children.some(
+        (node) =>
+          !allowsChild(parent, node.kind) ||
+          (node.kind === "raw" && /[《》｜]/u.test(node.source)),
+      )
+    ) {
+      onstatus("ここにはこの原文を貼り付けられません。");
+      return true;
+    }
+    onstatus("");
+    view.dispatch(
+      closeHistory(view.state.tr)
+        .replaceSelection(
+          new Slice(
+            schema.nodes.column.create(null, children.map(project)).content,
+            0,
+            0,
+          ),
+        )
+        .scrollIntoView(),
+    );
+    view.dispatch(closeHistory(view.state.tr));
+    return true;
+  }
+  view.dispatch(
+    closeHistory(view.state.tr)
+      .replaceSelection(clipboardMarkup(text))
+      .scrollIntoView(),
+  );
+  view.dispatch(closeHistory(view.state.tr));
+  return true;
+}
+
 export function clipboardMarkup(text: string): Slice {
   return new Slice(fromMarkup(text).content, 1, 1);
 }
@@ -1329,40 +1374,7 @@ export function createEditor(
       if (composing || view.composing) return false;
       const text = event.clipboardData?.getData("text/plain");
       if (text === undefined) return false;
-      if (view.state.selection.$from.depth > 1) {
-        const children = parseLine(text);
-        const parent = view.state.selection.$from.node(
-          view.state.selection.$from.depth - 1,
-        ).type.name;
-        if (
-          /[\r\n]/.test(text) ||
-          children.some(
-            (node) =>
-              !allowsChild(parent, node.kind) ||
-              (node.kind === "raw" && /[《》｜]/u.test(node.source)),
-          )
-        ) {
-          onstatus("ここにはこの原文を貼り付けられません。");
-          return true;
-        }
-        onstatus("");
-        view.dispatch(
-          view.state.tr
-            .replaceSelection(
-              new Slice(
-                schema.nodes.column.create(null, children.map(project)).content,
-                0,
-                0,
-              ),
-            )
-            .scrollIntoView(),
-        );
-        return true;
-      }
-      view.dispatch(
-        view.state.tr.replaceSelection(clipboardMarkup(text)).scrollIntoView(),
-      );
-      return true;
+      return pasteMarkup(view, text, onstatus);
     },
     dispatchTransaction(tr) {
       const patches = sourcePatches(tr);

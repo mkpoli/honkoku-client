@@ -14,6 +14,7 @@ import {
   moveCaret,
   schema,
   textareaSource,
+  pasteMarkup,
   deleteContext,
 } from "./index";
 import { pageTexts } from "../markup/test-fixtures";
@@ -54,6 +55,60 @@ function editor(source: string) {
     dispatch,
   };
 }
+for (const nested of [false, true]) {
+  const source = (text: string) => (nested ? `《題：前${text}》` : text);
+  for (const typeAfterPaste of [false, true]) {
+    test(`paste isolates undo ${nested ? "inside an annotation" : "in a column"}${typeAfterPaste ? " with immediate typing afterward" : ""}`, () => {
+      const e = editor(source(""));
+      e.dispatch(
+        e.state.tr.setSelection(
+          TextSelection.create(e.state.doc, nested ? 4 : 1),
+        ),
+      );
+      let time = 1000;
+      const view = {
+        get state() {
+          return e.state;
+        },
+        dispatch: (tr: typeof e.state.tr) => e.dispatch(tr.setTime(time++)),
+      };
+      for (const character of "abc")
+        view.dispatch(e.state.tr.insertText(character));
+      expect(pasteMarkup(view, "貼付", () => {})).toBe(true);
+      expect(e.source).toBe(source("abc貼付"));
+      if (typeAfterPaste) {
+        view.dispatch(e.state.tr.insertText("後"));
+        expect(e.source).toBe(source("abc貼付後"));
+        expect(undo(e.state, e.dispatch)).toBe(true);
+        expect(e.source).toBe(source("abc貼付"));
+      }
+      expect(undo(e.state, e.dispatch)).toBe(true);
+      expect(e.source).toBe(source("abc"));
+      expect(undo(e.state, e.dispatch)).toBe(true);
+      expect(e.source).toBe(source(""));
+      expect(undo(e.state, e.dispatch)).toBe(false);
+      expect(redo(e.state, e.dispatch)).toBe(true);
+      expect(e.source).toBe(source("abc"));
+      expect(redo(e.state, e.dispatch)).toBe(true);
+      expect(e.source).toBe(source("abc貼付"));
+      if (typeAfterPaste) {
+        expect(redo(e.state, e.dispatch)).toBe(true);
+        expect(e.source).toBe(source("abc貼付後"));
+      }
+    });
+  }
+}
+test("raw textarea source updates keep paste separate from surrounding input", () => {
+  const e = editor("");
+  let time = 1000;
+  const dispatch = (tr: typeof e.state.tr) => e.dispatch(tr.setTime(time++));
+  for (const value of ["abc", "abc貼付", "abc貼付後"])
+    replaceSource(textareaSource(e.source, value))(e.state, dispatch);
+  for (const value of ["abc貼付", "abc", ""]) {
+    expect(undo(e.state, e.dispatch)).toBe(true);
+    expect(e.source).toBe(value);
+  }
+});
 test("local edits retain untouched annotation spelling and all other columns", () => {
   const e = editor(
     "一\r\n未（いまだ｜ズ）＃００１\r《割書：a｜b｜c｜d》\n《未知：□》",
