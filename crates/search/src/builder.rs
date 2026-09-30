@@ -110,16 +110,17 @@ impl IndexBuilder {
         let path = path.as_ref();
         std::fs::create_dir_all(path)?;
         let (expected, fields) = schema();
+        // The directory is a cache: an index in an older format is discarded
+        // together with its page ledger, so the build starts from scratch.
+        if path.join("meta.json").exists() && Index::open_in_dir(path)?.schema() != expected {
+            std::fs::remove_dir_all(path)?;
+            std::fs::create_dir_all(path)?;
+        }
         let index = if path.join("meta.json").exists() {
             Index::open_in_dir(path)?
         } else {
             Index::create_in_dir(path, expected.clone())?
         };
-        if index.schema() != expected {
-            return Err(Error::Invalid(
-                "search index format changed; rebuild the index".into(),
-            ));
-        }
         register(&index);
         let writer = index.writer_with_options(
             tantivy::indexer::IndexWriterOptions::builder()
@@ -197,17 +198,12 @@ impl IndexBuilder {
             return Ok(false);
         }
         let strict = normalize::strict(&page.text);
-        let folded = normalize::fold(&strict);
         let f = &self.fields;
         let mut doc = TantivyDocument::default();
         for (field, value) in [
             (f.page_id, page.page_id.as_str()),
             (f.project_id, &page.project_id),
             (f.entry_id, &page.entry_id),
-            (f.strict, &strict.text),
-            (f.strict2, &strict.text),
-            (f.folded, &folded.text),
-            (f.folded2, &folded.text),
             (f.source, source),
             (f.entry_label, &page.entry_label),
             (f.project_title, &page.project_title),
@@ -217,8 +213,23 @@ impl IndexBuilder {
         doc.add_u64(f.index, page.index);
         doc.add_i64(f.updated_at, page.updated_at);
         doc.add_bytes(f.original, page.text.as_bytes());
-        doc.add_bytes(f.strict_map, &crate::maps::encode(&strict.offsets));
-        doc.add_bytes(f.folded_map, &crate::maps::encode(&folded.offsets));
+        let mut texts = vec![strict];
+        for reading in normalize::readings(&page.text) {
+            if !texts.contains(&reading) {
+                texts.push(reading);
+            }
+        }
+        for strict in texts {
+            let folded = normalize::fold(&strict);
+            for (single, pair, map, text) in [
+                (f.strict, f.strict2, f.strict_map, strict),
+                (f.folded, f.folded2, f.folded_map, folded),
+            ] {
+                doc.add_text(single, &text.text);
+                doc.add_text(pair, &text.text);
+                doc.add_bytes(map, &crate::maps::encode(&text.offsets));
+            }
+        }
         doc.add_bytes(f.text_hash, hash.as_bytes());
         self.writer
             .delete_term(Term::from_field_text(f.page_id, &page.page_id));

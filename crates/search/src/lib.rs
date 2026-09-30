@@ -103,12 +103,14 @@ struct Fields {
     entry_label: Field,
     project_title: Field,
 }
+// Tokenizer names participate in schema equality, so normalization changes require a rebuild.
+const NORMALIZATION_VERSION: u32 = 2;
 fn schema() -> (Schema, Fields) {
     let mut s = Schema::builder();
     let text = |tokenizer| {
         TextOptions::default().set_indexing_options(
             TextFieldIndexing::default()
-                .set_tokenizer(tokenizer)
+                .set_tokenizer(&format!("{tokenizer}_v{NORMALIZATION_VERSION}"))
                 .set_index_option(IndexRecordOption::WithFreqsAndPositions)
                 .set_fieldnorms(false),
         )
@@ -134,12 +136,14 @@ fn schema() -> (Schema, Fields) {
     (s.build(), f)
 }
 fn register(index: &Index) {
-    index
-        .tokenizers()
-        .register("scalar", tokenizer::Characters(1));
-    index
-        .tokenizers()
-        .register("pair", tokenizer::Characters(2));
+    index.tokenizers().register(
+        &format!("scalar_v{NORMALIZATION_VERSION}"),
+        tokenizer::Characters(1),
+    );
+    index.tokenizers().register(
+        &format!("pair_v{NORMALIZATION_VERSION}"),
+        tokenizer::Characters(2),
+    );
 }
 fn string(doc: &TantivyDocument, field: Field) -> &str {
     doc.get_first(field)
@@ -276,8 +280,11 @@ impl Searcher {
         let mut remaining = 0;
         for address in addresses {
             let doc: TantivyDocument = searcher.doc(address)?;
-            let normalized_page = string(&doc, single);
-            if !normalized_page.contains(&normalized.text) {
+            let normalized_pages: Vec<_> = doc.get_all(single).filter_map(|v| v.as_str()).collect();
+            if !normalized_pages
+                .iter()
+                .any(|text| text.contains(&normalized.text))
+            {
                 continue;
             }
             total += 1;
@@ -298,8 +305,24 @@ impl Searcher {
             }
             let original = std::str::from_utf8(bytes(&doc, f.original))
                 .map_err(|_| Error::Invalid("invalid stored UTF-8".into()))?;
-            let offsets = maps::decode(bytes(&doc, map))?;
-            let occurrences = occurrences(original, normalized_page, &normalized.text, &offsets)?;
+            let stored_maps: Vec<_> = doc.get_all(map).filter_map(|v| v.as_bytes()).collect();
+            if stored_maps.len() != normalized_pages.len() {
+                return Err(Error::Invalid("missing normalized text map".into()));
+            }
+            let mut occurrences = Vec::new();
+            for (text, map) in normalized_pages.into_iter().zip(stored_maps) {
+                if text.contains(&normalized.text) {
+                    let offsets = maps::decode(map)?;
+                    occurrences.extend(crate::occurrences(
+                        original,
+                        text,
+                        &normalized.text,
+                        &offsets,
+                    )?);
+                }
+            }
+            occurrences.sort_by_key(|o| (o.original_start, o.original_end));
+            occurrences.dedup_by_key(|o| (o.original_start, o.original_end));
             let hit = Hit {
                 page_id: id.to_owned(),
                 project_id: string(&doc, f.project_id).into(),

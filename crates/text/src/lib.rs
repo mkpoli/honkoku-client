@@ -94,8 +94,14 @@ mod tests {
             ("《見せ消ち：a｜b》", "b"),
             ("《圏点：x｜m》", "x"),
             ("《右線：x》", "x"),
+            ("富（ふ）士（じ）山（さん）", "富士山"),
+            ("未（a《b》）", "未（a《b》）"),
             ("【注】a【右丁】b【左丁】", "a\nb\n"),
             ("字※注釈\n文＃１０■□〓＃2", "字\n文■□〓"),
+            (
+                "之＿一レ不＿四人｛＿上レ｝《返り点：レ》《送り仮名：ト云》也",
+                "之不人也",
+            ),
             ("《割書：a｜《圏点：b｜﹅》》", "ab"),
         ] {
             assert_eq!(plain_text(source), want);
@@ -125,8 +131,9 @@ mod tests {
     }
     proptest! {
         #[test]
-        fn no_markup_delimiters(chars in proptest::collection::vec(any::<char>(),0..500)) {
-            let source: String = chars.into_iter().collect();
+        fn no_markup_delimiters_without_raw_ruby(chars in proptest::collection::vec(any::<char>(),0..500)) {
+            // Invalid parenthesized ruby is preserved verbatim, including delimiters.
+            let source: String = chars.into_iter().filter(|ch| *ch != '（').collect();
             prop_assert!(!plain_text(&source).contains(['《','》','【','】']));
         }
         #[test]
