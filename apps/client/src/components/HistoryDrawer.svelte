@@ -149,6 +149,7 @@
         >{editing ? "復元" : "編集を開始して復元"}</button
       >
     </div>
+    <p class="muted history-legend">追加：実線囲み／削除：破線囲み</p>
     <div class="history-diff" class:horizontal aria-label="翻刻文の差分">
       {#each changes as change, i}{#if change.kind === "insert"}<ins
             title={change.widthOnly ? "文字幅の変更（半角・全角）" : "追加"}
@@ -158,7 +159,6 @@
             >{@render changedText(change, textAfter(changes, i))}</del
           >{:else}<span>{change.text}</span>{/if}{/each}
     </div>
-    <p class="muted history-legend">追加：実線囲み／削除：破線囲み</p>
   {/if}
 </aside>
 
@@ -253,7 +253,9 @@
     text-orientation: upright;
   }
   .history-legend {
-    margin: 4px 0 0;
+    margin: 0;
+    padding: 0 12px;
+    font-size: 12px;
   }
   .whitespace-mark {
     display: inline-block;
