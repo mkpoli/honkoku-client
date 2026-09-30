@@ -480,7 +480,10 @@
         await tick();
       }
       const restored = restoreHistoryDraft(version, tempNotes);
-      if (restored.notes !== tempNotes) notesGeneration++;
+      if (restored.notes !== tempNotes) {
+        notesGeneration++;
+        changeNoteForm(undefined);
+      }
       tempNotes = restored.notes;
       source = restored.source;
       closeNotes();
