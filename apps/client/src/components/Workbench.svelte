@@ -2,6 +2,7 @@
   import type { Snippet } from "svelte";
   import { openSessions } from "../editing-sessions.svelte";
   import { notesPending, restoreDraft, type LocalDraft } from "../editing-draft";
+  import { restoreHistoryDraft, type HistoryVersion } from "../history-restore";
   import type { Region } from "../region.svelte";
   import HistoryDrawer from "./HistoryDrawer.svelte";
   import BibliographyDrawer from "./BibliographyDrawer.svelte";
@@ -461,15 +462,21 @@
     historyOpen = false;
     bibliographyOpen = false;
   });
-  function restoreHistory(text: string) {
+  // Bumped when notes are replaced wholesale, so the drawer drops any open form.
+  let notesGeneration = $state(0);
+  function restoreHistory(version: HistoryVersion) {
     if (busy || verifying || composing) return;
     act(async () => {
       if (!editing) {
         begin(await pageLock(entry.id, index, false));
         await tick();
       }
-      editorInstance?.setSource(text);
-      source = text;
+      const restored = restoreHistoryDraft(version, tempNotes);
+      if (restored.notes !== tempNotes) notesGeneration++;
+      tempNotes = restored.notes;
+      source = restored.source;
+      closeNotes();
+      editorInstance?.setSource(source);
       saveState = "未保存の変更";
       remember();
       queue?.request(draftPayload());
@@ -1731,7 +1738,7 @@
           highlighted={highlightedNote}
           selecting={clipping || annotationMode || recognizing}
         />
-        {#if notesOpen}{#key page.id}<NotesDrawer
+        {#if notesOpen}{#key `${page.id}:${notesGeneration}`}<NotesDrawer
               bind:this={notesDrawer}
               notes={annotationNotes}
               {editing}
