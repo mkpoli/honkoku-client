@@ -51,6 +51,13 @@ const constructs: Record<string, [SyntaxKind, number, number]> = {
   人物: ["person", 1, 1],
   日時: ["date", 1, 1],
 };
+const returnBases = "一二三四五六七八九十上中下甲乙丙丁天地人";
+export const returnMarks = [
+  "レ",
+  ...returnBases,
+  ...[...returnBases].map((mark) => `${mark}レ`),
+];
+const returnPrefix = new RegExp(`^＿(?:[${returnBases}]レ?|レ)`, "u");
 /** Editable children of each compound field. */
 export function allowsChild(parent: string, child: string): boolean {
   if (
@@ -168,6 +175,21 @@ export function parseLine(text: string, start = 0): SyntaxNode[] {
         continue;
       }
       const match = /^《([^：]+)：([\s\S]*)》$/.exec(token);
+      if (match?.[1] === "返り点") {
+        if (returnMarks.includes(match[2]))
+          add("return", end, [match[2]], "bracket");
+        else add("raw", end);
+        continue;
+      }
+      if (match?.[1] === "送り仮名") {
+        if (
+          match[2] &&
+          parseLine(match[2]).every((child) => child.kind === "text")
+        )
+          add("okurigana", end, [match[2]], "bracket");
+        else add("raw", end);
+        continue;
+      }
       const rule = match && constructs[match[1]];
       const segments = match ? splitFields(match[2]) : undefined;
       if (
@@ -196,7 +218,8 @@ export function parseLine(text: string, start = 0): SyntaxNode[] {
         token[0] === "〔" ? "place" : token[0] === "＜" ? "date" : "person";
       if (
         kind === "person" &&
-        /^＿[レ一二三上中下甲乙丙丁天地人]$/u.test(content)
+        content.startsWith("＿") &&
+        returnMarks.includes(content.slice(1))
       )
         add("return", token.length, [content.slice(1)], "legacy");
       else add(kind, token.length, [content], "legacy");
@@ -207,7 +230,7 @@ export function parseLine(text: string, start = 0): SyntaxNode[] {
       add("reference", reference[0].length);
       continue;
     }
-    const returning = /^＿[レ一二三上中下甲乙丙丁天地人]/u.exec(rest);
+    const returning = returnPrefix.exec(rest);
     if (returning) {
       add("return", returning[0].length, [returning[0].slice(1)]);
       continue;

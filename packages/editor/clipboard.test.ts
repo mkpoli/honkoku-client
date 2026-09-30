@@ -98,6 +98,20 @@ test("typing after a raw okurigana prefix forms a node", () => {
   expect(state.doc.firstChild!.lastChild!.type.name).toBe("okurigana");
   expect(toMarkup(state.doc)).toBe("故￣ニ");
 });
+test("extending a bracketed okurigana keeps the bracket form", () => {
+  let state = EditorState.create({ doc: fromMarkup("之《送り仮名：ト云》") });
+  state = state.apply(
+    state.tr.setSelection(
+      TextSelection.create(state.doc, state.doc.content.size - 1),
+    ),
+  );
+  expect(
+    extendOkurigana("フ")(state, (tr) => {
+      state = state.apply(tr);
+    }),
+  ).toBe(true);
+  expect(toMarkup(state.doc)).toBe("之《送り仮名：ト云フ》");
+});
 test("presets normalize kana and isolate accounts and groups", () => {
   expect(normalizePreset("送り仮名", "にして")).toBe("ニシテ");
   expect(normalizePreset("送り仮名", "ニ".repeat(9))).toBeNull();

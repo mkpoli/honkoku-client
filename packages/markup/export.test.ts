@@ -28,6 +28,38 @@ test("LaTeX reproduces the site's ruby and kanbun macros", () => {
     "\\sougyou{ 一行 }{ 二行 }讀\\kokana{ ム }{}\\kaeriten{ レ }\\textcolor{red}{【注記】}□■",
   );
 });
+test("reading marks export equally from short, legacy and bracket forms", () => {
+  const marks = [
+    "レ",
+    ...[..."一二三四五六七八九十上中下甲乙丙丁天地人"].flatMap((mark) => [
+      mark,
+      `${mark}レ`,
+    ]),
+  ];
+  for (const mark of marks)
+    for (const source of [
+      `＿${mark}`,
+      `｛＿${mark}｝`,
+      `《返り点：${mark}》`,
+    ]) {
+      const pages = [{ index: 0, text: `之${source}人` }];
+      expect(exportTranscription(pages, "xml")).toContain(
+        `之<metamark function="kaeriten">${mark}</metamark>人`,
+      );
+      expect(exportTranscription(pages, "tex")).toContain(
+        `之\\kaeriten{ ${mark} }人`,
+      );
+    }
+  for (const format of ["xml", "tex"] as const)
+    expect(
+      exportTranscription([{ index: 0, text: "之《送り仮名：カナ》" }], format),
+    ).toBe(exportTranscription([{ index: 0, text: "之￣カナ" }], format));
+  const pages = [{ index: 0, text: "之《送り仮名：ト云》" }];
+  expect(exportTranscription(pages, "xml")).toContain(
+    '之<note type="okuri">ト云</note>',
+  );
+  expect(exportTranscription(pages, "tex")).toContain("之\\kokana{ ト云 }{}");
+});
 test("a warigaki without ｜ exports as 双行 with an empty left half", () => {
   const source = "《割書：松前志摩守内》";
   expect(exportTranscription([{ index: 0, text: source }], "tex")).toContain(

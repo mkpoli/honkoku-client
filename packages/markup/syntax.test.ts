@@ -116,8 +116,49 @@ test("all specified constructs and site legacy ruby", () => {
     ["text", "ひら"],
     ["ruby", "カナ"],
   ]);
-  for (const mark of "レ一二三上中下甲乙丙丁天地人")
-    expect(parseLine(`＿${mark}`)[0].kind).toBe("return");
+});
+test("return marks accept one level with an optional レ in all forms", () => {
+  const marks = [
+    "レ",
+    ...[..."一二三四五六七八九十上中下甲乙丙丁天地人"].flatMap((mark) => [
+      mark,
+      `${mark}レ`,
+    ]),
+  ];
+  for (const mark of marks)
+    for (const source of [
+      `＿${mark}`,
+      `｛＿${mark}｝`,
+      `《返り点：${mark}》`,
+    ]) {
+      expect(parseLine(`之${source}`, 5)).toEqual([
+        { kind: "text", source: "之", from: 5, to: 6 },
+        {
+          kind: "return",
+          source,
+          segments: [mark],
+          from: 6,
+          to: 6 + source.length,
+          ...(source.startsWith("｛") ? { form: "legacy" } : {}),
+          ...(source.startsWith("《") ? { form: "bracket" } : {}),
+        },
+      ]);
+      expect(serialize(parse(`之${source}\r\n次`))).toBe(`之${source}\r\n次`);
+    }
+});
+test("return marks leave following body characters outside the mark", () => {
+  for (const mark of ["レ", "四", "一レ", "上レ", "甲レ", "天レ"])
+    for (const body of ["人", "天", "一", "天地人"])
+      expect(
+        parseLine(`不＿${mark}${body}`).map((n) => [n.kind, n.source]),
+      ).toEqual([
+        ["text", "不"],
+        ["return", `＿${mark}`],
+        ["text", body],
+      ]);
+  for (const mark of ["", "十一", "レレ", "一二", "一レ人", "不", "レ｜一"])
+    expect(parseLine(`《返り点：${mark}》`)[0].kind).toBe("raw");
+  expect(parseLine("｛＿一レ人｝")[0].kind).toBe("person");
 });
 test("deterministic arbitrary UTF-16 round trips", () => {
   let seed = 42;
@@ -162,6 +203,54 @@ test("an okurigana run ends where the katakana ends, as on the site", () => {
   ]);
   expect(kinds("讀￣ムー")).toEqual(["text:讀", "okurigana:￣ム", "text:ー"]);
   expect(kinds("地￣へ罷越")).toEqual(["text:地", "raw:￣", "text:へ罷越"]);
+});
+
+test("bracketed okurigana retains the whole plain field", () => {
+  for (const text of ["カナ", "ト云"]) {
+    const source = `《送り仮名：${text}》`;
+    expect(parseLine(source)).toEqual([
+      {
+        kind: "okurigana",
+        source,
+        segments: [text],
+        form: "bracket",
+        from: 0,
+        to: source.length,
+      },
+    ]);
+    expect(serialize(parse(`之${source}`))).toBe(`之${source}`);
+  }
+  for (const text of ["", "ト｜云", "《題：ト》", "＿レ", "￣ト"])
+    expect(parseLine(`《送り仮名：${text}》`)[0].kind).toBe("raw");
+});
+
+test("reading mark spans cover short, legacy and bracket forms losslessly", () => {
+  const source = "之＿四＿一レ人｛＿上レ｝《返り点：甲レ》《送り仮名：ト云》";
+  const spans = tokenizeSource(source);
+  expect(spans.map(({ kind, source }) => [kind, source])).toEqual([
+    ["text", "之"],
+    ["return", "＿四"],
+    ["return", "＿一レ"],
+    ["text", "人"],
+    ["return", "｛＿上レ｝"],
+    ["punctuation", "《"],
+    ["label", "返り点"],
+    ["punctuation", "："],
+    ["return", "甲レ"],
+    ["punctuation", "》"],
+    ["punctuation", "《"],
+    ["label", "送り仮名"],
+    ["punctuation", "："],
+    ["okurigana", "ト云"],
+    ["punctuation", "》"],
+  ]);
+  let offset = 0;
+  for (const span of spans) {
+    expect(span.from).toBe(offset);
+    expect(source.slice(span.from, span.to)).toBe(span.source);
+    offset = span.to;
+  }
+  expect(offset).toBe(source.length);
 });
 
 test("notation spans cover annotation fields, ruby and reading marks losslessly", () => {

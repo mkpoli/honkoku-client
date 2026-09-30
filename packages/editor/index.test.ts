@@ -14,6 +14,7 @@ import {
   moveCaret,
   schema,
   textareaSource,
+  selectedMarkup,
   pasteMarkup,
   deleteContext,
 } from "./index";
@@ -55,6 +56,34 @@ function editor(source: string) {
     dispatch,
   };
 }
+test("long reading forms retain their spelling through edits and copying", () => {
+  for (const [name, kind, value, replacement] of [
+    ["返り点", "return", "レ", "一レ"],
+    ["送り仮名", "okurigana", "ト云", "ト曰"],
+  ]) {
+    const source = `之《${name}：${value}》人`;
+    const e = editor(source);
+    expect(e.source).toBe(source);
+    expect(e.state.doc.firstChild!.child(1).type.name).toBe(kind);
+    e.dispatch(
+      e.state.tr.setNodeMarkup(2, undefined, {
+        ...e.state.doc.firstChild!.child(1).attrs,
+        original: null,
+        originalParts: null,
+      }),
+    );
+    expect(e.source).toBe(source);
+    const pos = 4;
+    e.dispatch(e.state.tr.insertText(replacement, pos, pos + value.length));
+    expect(e.source).toBe(`之《${name}：${replacement}》人`);
+    expect(toMarkup(fromMarkup(e.source))).toBe(e.source);
+    expect(selectedMarkup(e.state.doc, pos, pos + replacement.length)).toBe(
+      `《${name}：${replacement}》`,
+    );
+    undo(e.state, e.dispatch);
+    expect(e.source).toBe(source);
+  }
+});
 for (const nested of [false, true]) {
   const source = (text: string) => (nested ? `《題：前${text}》` : text);
   for (const typeAfterPaste of [false, true]) {
