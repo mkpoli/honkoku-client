@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { diffSource } from "./diff";
+import { diffSource, diffTokens, textAfter, widthLabel } from "./diff";
 test("character diff shows replacement, additions, deletion and empty saves", () => {
   expect(diffSource("山に花あり", "山に雪あり")).toEqual([
     { kind: "equal", text: "山に" },
@@ -33,4 +33,110 @@ test("supplementary kana and markup reconstruct both original sources", () => {
 test("long identical pages and short edit boundaries are inexpensive", () => {
   const source = "古文書".repeat(10000);
   expect(diffSource(source + "春", source + "秋")).toHaveLength(3);
+});
+
+test("width-only replacements are marked in both directions", () => {
+  for (const [half, full] of [
+    ["-", "－"],
+    ["A", "Ａ"],
+    [" ", "　"],
+    ["A- ", "Ａ－　"],
+    ["ｶﾞ", "ガ"],
+    ["｡ｶﾀｶﾅ", "。カタカナ"],
+    ["￦", "₩"],
+    ["AＢ", "ＡB"],
+  ]) {
+    for (const [before, after] of [
+      [half, full],
+      [full, half],
+    ]) {
+      const changes = diffSource(`前${before}後`, `前${after}後`);
+      expect(changes.filter((c) => c.kind !== "equal")).toEqual([
+        { kind: "delete", text: before, widthOnly: true },
+        { kind: "insert", text: after, widthOnly: true },
+      ]);
+      expect(changes.filter((c) => c.kind === "equal")).toEqual([
+        { kind: "equal", text: "前" },
+        { kind: "equal", text: "後" },
+      ]);
+    }
+  }
+});
+
+test("ordinary replacements and non-width compatibility forms are not marked", () => {
+  for (const [before, after] of [
+    ["十", "一"],
+    ["A", "Ｂ"],
+    ["①", "1"],
+    ["ﬀ", "ff"],
+    ["\u00a0", " "],
+    ["", "Ａ"],
+    ["Ａ", ""],
+    ["Ａ", "Ａ"],
+    ["A①", "Ａ1"],
+  ])
+    expect(diffSource(before, after).some((c) => c.widthOnly)).toBe(false);
+});
+
+test("changed whitespace has distinct visible marks and accessible labels", () => {
+  for (const kind of ["insert", "delete"] as const) {
+    const text = "十 　\t\r\n\n\r一\u2028\u2029\u00a0\u200b";
+    const tokens = diffTokens({ kind, text });
+    expect(tokens.map((t) => t.text).join("")).toBe(text);
+    expect(
+      tokens.filter((t) => t.mark).map((t) => [t.mark, t.label, t.lineBreak]),
+    ).toEqual([
+      ["·", "半角空白", false],
+      ["⬚", "全角空白", false],
+      ["⇥", "タブ", false],
+      ["↵", "改行", true],
+      ["↵", "改行", true],
+      ["↵", "改行", true],
+      ["↵", "改行", true],
+      ["↵", "改行", true],
+      ["·", "空白（U+00A0）", false],
+      ["·", "空白（U+200B）", false],
+    ]);
+    expect(tokens.filter((t) => !t.mark)).toEqual([
+      { text: "十" },
+      { text: "一" },
+    ]);
+  }
+});
+
+test("unchanged whitespace and literal mark characters stay untouched", () => {
+  const text = "𛀂 ␣□↵　\t\n";
+  expect(diffTokens({ kind: "equal", text })).toEqual([{ text }]);
+  expect(diffTokens({ kind: "delete", text: "𛀂␣□↵" })).toEqual([
+    { text: "𛀂␣□↵" },
+  ]);
+  expect(diffTokens({ kind: "insert", text: "" })).toEqual([]);
+});
+
+test("repeated whitespace keeps one mark per space and per line ending", () => {
+  expect(
+    diffTokens({ kind: "delete", text: " 　\n\n" }).map((t) => t.mark),
+  ).toEqual(["·", "⬚", "↵", "↵"]);
+});
+test("width labels name the width of each side", () => {
+  expect(widthLabel("-")).toBe("半");
+  expect(widthLabel("ｶﾞ")).toBe("半");
+  expect(widthLabel("－")).toBe("全");
+  expect(widthLabel("ガ")).toBe("全");
+  expect(widthLabel("AＢ")).toBe("混");
+});
+test("a CR added before an unchanged LF is not a line break", () => {
+  const changes = diffSource("甲\n乙", "甲\r\n乙");
+  const tokens = changes.flatMap((change, i) =>
+    diffTokens(change, textAfter(changes, i)),
+  );
+  expect(tokens.filter((token) => token.lineBreak)).toEqual([]);
+  expect(tokens.find((token) => token.text === "\r")?.mark).toBe("␍");
+});
+test("a CR removed before an unchanged LF is not a line break", () => {
+  const changes = diffSource("甲\r\n乙", "甲\n乙");
+  const tokens = changes.flatMap((change, i) =>
+    diffTokens(change, textAfter(changes, i)),
+  );
+  expect(tokens.filter((token) => token.lineBreak)).toEqual([]);
 });
