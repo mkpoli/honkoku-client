@@ -142,7 +142,6 @@
       <p class="muted">
         {compareCurrent ? "選択した保存→現在の内容" : "前の保存→選択した保存"}
       </p>
-      <p class="muted">追加：実線囲み／削除：破線囲み</p>
       <button
         class="primary"
         {disabled}
@@ -159,6 +158,7 @@
             >{@render changedText(change, textAfter(changes, i))}</del
           >{:else}<span>{change.text}</span>{/if}{/each}
     </div>
+    <p class="muted history-legend">追加：実線囲み／削除：破線囲み</p>
   {/if}
 </aside>
 
@@ -251,6 +251,9 @@
     box-decoration-break: clone;
     -webkit-box-decoration-break: clone;
     text-orientation: upright;
+  }
+  .history-legend {
+    margin: 4px 0 0;
   }
   .whitespace-mark {
     display: inline-block;
