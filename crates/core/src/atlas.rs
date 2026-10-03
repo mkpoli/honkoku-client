@@ -56,13 +56,13 @@ struct VariantItem {
     char: String,
     #[serde(default)]
     corpus_count: u64,
+    #[serde(default)]
+    sources: Vec<String>,
 }
 #[derive(Deserialize, Default)]
 struct Variants {
     #[serde(default)]
     items: Vec<VariantItem>,
-    #[serde(default)]
-    related: Vec<Named>,
     #[serde(default)]
     sources: BTreeMap<String, String>,
 }
@@ -150,22 +150,21 @@ async fn glyphs_at(base: &str, character: &str, limit: usize) -> Result<AtlasGly
             .into())
     };
     let mut seen = std::collections::HashSet::new();
-    let variants: Vec<AtlasVariant> = detail
+    let shown: Vec<VariantItem> = detail
         .variants
         .items
+        .into_iter()
+        .filter(|v| {
+            v.char != detail.char && v.char.chars().count() == 1 && seen.insert(v.char.clone())
+        })
+        .collect();
+    let mut variant_sources = detail.variants.sources;
+    variant_sources.retain(|name, _| shown.iter().any(|v| v.sources.contains(name)));
+    let variants = shown
         .into_iter()
         .map(|v| AtlasVariant {
             character: v.char,
             count: v.corpus_count,
-        })
-        .chain(detail.variants.related.into_iter().map(|v| AtlasVariant {
-            character: v.char,
-            count: 0,
-        }))
-        .filter(|v| {
-            v.character != detail.char
-                && v.character.chars().count() == 1
-                && seen.insert(v.character.clone())
         })
         .collect();
     let items = occurrences
@@ -206,7 +205,7 @@ async fn glyphs_at(base: &str, character: &str, limit: usize) -> Result<AtlasGly
         readings: detail.readings,
         jibo: detail.jibo.into_iter().map(|j| j.char).collect(),
         variants,
-        variant_sources: detail.variants.sources,
+        variant_sources,
         total: occurrences.total,
         items,
     })
@@ -229,8 +228,10 @@ mod tests {
             .respond_with(ResponseTemplate::new(200).set_body_json(json!({
                 "char": "候", "code_point": "U+5019", "name": "CJK UNIFIED IDEOGRAPH-5019",
                 "readings": [], "jibo": [],
-                "variants": {"items": [{"char": "𠋫", "corpus_count": 1}, {"char": "⿰亻侯"}],
-                             "related": [{"char": "𠋫"}], "sources": {"yitizi": "yitizi; MIT"}}
+                "variants": {"items": [{"char": "𠋫", "corpus_count": 1, "sources": ["yitizi"]},
+                                       {"char": "⿰亻侯", "sources": ["derived-ids"]}],
+                             "related": [{"char": "侯"}],
+                             "sources": {"yitizi": "yitizi; MIT", "derived-ids": "predicted"}}
             })))
             .mount(&server)
             .await;
@@ -254,6 +255,10 @@ mod tests {
             .mount(&server)
             .await;
         let result = glyphs_at(&server.uri(), "候", 2).await?;
+        assert_eq!(
+            result.variant_sources.keys().collect::<Vec<_>>(),
+            vec!["yitizi"]
+        );
         assert_eq!(result.total, 193);
         assert_eq!(
             result.variants,
