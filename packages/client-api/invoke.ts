@@ -266,6 +266,8 @@ export const glyphAttestations = (
     project,
     limit,
   });
+export const atlasGlyphs = (character: string, limit = 100) =>
+  invoke<import("./types").AtlasGlyphs>("atlas_glyphs", { character, limit });
 export const clipsList = () => invoke<import("./types").Clip[]>("clips_list");
 export const clipCreate = (input: import("./types").ClipInput) =>
   invoke<import("./types").Clip>("clip_create", { input });
