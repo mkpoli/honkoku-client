@@ -72,6 +72,7 @@
     "allow-search-query",
     "allow-search-sync",
     "allow-glyph-attestations",
+    "allow-atlas-glyphs",
     "allow-clips-list",
     "allow-clip-create",
     "allow-clip-delete",

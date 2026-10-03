@@ -972,6 +972,13 @@ pub async fn glyph_attestations(
         .await?)
 }
 #[tauri::command]
+pub async fn atlas_glyphs(
+    character: String,
+    limit: usize,
+) -> Result<honkoku_core::atlas::AtlasGlyphs, AppError> {
+    Ok(honkoku_core::atlas::glyphs(&character, limit).await?)
+}
+#[tauri::command]
 pub async fn clips_list(
     state: State<'_, AppState>,
 ) -> Result<Vec<honkoku_core::clips::Clip>, AppError> {

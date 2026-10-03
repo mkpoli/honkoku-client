@@ -437,6 +437,33 @@ export interface GlyphAttestations {
   pages: GlyphAttestation[];
   firestoreReads: number;
 }
+export interface AtlasGlyph {
+  id: string;
+  label: string;
+  image: string;
+  source: string;
+  pageNumber: number | null;
+  entryId: string | null;
+  pageIndex: number | null;
+  licence: string;
+  holder: string | null;
+  attribution: string | null;
+  rightsUrl: string | null;
+  state: string | null;
+  recordUrl: string;
+}
+export interface AtlasGlyphs {
+  character: string;
+  codePoint: string;
+  name: string | null;
+  readings: string[];
+  jibo: string[];
+  variants: { character: string; count: number }[];
+  variantSources: Record<string, string>;
+  total: number;
+  items: AtlasGlyph[];
+  pageUrl: string;
+}
 export interface ClipInput {
   entryId: string;
   index: number;

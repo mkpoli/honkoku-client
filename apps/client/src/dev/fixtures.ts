@@ -2,6 +2,7 @@ import notesFixture from "../../../../fixtures/api/page-notes.json";
 import pageHistoryFixture from "../../../../fixtures/home/page-history.json";
 import bibliographyFixture from "../../../../fixtures/api/manifest-bibliography-v3.json";
 import glyphFixture from "../../../../fixtures/glyphs/attestations-候.json";
+import atlasFixture from "../../../../fixtures/glyphs/atlas-候.json";
 import clipFixture from "../../../../fixtures/glyphs/clips.json";
 import type { Clip, ClipInput } from "@honkoku/client-api/types";
 import pageStatuses from "../../../../fixtures/home/page-statuses.json";
@@ -245,6 +246,21 @@ export async function fixtureInvoke(
         .slice(0, Number(args.limit));
       if (args.character !== "候") result.pages = [];
       result.total = result.pages.length;
+      return result;
+    }
+    case "atlas_glyphs": {
+      const result = structuredClone(atlasFixture);
+      if (args.character !== "候")
+        return {
+          ...result,
+          character: args.character,
+          total: 0,
+          items: [],
+          variants: [],
+          readings: [],
+          jibo: [],
+        };
+      result.items = result.items.slice(0, Number(args.limit));
       return result;
     }
     case "clips_list":
