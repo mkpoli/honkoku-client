@@ -1873,6 +1873,24 @@ export async function checkGlyphs(
       .getByRole("heading", { name: "位置不明", exact: true })
       .waitFor();
     assert.equal(await page.locator(".glyph-card.located").count(), 4);
+    assert.equal(await page.locator(".atlas-card").count(), 12);
+    await page.waitForFunction(
+      () =>
+        [
+          ...document.querySelectorAll<HTMLImageElement>(".atlas-card img"),
+        ].every((img) => img.complete && img.naturalWidth > 0),
+      {},
+      { timeout: 60000 },
+    );
+    assert.ok(
+      await page
+        .locator(`.atlas-card a[href^="#/entries/${entry}/pages/"]`)
+        .count(),
+    );
+    await page
+      .getByLabel("異体字")
+      .getByRole("link", { name: "𠋫", exact: true })
+      .waitFor();
     await page.waitForFunction(
       () => document.querySelectorAll(".glyph-crop img.ready").length === 4,
       {},
@@ -1930,6 +1948,7 @@ export async function checkGlyphs(
       .getByRole("button", { name: "集字", exact: true })
       .click();
     await page.locator(".glyph-drawer .glyph-card.located").first().waitFor();
+    await page.locator(".glyph-drawer .atlas-card").first().waitFor();
     if (theme === "light")
       await page.screenshot({
         path: resolve(
