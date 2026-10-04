@@ -2062,7 +2062,7 @@ dependencies = [
 
 [[package]]
 name = "honkoku-cli"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "clap",
  "directories",
@@ -2081,7 +2081,7 @@ dependencies = [
 
 [[package]]
 name = "honkoku-client"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "futures-util",
  "honkoku-core",
@@ -2105,7 +2105,7 @@ dependencies = [
 
 [[package]]
 name = "honkoku-core"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "base64 0.22.1",
  "futures-util",
@@ -2128,7 +2128,7 @@ dependencies = [
 
 [[package]]
 name = "honkoku-iiif"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "bytes",
  "futures-util",
@@ -2148,7 +2148,7 @@ dependencies = [
 
 [[package]]
 name = "honkoku-ocr"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "honkoku-core",
  "honkoku-iiif",
@@ -2164,7 +2164,7 @@ dependencies = [
 
 [[package]]
 name = "honkoku-search"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "blake3",
  "csv",
@@ -2180,7 +2180,7 @@ dependencies = [
 
 [[package]]
 name = "honkoku-storage"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "rusqlite",
  "serde",
@@ -2191,7 +2191,7 @@ dependencies = [
 
 [[package]]
 name = "honkoku-text"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "proptest",
  "serde",
