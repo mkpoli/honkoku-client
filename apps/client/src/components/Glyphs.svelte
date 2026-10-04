@@ -3,17 +3,21 @@
   import { openUrl } from "@tauri-apps/plugin-opener";
   import {
     glyphAttestations,
+    atlasGlyphs,
     searchStatus,
     listProjects,
     isTauri,
   } from "@honkoku/client-api/invoke";
   import type {
+    AtlasGlyphs,
     GlyphAttestations,
     SearchStatus,
   } from "@honkoku/client-api/types";
   import { glyphCards, singleGlyph } from "./glyph-regions";
   import { errorMessage } from "../lib";
   import GlyphCard from "./GlyphCard.svelte";
+  import AtlasCard from "./AtlasCard.svelte";
+  import ExternalLink from "./ExternalLink.svelte";
   import Clips from "./Clips.svelte";
   import Skeleton from "./Skeleton.svelte";
   let { character, compact = false }: { character: string; compact?: boolean } =
@@ -28,6 +32,10 @@
     error = $state(""),
     revision = $state(0);
   let names = $state<Record<string, string>>({});
+  let atlas = $state<AtlasGlyphs>(),
+    atlasLoading = $state(false),
+    atlasError = $state(""),
+    atlasRevision = $state(0);
   let generation = 0;
   let code = $derived(
     [...character]
@@ -89,6 +97,29 @@
       generation++;
     };
   });
+  $effect(() => {
+    const char = character,
+      count = compact ? 24 : limit;
+    atlasRevision;
+    let alive = true;
+    atlas = undefined;
+    atlasError = "";
+    if (!singleGlyph(char)) return;
+    atlasLoading = true;
+    void atlasGlyphs(char, count)
+      .then((value) => {
+        if (alive) atlas = value;
+      })
+      .catch((e) => {
+        if (alive) atlasError = errorMessage(e);
+      })
+      .finally(() => {
+        if (alive) atlasLoading = false;
+      });
+    return () => {
+      alive = false;
+    };
+  });
   function change(event: Event) {
     const node = event.currentTarget as HTMLInputElement;
     if (singleGlyph(node.value))
@@ -135,6 +166,12 @@
         <div>
           <strong>集字</strong>
           <p class="caption muted">{code}</p>
+          {#if atlas?.jibo.length}<p class="caption">
+              字母 {atlas.jibo.join("・")}
+            </p>{/if}
+          {#if atlas?.readings.length}<p class="caption">
+              読み {atlas.readings.join("・")}
+            </p>{/if}
         </div>
       </div>
       <label
@@ -170,6 +207,23 @@
         }}>くずし字データセット↗</a
       >
     </header>
+    {#if atlas?.variants.length}<div class="variants" aria-label="異体字">
+        <span class="caption muted">異体字</span>
+        {#each atlas.variants as variant (variant.character)}<a
+            href={`#/glyphs/${encodeURIComponent(variant.character)}`}
+            >{variant.character}</a
+          >{/each}
+        <details>
+          <summary class="caption muted">典拠</summary>
+          <ul>
+            {#each Object.values(atlas.variantSources) as credit}<li
+                class="caption"
+              >
+                {credit}
+              </li>{/each}
+          </ul>
+        </details>
+      </div>{/if}
     <nav aria-label="集字の資料">
       <button aria-pressed={tab === "corpus"} onclick={() => (tab = "corpus")}
         >翻刻資料</button
@@ -182,7 +236,41 @@
       {character}
       embedded
     />{:else if !singleGlyph(character)}<p>本文から1文字を選んでください。</p>
-  {:else if status && !status.present}<section class="panel guidance">
+  {:else}
+    <section class="atlas" aria-label="Glyph Atlas の字形">
+      <header class="section-head">
+        <h2>Glyph Atlas</h2>
+        {#if atlas}<span class="caption muted"
+            >{atlas.total.toLocaleString("ja-JP")}字・表示{atlas.items
+              .length}字</span
+          >{#if atlas.pageUrl}<ExternalLink href={atlas.pageUrl}
+              >glyphatlas.org↗</ExternalLink
+            >{/if}{/if}
+      </header>
+      {#if atlasError}<p role="alert">
+          {atlasError}<button onclick={() => atlasRevision++}>再試行</button>
+        </p>
+      {:else if atlasLoading}<div class="glyph-grid" aria-label="Glyph Atlas を取得中">
+          {#each Array(compact ? 3 : 6) as _}<Skeleton
+              shape="frame"
+              count={1}
+            />{/each}
+        </div>
+      {:else if atlas?.items.length}<div
+          class="glyph-grid"
+          aria-label="Glyph Atlas の画像"
+        >
+          {#each atlas.items as glyph (glyph.id)}<AtlasCard {glyph} />{/each}
+        </div>
+      {:else if atlas}<p class="caption muted">
+          Glyph Atlas にはこの字の切り出しがまだありません。
+        </p>{/if}
+    </section>
+    <header class="section-head">
+      <h2>翻刻資料から推定</h2>
+      <span class="caption muted">OCRの行枠を字数で割った位置</span>
+    </header>
+    {#if status && !status.present}<section class="panel guidance">
       <h2>翻刻を端末で検索する</h2>
       <p>
         公開翻刻データから検索索引を作成します。一度作成すると、通信せずに本文を検索できます。
@@ -236,6 +324,7 @@
           >取得できなかった資料を再試行</button
         >{/if}
     {/if}
+  {/if}
   {/if}
 </section>
 
@@ -327,6 +416,40 @@
   h2 {
     font-size: 18px;
     margin: 8px 0 0;
+  }
+  .section-head {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .section-head h2 {
+    margin: 0;
+  }
+  .section-head :global(a) {
+    font-size: 13px;
+  }
+  .atlas {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .variants {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+  }
+  .variants > a {
+    font: 24px var(--font-serif);
+    text-decoration: none;
+  }
+  .variants details {
+    flex-basis: 100%;
+  }
+  .variants ul {
+    margin: 4px 0 0;
+    padding-left: 16px;
   }
   .guidance {
     padding: 16px;

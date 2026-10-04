@@ -1,0 +1,219 @@
+{
+  "character": "候",
+  "codePoint": "U+5019",
+  "name": "CJK UNIFIED IDEOGRAPH-5019",
+  "readings": [],
+  "jibo": [],
+  "variants": [
+    {
+      "character": "𠋫",
+      "count": 1
+    },
+    {
+      "character": "𠊱",
+      "count": 0
+    },
+    {
+      "character": "𠉀",
+      "count": 0
+    },
+    {
+      "character": "𬾴",
+      "count": 0
+    },
+    {
+      "character": "𬿈",
+      "count": 0
+    }
+  ],
+  "variantSources": {
+    "cjkvi-variants": "CJKVI Variants Database (cjkvi-variants); PD (https://github.com/cjkvi/cjkvi-variants/blob/e4f1da248c9737a243f9930b5dc497cef5d5ae16/cjkvi-variants.txt); 川幡太一, CJKVI Variants Database (cjkvi-variants)",
+    "mj-shrink-map": "MJ縮退マップ; CC-BY-SA-2.1-JP (https://moji.or.jp/wp-content/mojikiban/oscdl/MJShrinkMap.1.2.0.json); 文字情報基盤 MJ縮退マップ（IPA）, CC BY-SA 2.1 JP",
+    "wikidata": "Wikidata, property P5475 (CJKV variant character); CC0-1.0 (https://www.wikidata.org/wiki/Wikidata:Licensing); Wikidata contributors, CC0 1.0",
+    "yitizi": "Yitizi 異體字 (nk2028); CC0-1.0 (https://github.com/nk2028/yitizi/blob/60e232c40d6076af07679151c008349363e699ae/LICENSE); nk2028, Yitizi, CC0 1.0"
+  },
+  "total": 193,
+  "items": [
+    {
+      "id": "ar:ezo-kiko--ryukoku-1:8-ocr4-9",
+      "label": "候",
+      "image": "https://glyphatlas.org/atlas/media/f0c7876d6711434e8c3b9a127c5c1f05db2fa2f986d25a81c4f3cdf853f62a7d.webp",
+      "source": "蝦夷記行　第1冊（龍谷大学図書館）",
+      "pageNumber": 8,
+      "entryId": "0916dafb80cdc48ca7687afcad4a4f35",
+      "pageIndex": 7,
+      "licence": "PD",
+      "holder": "龍谷大学図書館",
+      "attribution": "龍谷大学図書館",
+      "rightsUrl": "https://da.library.ryukoku.ac.jp/support2.html",
+      "state": "pending",
+      "recordUrl": "https://glyphatlas.org/ja/crop/ar:ezo-kiko--ryukoku-1:8-ocr4-9"
+    },
+    {
+      "id": "ar:ezo-kiko--ryukoku-1:9-ocr12-4",
+      "label": "候",
+      "image": "https://glyphatlas.org/atlas/media/f20777cd5678afee2d0a09fe8f8bed0f2752b526c28de2c368fb1fa011d57f24.webp",
+      "source": "蝦夷記行　第1冊（龍谷大学図書館）",
+      "pageNumber": 9,
+      "entryId": "0916dafb80cdc48ca7687afcad4a4f35",
+      "pageIndex": 8,
+      "licence": "PD",
+      "holder": "龍谷大学図書館",
+      "attribution": "龍谷大学図書館",
+      "rightsUrl": "https://da.library.ryukoku.ac.jp/support2.html",
+      "state": "pending",
+      "recordUrl": "https://glyphatlas.org/ja/crop/ar:ezo-kiko--ryukoku-1:9-ocr12-4"
+    },
+    {
+      "id": "ar:ezo-soshi--ryukoku-1:12-ocr20-20",
+      "label": "候",
+      "image": "https://glyphatlas.org/atlas/media/642876f167fdca0734c00c3e37d3595f8d19a0f59410e2d1134b5674347a7a31.webp",
+      "source": "蝦夷草紙　第1冊（龍谷大学図書館）",
+      "pageNumber": 12,
+      "entryId": "9987c791c64b854f7fadde0412de937a",
+      "pageIndex": 11,
+      "licence": "PD",
+      "holder": "龍谷大学図書館",
+      "attribution": "龍谷大学図書館",
+      "rightsUrl": "https://da.library.ryukoku.ac.jp/support2.html",
+      "state": "pending",
+      "recordUrl": "https://glyphatlas.org/ja/crop/ar:ezo-soshi--ryukoku-1:12-ocr20-20"
+    },
+    {
+      "id": "ar:ezo-soshi--ryukoku-1:17-ocr10-2",
+      "label": "候",
+      "image": "https://glyphatlas.org/atlas/media/90255b44a175b844da215b5b892338f95c5d92e163b3a50a116f4863e8fc50c9.webp",
+      "source": "蝦夷草紙　第1冊（龍谷大学図書館）",
+      "pageNumber": 17,
+      "entryId": "9987c791c64b854f7fadde0412de937a",
+      "pageIndex": 16,
+      "licence": "PD",
+      "holder": "龍谷大学図書館",
+      "attribution": "龍谷大学図書館",
+      "rightsUrl": "https://da.library.ryukoku.ac.jp/support2.html",
+      "state": "pending",
+      "recordUrl": "https://glyphatlas.org/ja/crop/ar:ezo-soshi--ryukoku-1:17-ocr10-2"
+    },
+    {
+      "id": "ar:ezo-soshi--ryukoku-1:3-ocr4-23",
+      "label": "候",
+      "image": "https://glyphatlas.org/atlas/media/eb0181f3c9e96fef3146bd9b5673f080e5c1bc34a4c9233bf6735ba159b5b0f3.webp",
+      "source": "蝦夷草紙　第1冊（龍谷大学図書館）",
+      "pageNumber": 3,
+      "entryId": "9987c791c64b854f7fadde0412de937a",
+      "pageIndex": 2,
+      "licence": "PD",
+      "holder": "龍谷大学図書館",
+      "attribution": "龍谷大学図書館",
+      "rightsUrl": "https://da.library.ryukoku.ac.jp/support2.html",
+      "state": "pending",
+      "recordUrl": "https://glyphatlas.org/ja/crop/ar:ezo-soshi--ryukoku-1:3-ocr4-23"
+    },
+    {
+      "id": "ar:ezo-soshi--ryukoku-1:7-ocr1-12",
+      "label": "候",
+      "image": "https://glyphatlas.org/atlas/media/31608de3712cd057ed6b3180cec65a21fd0896cac16d471ae4e0f4a09aa86158.webp",
+      "source": "蝦夷草紙　第1冊（龍谷大学図書館）",
+      "pageNumber": 7,
+      "entryId": "9987c791c64b854f7fadde0412de937a",
+      "pageIndex": 6,
+      "licence": "PD",
+      "holder": "龍谷大学図書館",
+      "attribution": "龍谷大学図書館",
+      "rightsUrl": "https://da.library.ryukoku.ac.jp/support2.html",
+      "state": "pending",
+      "recordUrl": "https://glyphatlas.org/ja/crop/ar:ezo-soshi--ryukoku-1:7-ocr1-12"
+    },
+    {
+      "id": "ar:ezo-yabubanashi--hokudai:12-ocr10-18",
+      "label": "候",
+      "image": "https://glyphatlas.org/atlas/media/4c5da349932091da1de6a98cbe237d07757bb76d6285e7ebdaf4da72bde143f9.webp",
+      "source": "蝦夷薮話（北海道大学附属図書館）",
+      "pageNumber": 12,
+      "entryId": "91e9d7edfbcead11d8bc83a6fc83183c",
+      "pageIndex": 11,
+      "licence": "CC-BY-SA-4.0",
+      "holder": "北海道大学附属図書館",
+      "attribution": "北海道大学附属図書館",
+      "rightsUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "state": "pending",
+      "recordUrl": "https://glyphatlas.org/ja/crop/ar:ezo-yabubanashi--hokudai:12-ocr10-18"
+    },
+    {
+      "id": "ar:ezo-yabubanashi--hokudai:12-ocr11-17",
+      "label": "候",
+      "image": "https://glyphatlas.org/atlas/media/7c329764657bb95e1d5a911184b12a6250a8a990acec85fd5b4c586f8f926915.webp",
+      "source": "蝦夷薮話（北海道大学附属図書館）",
+      "pageNumber": 12,
+      "entryId": "91e9d7edfbcead11d8bc83a6fc83183c",
+      "pageIndex": 11,
+      "licence": "CC-BY-SA-4.0",
+      "holder": "北海道大学附属図書館",
+      "attribution": "北海道大学附属図書館",
+      "rightsUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "state": "pending",
+      "recordUrl": "https://glyphatlas.org/ja/crop/ar:ezo-yabubanashi--hokudai:12-ocr11-17"
+    },
+    {
+      "id": "ex:0ecaa123286dd3bf:8d7f92035fa0674ef67c",
+      "label": "候",
+      "image": "https://glyphatlas.org/atlas/media/ec3aa54f50c6a4bec27a41e02fffce61536704ab34234e87ad7827af731a58da.webp",
+      "source": "願書控帳",
+      "pageNumber": 22,
+      "entryId": null,
+      "pageIndex": null,
+      "licence": "CC-BY-4.0",
+      "holder": "伊那市立高遠町図書館・合同会社AMANE",
+      "attribution": "伊那市立高遠町図書館・合同会社AMANE",
+      "rightsUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "state": "pending",
+      "recordUrl": "https://glyphatlas.org/ja/crop/ex:0ecaa123286dd3bf:8d7f92035fa0674ef67c"
+    },
+    {
+      "id": "ex:133dbd3b8516d935:02e9374fb16d8d3b64f0",
+      "label": "候",
+      "image": "https://glyphatlas.org/atlas/media/8f5e00319987f3554344756d4b9755687201bc9711010e691446967deb4e7657.webp",
+      "source": "口上覚",
+      "pageNumber": 1,
+      "entryId": null,
+      "pageIndex": null,
+      "licence": "CC-BY-4.0",
+      "holder": "伊那市立高遠町図書館・合同会社AMANE",
+      "attribution": "伊那市立高遠町図書館・合同会社AMANE",
+      "rightsUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "state": "pending",
+      "recordUrl": "https://glyphatlas.org/ja/crop/ex:133dbd3b8516d935:02e9374fb16d8d3b64f0"
+    },
+    {
+      "id": "ex:17a9bddfb48b4b05:8824dfbac157fa20097b",
+      "label": "候",
+      "image": "https://glyphatlas.org/atlas/media/03415e0fbaff5a48bce9cc5bb19b36f58dd9e6753d6b66a477f13e1644017d93.webp",
+      "source": "御返答口上覚",
+      "pageNumber": 1,
+      "entryId": null,
+      "pageIndex": null,
+      "licence": "CC-BY-4.0",
+      "holder": "伊那市立高遠町図書館・合同会社AMANE",
+      "attribution": "伊那市立高遠町図書館・合同会社AMANE",
+      "rightsUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "state": "pending",
+      "recordUrl": "https://glyphatlas.org/ja/crop/ex:17a9bddfb48b4b05:8824dfbac157fa20097b"
+    },
+    {
+      "id": "ex:1a5d2d42b767ff40:d668f932cbec615486b1",
+      "label": "候",
+      "image": "https://glyphatlas.org/atlas/media/580d620024677e7863c7fd9d1072ee6e8b8afecfbd44222ce9eb3755eb2b505e.webp",
+      "source": "書状",
+      "pageNumber": 2,
+      "entryId": null,
+      "pageIndex": null,
+      "licence": "CC-BY-4.0",
+      "holder": "伊那市立高遠町図書館・合同会社AMANE",
+      "attribution": "伊那市立高遠町図書館・合同会社AMANE",
+      "rightsUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "state": "pending",
+      "recordUrl": "https://glyphatlas.org/ja/crop/ex:1a5d2d42b767ff40:d668f932cbec615486b1"
+    }
+  ],
+  "pageUrl": "https://glyphatlas.org/ja/character/U+5019"
+}
